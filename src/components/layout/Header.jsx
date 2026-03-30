@@ -248,8 +248,8 @@ const Header = () => {
       </div>
 
       {mobileMenuOpen && (
-        <div className="border-t border-gray-200 bg-white lg:hidden">
-          <div className="mx-auto max-w-[1280px] px-4 py-4">
+        <div className="absolute left-0 right-0 top-full z-50 border-t border-gray-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.12)] lg:hidden">
+          <div className="mx-auto max-h-[calc(100vh-88px)] max-w-[1280px] overflow-y-auto px-4 py-4">
             <button className="mb-4 flex items-center gap-2 text-sm font-medium text-gray-700 md:hidden">
               <MapPin size={16} className="text-orange-500" />
               <span>New Delhi</span>
@@ -284,7 +284,7 @@ const Header = () => {
               </Link>
             </div>
 
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2">
               {categoryMenu.map((item) => (
                 <div
                   key={item.slug}

@@ -20,11 +20,11 @@ const Footer = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <span className="font-heading font-extrabold text-xl text-white">MediShop</span>
-              <span className="bg-brand text-white text-[11px] font-bold px-2 py-0.5 rounded-md">Rx</span>
+              <span className="font-heading font-extrabold text-xl text-white">GURUNANAK</span>
+              {/* <span className="bg-brand text-white text-[11px] font-bold px-2 py-0.5 rounded-md">Rx</span> */}
             </div>
             <p className="text-body leading-relaxed max-w-xs">
-              Your trusted online pharmacy. Genuine medicines and health products across India — delivered with care.
+              Your trusted online pharmacy. Genuine medicines and health products across India  delivered with care.
             </p>
           </div>
 
