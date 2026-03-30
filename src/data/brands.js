@@ -30,15 +30,58 @@ export const featuredBrands = [
     image: "/patanjali.png",
   },
 ];
+
 export const ayurvedaBrands = [
-  { id: 1, icon: "🌳", name: "Dabur", bg: "bg-orange-50" },
-  { id: 2, icon: "🏺", name: "Baidyanath", bg: "bg-red-50" },
-  { id: 3, icon: "🌿", name: "Dhootapapeshwar", bg: "bg-green-50" },
-  { id: 4, icon: "💊", name: "Tata 1mg", bg: "bg-yellow-50" },
-  { id: 5, icon: "⛰️", name: "Himalaya Since 1930", bg: "bg-blue-50" },
-  { id: 6, icon: "🪷", name: "Jiva Ayurveda", bg: "bg-pink-50" },
-  { id: 7, icon: "🌺", name: "Kerala Ayurveda", bg: "bg-emerald-50" },
-  { id: 8, icon: "🕉️", name: "Sri Sri Tattva", bg: "bg-indigo-50" },
+  {
+    id: 1,
+    name: "Dabur",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://www.dabur.com",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.dabur.com",
+    bg: "bg-orange-50",
+  },
+  {
+    id: 2,
+    name: "Baidyanath",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://www.baidyanath.com",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.baidyanath.com",
+    bg: "bg-red-50",
+  },
+  {
+    id: 3,
+    name: "Dhootapapeshwar",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://www.sdlindia.com",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.sdlindia.com",
+    bg: "bg-green-50",
+  },
+
+  {
+    id: 4,
+    name: "Himalaya Since 1930",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://himalayawellness.in",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://himalayawellness.in",
+    bg: "bg-blue-50",
+  },
+  {
+    id: 5,
+    name: "Jiva Ayurveda",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://www.jiva.com",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.jiva.com",
+    bg: "bg-pink-50",
+  },
+  {
+    id: 6,
+    name: "Kerala Ayurveda",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://www.keralaayurveda.biz",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.keralaayurveda.biz",
+    bg: "bg-emerald-50",
+  },
+  {
+    id: 7,
+    name: "Sri Sri Tattva",
+    image: "https://www.google.com/s2/favicons?sz=256&domain_url=https://www.srisritattva.com",
+    fallbackImage: "https://www.google.com/s2/favicons?sz=128&domain_url=https://www.srisritattva.com",
+    bg: "bg-indigo-50",
+  },
 ];
 
 export const healthConcerns = [
@@ -109,9 +152,39 @@ export const healthConcerns = [
 ];
 
 export const personalCareCategories = [
-  { id: 1, icon: "🧴", label: "Skin care", gradient: "from-green-500 to-green-700" },
-  { id: 2, icon: "💆", label: "Hair Care", gradient: "from-blue-500 to-blue-700" },
-  { id: 3, icon: "💊", label: "Sexual Wellness", gradient: "from-amber-500 to-amber-700" },
-  { id: 4, icon: "🦷", label: "Oral Care", gradient: "from-rose-500 to-rose-700" },
-  { id: 5, icon: "👴", label: "Elderly Care", gradient: "from-teal-500 to-teal-700" },
+  {
+    id: 1,
+    label: "Skin care",
+    image:
+      "https://images.unsplash.com/photo-1625772452859-1c03d5bf1137?auto=format&fit=crop&w=600&q=80",
+    gradient: "from-green-500 to-green-700",
+  },
+  {
+    id: 2,
+    label: "Hair Care",
+    image:
+      "https://images.unsplash.com/photo-1522338242992-e1a54906a8da?auto=format&fit=crop&w=600&q=80",
+    gradient: "from-blue-500 to-blue-700",
+  },
+  {
+    id: 3,
+    label: "Sexual Wellness",
+    image:
+      "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=600&q=80",
+    gradient: "from-amber-500 to-amber-700",
+  },
+  {
+    id: 4,
+    label: "Oral Care",
+    image:
+      "https://images.unsplash.com/photo-1609840114035-3c981b782dfe?auto=format&fit=crop&w=600&q=80",
+    gradient: "from-rose-500 to-rose-700",
+  },
+  {
+    id: 5,
+    label: "Elderly Care",
+    image:
+      "https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=600&q=80",
+    gradient: "from-teal-500 to-teal-700",
+  },
 ];

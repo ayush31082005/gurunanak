@@ -76,7 +76,7 @@ const HeroBanner = () => {
         <div className="absolute -left-20 top-10 h-56 w-56 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="absolute bottom-0 right-0 h-72 w-72 rounded-full bg-emerald-400/10 blur-3xl" />
 
-        <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col items-center justify-between gap-8 px-4 py-10 sm:px-6 sm:py-12 lg:flex-row lg:gap-10 lg:px-8 lg:py-14">
+        <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col items-center justify-center gap-8 px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
           {/* Left Content */}
           <div className="w-full max-w-2xl text-center lg:text-left">
             <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-white backdrop-blur-sm sm:text-sm">
@@ -135,57 +135,8 @@ const HeroBanner = () => {
               </div>
             </div>
 
-            {/* Indicators */}
-            <div className="mt-6 flex items-center justify-center gap-3 lg:justify-start">
-              {slides.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActive(index)}
-                  className={`h-2.5 rounded-full transition-all duration-300 ${index === active ? "w-8 bg-white" : "w-2.5 bg-white/40"
-                    }`}
-                />
-              ))}
-            </div>
           </div>
 
-          {/* Right Content */}
-          <div className="flex w-full max-w-xl justify-center lg:justify-end">
-            <div className="relative w-full max-w-[390px]">
-              {/* Main Card */}
-              <div className="rounded-[28px] border border-white/15 bg-white/12 p-4 shadow-2xl backdrop-blur-md sm:p-5">
-                <img
-                  src={slide.image}
-                  alt={slide.subtitle}
-                  className="h-[200px] w-full rounded-[22px] object-cover sm:h-[230px] lg:h-[250px]"
-                />
-
-                <div className="mt-3 rounded-2xl bg-white p-4 shadow-lg">
-                  <p className="text-lg font-bold text-slate-800">{slide.cardTitle}</p>
-                  <p className="mt-1 text-sm text-slate-600">{slide.cardText}</p>
-
-                  <div className="mt-3 flex items-center justify-between">
-                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
-                      Pharmacy Care
-                    </span>
-                    <span className="text-sm font-semibold text-slate-700">
-                      Trusted Service
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating Small Cards */}
-              <div className="absolute -left-4 top-6 hidden rounded-2xl bg-white px-4 py-3 shadow-xl sm:block">
-                <p className="text-xs font-semibold text-slate-500">Daily Essentials</p>
-                <p className="mt-1 text-sm font-bold text-slate-800">Medicines & Wellness</p>
-              </div>
-
-              <div className="absolute -right-4 bottom-8 hidden rounded-2xl bg-white px-4 py-3 shadow-xl sm:block">
-                <p className="text-xs font-semibold text-slate-500">Special Discount</p>
-                <p className="mt-1 text-sm font-bold text-slate-800">{slide.highlight}</p>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Arrows */}

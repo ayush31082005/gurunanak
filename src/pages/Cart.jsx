@@ -1,114 +1,205 @@
-import PageHero from "../components/common/PageHero";
 import { Link } from "react-router-dom";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, ShieldCheck, ShoppingBag } from "lucide-react";
 import { useCart } from "../context/CartContext";
 
 const Cart = () => {
   const { cartItems, cartTotal, removeFromCart, updateQuantity } = useCart();
 
+  const totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+
   return (
-    <>
-      <PageHero title="My Cart" description="Your selected medicines and wellness products will appear here." />
-      <section className="bg-bg py-10">
-        <div className="container-padded">
-          {cartItems.length === 0 ? (
-            <div className="rounded-card border border-dashed border-gray-300 bg-white p-10 text-center text-gray-500">
-              <p>Your cart is empty right now.</p>
-              <Link
-                to="/products"
-                className="mt-4 inline-flex rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-              >
-                Browse Products
-              </Link>
-            </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-              <div className="space-y-4">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex flex-col gap-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center"
-                  >
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="h-24 w-24 rounded-2xl bg-slate-50 object-contain p-3"
-                    />
-
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                        {item.category}
-                      </p>
-                      <h2 className="mt-1 text-base font-bold text-slate-900">
-                        {item.name}
-                      </h2>
-                      <p className="mt-1 text-sm text-slate-500">{item.qty}</p>
-                      <p className="mt-3 text-lg font-extrabold text-slate-900">
-                        Rs {item.price}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3 sm:flex-col sm:items-end">
-                      <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 transition hover:bg-white"
-                          aria-label={`Decrease quantity for ${item.name}`}
-                        >
-                          <Minus size={14} />
-                        </button>
-                        <span className="min-w-8 text-center text-sm font-semibold text-slate-900">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 transition hover:bg-white"
-                          aria-label={`Increase quantity for ${item.name}`}
-                        >
-                          <Plus size={14} />
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="inline-flex items-center gap-2 rounded-full border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                      >
-                        <Trash2 size={14} />
-                        Remove
-                      </button>
-                    </div>
+    <section className="min-h-screen bg-[#f6f7fb] py-6 sm:py-10">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+          <div className="grid min-h-[650px] grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]">
+            {/* Left Side */}
+            <div className="border-b border-slate-200 bg-[#fafafa] px-5 py-8 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 lg:py-10">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
+                    <ShoppingBag size={26} className="text-[#ff6f61]" />
                   </div>
-                ))}
-              </div>
 
-              <div className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
-                <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-                  Order Summary
-                </p>
-                <div className="mt-5 space-y-3 text-sm text-slate-600">
-                  <div className="flex items-center justify-between">
-                    <span>Items</span>
-                    <span>{cartItems.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Total Quantity</span>
-                    <span>{cartItems.reduce((total, item) => total + item.quantity, 0)}</span>
-                  </div>
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-base font-bold text-slate-900">
-                    <span>Total</span>
-                    <span>Rs {cartTotal}</span>
+                  <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                      My Cart
+                    </h1>
+                    <p className="mt-1 text-sm text-slate-500 sm:text-base">
+                      Review your selected medicines and wellness products.
+                    </p>
                   </div>
                 </div>
 
-                <button className="mt-5 w-full rounded-full bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800">
-                  Proceed to Checkout
-                </button>
+                {cartItems.length === 0 ? (
+                  <div className="mt-10 rounded-[24px] border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm sm:p-10">
+                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
+                      <ShoppingBag size={32} className="text-slate-500" />
+                    </div>
+
+                    <h2 className="mt-5 text-2xl font-bold text-slate-900">
+                      Your cart is empty
+                    </h2>
+
+                    <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+                      Add medicines and healthcare products to continue shopping.
+                    </p>
+
+                    <Link
+                      to="/products"
+                      className="mt-6 inline-flex rounded-xl bg-[#ff6f61] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#f45d4f]"
+                    >
+                      Browse Products
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="mt-8 space-y-4">
+                    {cartItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5"
+                      >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                          <div className="flex justify-center sm:block">
+                            <img
+                              src={item.image}
+                              alt={item.name}
+                              className="h-24 w-24 rounded-2xl bg-slate-50 object-contain p-3"
+                            />
+                          </div>
+
+                          <div className="min-w-0 flex-1 text-center sm:text-left">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              {item.category}
+                            </p>
+
+                            <h2 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
+                              {item.name}
+                            </h2>
+
+                            {item.qty ? (
+                              <p className="mt-1 text-sm text-slate-500">{item.qty}</p>
+                            ) : null}
+
+                            <p className="mt-3 text-xl font-extrabold text-slate-900">
+                              ₹{item.price}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-col items-center gap-3 sm:items-end">
+                            <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity - 1)
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 transition hover:bg-white"
+                                aria-label={`Decrease quantity for ${item.name}`}
+                              >
+                                <Minus size={14} />
+                              </button>
+
+                              <span className="min-w-8 text-center text-sm font-semibold text-slate-900">
+                                {item.quantity}
+                              </span>
+
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity + 1)
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-700 transition hover:bg-white"
+                                aria-label={`Increase quantity for ${item.name}`}
+                              >
+                                <Plus size={14} />
+                              </button>
+                            </div>
+
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="inline-flex items-center gap-2 rounded-full border border-red-200 px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                            >
+                              <Trash2 size={14} />
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          )}
+
+            {/* Right Side */}
+            <div className="flex items-start justify-center px-5 py-8 sm:px-8 lg:px-10 lg:py-10">
+              <div className="w-full max-w-md">
+                <div className="rounded-[24px] border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+                  <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    Order Summary
+                  </p>
+
+                  <div className="mt-5 space-y-4 text-sm text-slate-600">
+                    <div className="flex items-center justify-between">
+                      <span>Items</span>
+                      <span className="font-semibold text-slate-900">
+                        {cartItems.length}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span>Total Quantity</span>
+                      <span className="font-semibold text-slate-900">
+                        {totalQuantity}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between">
+                      <span>Delivery</span>
+                      <span className="font-semibold text-emerald-600">Free</span>
+                    </div>
+
+                    <div className="flex items-center justify-between border-t border-slate-100 pt-4 text-lg font-extrabold text-slate-900">
+                      <span>Total</span>
+                      <span>₹{cartTotal}</span>
+                    </div>
+                  </div>
+
+                  <button className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#ff6f61] px-5 text-sm font-bold text-white transition hover:bg-[#f45d4f]">
+                    Proceed to Checkout
+                  </button>
+
+                  <Link
+                    to="/products"
+                    className="mt-3 inline-flex h-12 w-full items-center justify-center rounded-xl border border-slate-200 bg-slate-50 px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                  >
+                    Continue Shopping
+                  </Link>
+
+                  <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                    <div className="flex items-center gap-2 font-semibold">
+                      <ShieldCheck size={16} />
+                      <span>Safe & Secure Checkout</span>
+                    </div>
+                    <p className="mt-1 text-xs leading-6 text-emerald-700/90">
+                      Your order details and payment information are protected.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                  <h3 className="text-base font-bold text-slate-900">
+                    Why shop with MediShop?
+                  </h3>
+                  <ul className="mt-4 space-y-3 text-sm text-slate-600">
+                    <li>• Genuine medicines and healthcare products</li>
+                    <li>• Fast delivery and easy checkout</li>
+                    <li>• Trusted support for your pharmacy needs</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 };
 

@@ -9,10 +9,23 @@ const AyurvedaBrands = () => (
         {ayurvedaBrands.map((brand) => (
           <div
             key={brand.id}
-            className={`flex-shrink-0 w-36 h-24 ${brand.bg} border-[1.5px] border-gray-200 rounded-card flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all duration-500 ease-out hover:-translate-y-0.5 hover:shadow-md hover:border-primary p-3`}
+            className="flex h-32 w-36 flex-shrink-0 flex-col items-center justify-center gap-3 p-2 text-center cursor-pointer transition-all duration-500 ease-out hover:-translate-y-0.5"
           >
-            <span className="text-3xl">{brand.icon}</span>
-            <span className="text-small font-semibold text-textMain text-center leading-tight">{brand.name}</span>
+            <div className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-full ${brand.bg} shadow-sm`}>
+              <img
+                src={brand.image}
+                alt={brand.name}
+                loading="lazy"
+                onError={(event) => {
+                  event.currentTarget.onerror = null;
+                  event.currentTarget.src = brand.fallbackImage;
+                }}
+                className="h-14 w-14 object-contain"
+              />
+            </div>
+            <span className="line-clamp-2 text-sm font-semibold leading-tight text-textMain">
+              {brand.name}
+            </span>
           </div>
         ))}
       </div>

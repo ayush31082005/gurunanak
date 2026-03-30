@@ -142,7 +142,7 @@ const Header = () => {
 
             <Link
               to="/upload-prescription"
-              className="hidden rounded-full bg-slate-800 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-900 sm:block lg:px-5 lg:py-3"
+              className="hidden rounded-full bg-[#ff6f61] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:block lg:px-5 lg:py-3"
             >
               Quick Order
             </Link>
@@ -278,7 +278,7 @@ const Header = () => {
               <Link
                 to="/upload-prescription"
                 onClick={() => setMobileMenuOpen(false)}
-                className="col-span-2 rounded-lg bg-slate-800 px-4 py-3 text-center text-sm font-semibold text-white sm:col-span-1"
+                className="col-span-2 rounded-lg bg-[#ff6f61] px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:col-span-1"
               >
                 Quick Order
               </Link>

@@ -1,25 +1,64 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Mail,
-  Smartphone,
-  Lock,
-  ShieldCheck,
   ArrowRight,
-  User,
+  Smartphone,
+  ShieldCheck,
   Stethoscope,
+  Pill,
+  PackageCheck,
 } from "lucide-react";
 
+const registerSlides = [
+  {
+    icon: Stethoscope,
+    title: "Medicines, Home Delivered",
+    description:
+      "Order medicines and health products easily. Enjoy fast delivery, trusted service and great discounts on every order.",
+    accent: "text-orange-500",
+    bg: "bg-orange-50",
+  },
+  {
+    icon: PackageCheck,
+    title: "Track Every Order Easily",
+    description:
+      "Create your account to view order history, delivery status and saved details in one secure place.",
+    accent: "text-cyan-600",
+    bg: "bg-cyan-50",
+  },
+  {
+    icon: Pill,
+    title: "Fast Access To Essentials",
+    description:
+      "Save time at checkout and reorder your regular healthcare products whenever you need them.",
+    accent: "text-emerald-600",
+    bg: "bg-emerald-50",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Secure Signup Experience",
+    description:
+      "Register with confidence using a modern sign-up flow built for safe and simple pharmacy access.",
+    accent: "text-violet-600",
+    bg: "bg-violet-50",
+  },
+  {
+    icon: Smartphone,
+    title: "Quick OTP Registration",
+    description:
+      "Create your account smoothly with your mobile number and OTP verification.",
+    accent: "text-rose-500",
+    bg: "bg-rose-50",
+  },
+];
+
 const Register = () => {
-  const [registerType, setRegisterType] = useState("email");
   const [otpSent, setOtpSent] = useState(false);
+  const [isHealthCareExpert, setIsHealthCareExpert] = useState(false);
+  const [activeSlide, setActiveSlide] = useState(0);
   const [form, setForm] = useState({
-    fullName: "",
-    email: "",
     mobile: "",
-    password: "",
-    confirmPassword: "",
     otp: ["", "", "", ""],
   });
 
@@ -31,309 +70,156 @@ const Register = () => {
   const handleOtpChange = (index, value) => {
     if (!/^\d?$/.test(value)) return;
 
-    const updatedOtp = [...form.otp];
-    updatedOtp[index] = value;
-    setForm((prev) => ({ ...prev, otp: updatedOtp }));
+    const nextOtp = [...form.otp];
+    nextOtp[index] = value;
+    setForm((prev) => ({ ...prev, otp: nextOtp }));
 
     if (value && index < 3) {
-      const next = document.getElementById(`register-otp-${index + 1}`);
-      next?.focus();
+      document.getElementById(`register-otp-${index + 1}`)?.focus();
     }
   };
 
   const handleOtpKeyDown = (index, e) => {
     if (e.key === "Backspace" && !form.otp[index] && index > 0) {
-      const prev = document.getElementById(`register-otp-${index - 1}`);
-      prev?.focus();
+      document.getElementById(`register-otp-${index - 1}`)?.focus();
     }
-  };
-
-  const handleEmailRegister = (e) => {
-    e.preventDefault();
-    console.log("Email register:", {
-      fullName: form.fullName,
-      email: form.email,
-      password: form.password,
-      confirmPassword: form.confirmPassword,
-    });
   };
 
   const handleSendOtp = (e) => {
     e.preventDefault();
-    if (!form.mobile || !form.fullName) return;
+    if (!form.mobile) return;
+
     setOtpSent(true);
     console.log("Register OTP sent:", {
-      fullName: form.fullName,
       mobile: form.mobile,
+      isHealthCareExpert,
     });
   };
 
   const handleVerifyOtp = (e) => {
     e.preventDefault();
-    console.log("Register OTP verify:", {
-      fullName: form.fullName,
+    console.log("Register verify OTP:", {
       mobile: form.mobile,
       otp: form.otp.join(""),
+      isHealthCareExpert,
     });
   };
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSlide((prev) => (prev + 1) % registerSlides.length);
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const currentSlide = registerSlides[activeSlide];
+  const SlideIcon = currentSlide.icon;
+
   return (
-    <section className="relative min-h-screen overflow-hidden bg-slate-950">
-      <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1600&q=80')] bg-cover bg-center opacity-20" />
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900/95 to-emerald-950/90" />
+    <section className="min-h-screen bg-[#f6f7fb] py-6 sm:py-10">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+          <div className="grid min-h-[650px] grid-cols-1 lg:grid-cols-2">
+            {/* Left Side */}
+            <div className="hidden border-r border-slate-200 bg-[#fafafa] px-10 py-12 lg:flex lg:flex-col lg:items-center lg:justify-center">
+              <div className="max-w-md text-center">
+                <div className={`mx-auto flex h-32 w-32 items-center justify-center rounded-full shadow-inner ${currentSlide.bg}`}>
+                  <div className={`flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-sm ${currentSlide.accent}`}>
+                    <SlideIcon size={42} />
+                  </div>
+                </div>
 
-      <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
-      <div className="absolute right-0 top-0 h-80 w-80 rounded-full bg-emerald-400/10 blur-3xl" />
-      <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
+                <h1 className="mt-8 text-4xl font-extrabold tracking-tight text-slate-800">
+                  {currentSlide.title}
+                </h1>
 
-      <div className="relative z-10 mx-auto grid min-h-screen max-w-7xl items-center gap-10 px-4 py-10 sm:px-6 lg:grid-cols-2 lg:px-8">
-        {/* Left */}
-        <motion.div
-          initial={{ opacity: 0, x: -35 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6 }}
-          className="hidden text-white lg:block"
-        >
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-sm backdrop-blur-md">
-            <ShieldCheck size={16} className="text-cyan-300" />
-            Create your secure pharmacy account
-          </div>
+                <p className="mt-5 text-lg leading-8 text-slate-500">
+                  {currentSlide.description}
+                </p>
 
-          <h1 className="mt-6 text-4xl font-extrabold leading-tight xl:text-5xl">
-            Join <span className="text-cyan-300">MediShop Rx</span> today
-          </h1>
-
-          <p className="mt-5 max-w-xl text-lg leading-8 text-slate-300">
-            Create your account for quick checkout, order tracking, prescription
-            uploads, saved addresses and a seamless pharmacy shopping experience.
-          </p>
-
-          <div className="mt-10 grid max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-md">
-              <Stethoscope className="text-cyan-300" size={22} />
-              <h3 className="mt-3 text-lg font-bold">Quick Orders</h3>
-              <p className="mt-2 text-sm text-slate-300">
-                Save your details and place medicine orders faster every time.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-white/10 bg-white/10 p-5 backdrop-blur-md">
-              <ShieldCheck className="text-cyan-300" size={22} />
-              <h3 className="mt-3 text-lg font-bold">Safe Access</h3>
-              <p className="mt-2 text-sm text-slate-300">
-                Register securely with email or mobile OTP in a modern flow.
-              </p>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Right */}
-        <motion.div
-          initial={{ opacity: 0, y: 35 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mx-auto w-full max-w-md"
-        >
-          <div className="rounded-[28px] border border-white/10 bg-white/95 p-5 shadow-2xl backdrop-blur-xl sm:p-7">
-            <div className="text-center">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg">
-                <User size={24} />
+                <div className="mt-8 flex items-center justify-center gap-2">
+                  {registerSlides.map((_, index) => (
+                    <span
+                      key={index}
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        index === activeSlide ? "bg-slate-700" : "bg-slate-300"
+                      }`}
+                    />
+                  ))}
+                </div>
               </div>
-              <h2 className="mt-4 text-2xl font-extrabold text-slate-900 sm:text-3xl">
-                Register
-              </h2>
-              <p className="mt-2 text-sm text-slate-500">
-                Choose your preferred registration method
-              </p>
             </div>
 
-            {/* Tabs */}
-            <div className="mt-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5">
-              <button
-                onClick={() => {
-                  setRegisterType("email");
-                  setOtpSent(false);
-                }}
-                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${registerType === "email"
-                    ? "bg-white text-slate-900 shadow"
-                    : "text-slate-500"
-                  }`}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Mail size={16} />
-                  Email
-                </span>
-              </button>
+            {/* Right Side */}
+            <div className="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
+              <div className="w-full max-w-md">
+                <div className="text-center lg:text-left">
+                  <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                    Sign Up
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                    Please enter your details to create your account.
+                  </p>
+                </div>
 
-              <button
-                onClick={() => setRegisterType("mobile")}
-                className={`rounded-xl px-4 py-3 text-sm font-semibold transition ${registerType === "mobile"
-                    ? "bg-white text-slate-900 shadow"
-                    : "text-slate-500"
-                  }`}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Smartphone size={16} />
-                  Mobile OTP
-                </span>
-              </button>
-            </div>
-
-            <AnimatePresence mode="wait">
-              {registerType === "email" ? (
-                <motion.form
-                  key="email-register"
-                  initial={{ opacity: 0, x: 16 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={{ duration: 0.25 }}
-                  onSubmit={handleEmailRegister}
-                  className="mt-6 space-y-4"
-                >
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Full Name
-                    </label>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
-                      <User size={18} className="text-slate-400" />
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={form.fullName}
-                        onChange={handleChange}
-                        placeholder="Enter your full name"
-                        className="w-full bg-transparent px-3 py-4 text-sm outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Email Address
-                    </label>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
-                      <Mail size={18} className="text-slate-400" />
-                      <input
-                        type="email"
-                        name="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        placeholder="Enter your email"
-                        className="w-full bg-transparent px-3 py-4 text-sm outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Password
-                    </label>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
-                      <Lock size={18} className="text-slate-400" />
-                      <input
-                        type="password"
-                        name="password"
-                        value={form.password}
-                        onChange={handleChange}
-                        placeholder="Create password"
-                        className="w-full bg-transparent px-3 py-4 text-sm outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Confirm Password
-                    </label>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
-                      <Lock size={18} className="text-slate-400" />
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        value={form.confirmPassword}
-                        onChange={handleChange}
-                        placeholder="Confirm password"
-                        className="w-full bg-transparent px-3 py-4 text-sm outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <label className="flex items-start gap-3 text-sm text-slate-600">
-                    <input type="checkbox" className="mt-1 rounded" />
-                    <span>
-                      I agree to the terms, privacy policy and pharmacy usage
-                      guidelines.
-                    </span>
-                  </label>
-
+                {/* Tabs */}
+                <div className="mt-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5">
                   <button
-                    type="submit"
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 font-semibold text-white transition hover:bg-slate-800"
+                    type="button"
+                    className="col-span-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow"
                   >
-                    Create Account
-                    <ArrowRight size={18} />
+                    <span className="inline-flex items-center gap-2">
+                      <Smartphone size={16} />
+                      Mobile OTP
+                    </span>
                   </button>
-                </motion.form>
-              ) : (
-                <motion.form
-                  key="mobile-register"
-                  initial={{ opacity: 0, x: 16 }}
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, x: 14 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -16 }}
-                  transition={{ duration: 0.25 }}
-                  onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}
-                  className="mt-6 space-y-4"
+                  transition={{ duration: 0.2 }}
+                  className="mt-7"
                 >
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Full Name
-                    </label>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
-                      <User size={18} className="text-slate-400" />
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={form.fullName}
-                        onChange={handleChange}
-                        placeholder="Enter your full name"
-                        className="w-full bg-transparent px-3 py-4 text-sm outline-none"
-                      />
+                  <form
+                    onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}
+                    className="space-y-5"
+                  >
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        Enter 10 digit mobile number
+                      </label>
+                      <div className="flex items-center border-b-2 border-rose-400 pb-2">
+                        <Smartphone size={18} className="text-slate-400" />
+                        <input
+                          type="tel"
+                          name="mobile"
+                          value={form.mobile}
+                          onChange={handleChange}
+                          placeholder="Enter mobile number"
+                          maxLength={10}
+                          className="w-full bg-transparent px-3 py-2 text-sm outline-none"
+                        />
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                      Mobile Number
-                    </label>
-                    <div className="flex items-center rounded-2xl border border-slate-200 bg-slate-50 px-4">
-                      <Smartphone size={18} className="text-slate-400" />
+                    <label className="flex items-center gap-3 text-sm text-slate-600">
                       <input
-                        type="tel"
-                        name="mobile"
-                        value={form.mobile}
-                        onChange={handleChange}
-                        placeholder="Enter mobile number"
-                        maxLength={10}
-                        className="w-full bg-transparent px-3 py-4 text-sm outline-none"
+                        type="checkbox"
+                        checked={isHealthCareExpert}
+                        onChange={(e) => setIsHealthCareExpert(e.target.checked)}
+                        className="h-4 w-4 rounded border-slate-300"
                       />
-                    </div>
-                  </div>
+                      <span>Are You a HealthCare Expert?</span>
+                    </label>
 
-                  {!otpSent ? (
-                    <button
-                      type="submit"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 font-semibold text-white transition hover:bg-slate-800"
-                    >
-                      Send OTP
-                      <ArrowRight size={18} />
-                    </button>
-                  ) : (
-                    <>
+                    {otpSent && (
                       <div>
-                        <label className="mb-2 block text-sm font-semibold text-slate-700">
+                        <label className="mb-3 block text-sm font-semibold text-slate-700">
                           Enter OTP
                         </label>
-                        <div className="flex justify-between gap-3">
+                        <div className="flex gap-3">
                           {form.otp.map((digit, index) => (
                             <input
                               key={index}
@@ -346,52 +232,52 @@ const Register = () => {
                                 handleOtpChange(index, e.target.value)
                               }
                               onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                              className="h-14 w-14 rounded-2xl border border-slate-200 text-center text-lg font-bold outline-none transition focus:border-cyan-500"
+                              className="h-12 w-12 rounded-xl border border-slate-300 text-center text-lg font-bold outline-none focus:border-orange-500"
                             />
                           ))}
                         </div>
                       </div>
+                    )}
 
-                      <div className="flex items-center justify-between text-sm">
-                        <button
-                          type="button"
-                          onClick={() => setOtpSent(false)}
-                          className="font-semibold text-slate-500 hover:text-slate-700"
-                        >
-                          Change number
-                        </button>
-                        <button
-                          type="button"
-                          className="font-semibold text-cyan-700 hover:text-cyan-800"
-                        >
-                          Resend OTP
-                        </button>
-                      </div>
+                    <button
+                      type="submit"
+                      className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ff6f61] px-5 text-sm font-bold text-white transition hover:bg-[#f45d4f]"
+                    >
+                      Continue
+                      <ArrowRight size={17} />
+                    </button>
+                  </form>
+                </motion.div>
 
-                      <button
-                        type="submit"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 font-semibold text-white transition hover:bg-slate-800"
-                      >
-                        Verify & Register
-                        <ArrowRight size={18} />
-                      </button>
-                    </>
-                  )}
-                </motion.form>
-              )}
-            </AnimatePresence>
+                <p className="mt-7 text-center text-sm text-slate-500">
+                  Already on MediShop?{" "}
+                  <Link
+                    to="/login"
+                    className="font-semibold text-[#ff6f61] hover:underline"
+                  >
+                    Login
+                  </Link>
+                </p>
 
-            <p className="mt-6 text-center text-sm text-slate-500">
-              Already have an account?{" "}
-              <Link
-                to="/login"
-                className="font-semibold text-cyan-700 hover:text-cyan-800"
-              >
-                Sign in
-              </Link>
-            </p>
+                <p className="mt-4 text-center text-xs leading-6 text-slate-500">
+                  By signing up, you agree to our{" "}
+                  <Link to="/terms" className="underline">
+                    Terms and Conditions
+                  </Link>{" "}
+                  &{" "}
+                  <Link to="/privacy-policy" className="underline">
+                    Privacy Policy
+                  </Link>
+                </p>
+
+                <div className="mt-5 flex items-center justify-center gap-2 text-xs text-emerald-700">
+                  <ShieldCheck size={14} />
+                  <span>Secure signup flow</span>
+                </div>
+              </div>
+            </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

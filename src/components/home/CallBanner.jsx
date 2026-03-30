@@ -60,7 +60,7 @@ const CallBanner = () => {
               </div>
 
               {/* CTA Button */}
-              <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto sm:min-w-[220px]">
+              <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#ff6f61] px-5 text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:w-auto sm:min-w-[220px]">
                 <Phone size={16} />
                 <span>Get a Call Back</span>
               </button>
