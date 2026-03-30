@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply font-body bg-bg text-textMain m-0;
+  }
+
+  a {
+    @apply no-underline;
+  }
+
+  button {
+    @apply border-0 bg-transparent;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .container-padded {
+    @apply max-w-7xl mx-auto px-4 sm:px-6;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
