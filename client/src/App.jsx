@@ -5,7 +5,12 @@ import { CartProvider } from "./context/CartContext";
 const App = () => {
   return (
     <CartProvider>
-      <BrowserRouter>
+      <BrowserRouter
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
         <AppRoutes />
       </BrowserRouter>
     </CartProvider>

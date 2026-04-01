@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import axios from "axios";
 import Button from "../common/Button";
 
 const steps = [
@@ -10,6 +11,10 @@ const steps = [
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:5000/api";
 
 const formatFileSize = (size) => {
   if (size < 1024 * 1024) {
@@ -19,15 +24,29 @@ const formatFileSize = (size) => {
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 };
 
+const convertFileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () =>
+      reject(new Error("Failed to read the selected file."));
+
+    reader.readAsDataURL(file);
+  });
+
 const PrescriptionUploadCard = () => {
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     name: "",
     mobile: "",
+    address: "",
   });
   const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState("");
   const [isDragActive, setIsDragActive] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -65,6 +84,7 @@ const PrescriptionUploadCard = () => {
 
     setSelectedFile(file);
     setError("");
+    setSuccessMessage("");
   };
 
   const handleChooseFile = () => {
@@ -84,13 +104,73 @@ const PrescriptionUploadCard = () => {
     validateAndStoreFile(file);
   };
 
+  const handleSubmit = async () => {
+    if (
+      !form.name.trim() ||
+      !form.mobile.trim() ||
+      !form.address.trim() ||
+      !selectedFile
+    ) {
+      setError(
+        "Full name, mobile number, address, and prescription file are required."
+      );
+      setSuccessMessage("");
+      return;
+    }
+
+    if (form.mobile.trim().length !== 10) {
+      setError("Please enter a valid 10-digit mobile number.");
+      setSuccessMessage("");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError("");
+      setSuccessMessage("");
+
+      const fileData = await convertFileToDataUrl(selectedFile);
+
+      await axios.post(`${API_BASE_URL}/prescriptions`, {
+        name: form.name.trim(),
+        mobile: form.mobile.trim(),
+        address: form.address.trim(),
+        fileData,
+        fileName: selectedFile.name,
+        fileType: selectedFile.type,
+      });
+
+      setSuccessMessage("Prescription submitted successfully.");
+      setForm({
+        name: "",
+        mobile: "",
+        address: "",
+      });
+      setSelectedFile(null);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (submissionError) {
+      console.error(submissionError);
+      setError(
+        submissionError.response?.data?.message ||
+          submissionError.message ||
+          "Something went wrong while submitting the prescription."
+      );
+      setSuccessMessage("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="rounded-card border border-gray-200 bg-white p-6 shadow-card">
         <h2 className="text-h2 font-bold text-textMain">Upload prescription</h2>
         <p className="mt-2 text-body text-gray-600">
-          This setup includes a frontend-ready prescription upload block. You can
-          connect it to your backend or cloud storage later.
+          Share your prescription and our team will review it before confirming
+          your medicine order.
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -120,6 +200,20 @@ const PrescriptionUploadCard = () => {
               placeholder="Enter mobile number"
               inputMode="numeric"
               maxLength={10}
+              className="w-full rounded-card border border-gray-200 px-4 py-3 outline-none transition focus:border-primary"
+            />
+          </div>
+
+          <div className="sm:col-span-2">
+            <label className="mb-2 block text-small font-semibold text-textMain">
+              Address
+            </label>
+            <textarea
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+              placeholder="Enter full delivery address"
+              rows={3}
               className="w-full rounded-card border border-gray-200 px-4 py-3 outline-none transition focus:border-primary"
             />
           </div>
@@ -177,6 +271,22 @@ const PrescriptionUploadCard = () => {
           {error && (
             <p className="mt-4 text-small font-medium text-red-600">{error}</p>
           )}
+
+          {successMessage && (
+            <p className="mt-4 text-small font-medium text-green-700">
+              {successMessage}
+            </p>
+          )}
+        </div>
+
+        <div className="mt-6">
+          <Button
+            className="bg-[#ff6f61] hover:bg-[#f45d4f]"
+            onClick={handleSubmit}
+            type="button"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Prescription"}
+          </Button>
         </div>
       </div>
 

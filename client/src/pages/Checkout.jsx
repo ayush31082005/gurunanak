@@ -1,12 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     MapPin,
     Phone,
     Mail,
-    CreditCard,
-    Wallet,
-    Truck,
     Tag,
     ShieldCheck,
     ChevronRight,
@@ -14,23 +11,24 @@ import {
 import { useCart } from "../context/CartContext";
 
 const Checkout = () => {
+    const navigate = useNavigate();
     const location = useLocation();
     const { cartItems } = useCart();
+    const savedAddress = location.state?.address;
     const [address, setAddress] = useState({
-        fullName: "",
-        phone: "",
-        email: "",
-        house: "",
-        area: "",
-        city: "",
-        state: "",
-        pincode: "",
+        fullName: savedAddress?.fullName || "",
+        phone: savedAddress?.phone || "",
+        email: savedAddress?.email || "",
+        house: savedAddress?.house || "",
+        area: savedAddress?.area || "",
+        city: savedAddress?.city || "",
+        state: savedAddress?.state || "",
+        pincode: savedAddress?.pincode || "",
     });
-
-    const [paymentMethod, setPaymentMethod] = useState("cod");
     const [coupon, setCoupon] = useState("");
-    const [appliedDiscount, setAppliedDiscount] = useState(0);
-    const [placingOrder, setPlacingOrder] = useState(false);
+    const [appliedDiscount, setAppliedDiscount] = useState(
+        Number(location.state?.appliedDiscount) || 0
+    );
 
     const checkoutItems = useMemo(() => {
         const stateItems = location.state?.checkoutItems;
@@ -44,23 +42,15 @@ const Checkout = () => {
         }));
     }, [cartItems, location.state]);
 
-    const subtotal = useMemo(() => {
-        return checkoutItems.reduce(
-            (sum, item) => sum + item.price * item.quantity,
-            0
-        );
-    }, [checkoutItems]);
-
-    const deliveryFee = subtotal >= 499 ? 0 : 49;
-    const platformFee = 9;
-    const total = subtotal + deliveryFee + platformFee - appliedDiscount;
+    const subtotal = useMemo(
+        () => checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
+        [checkoutItems]
+    );
+    const totalAfterDiscount = Math.max(subtotal - appliedDiscount, 0);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setAddress((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        setAddress((prev) => ({ ...prev, [name]: value }));
     };
 
     const handleApplyCoupon = () => {
@@ -78,7 +68,7 @@ const Checkout = () => {
         }
     };
 
-    const handlePlaceOrder = async () => {
+    const handleProceedToPayment = () => {
         if (!checkoutItems.length) {
             alert("Your checkout is empty");
             return;
@@ -108,33 +98,13 @@ const Checkout = () => {
             return;
         }
 
-        try {
-            setPlacingOrder(true);
-
-            // Backend connect yahan karna hai
-            // Example:
-            // await axios.post(`${import.meta.env.VITE_API_URL}/orders/create`, {
-            //   address,
-            //   paymentMethod,
-            //   items: checkoutItems,
-            //   pricing: {
-            //     subtotal,
-            //     deliveryFee,
-            //     platformFee,
-            //     discount: appliedDiscount,
-            //     total,
-            //   },
-            // });
-
-            setTimeout(() => {
-                alert("Order placed successfully");
-                setPlacingOrder(false);
-            }, 1200);
-        } catch (error) {
-            console.error(error);
-            alert("Failed to place order");
-            setPlacingOrder(false);
-        }
+        navigate("/payment", {
+            state: {
+                checkoutItems,
+                address,
+                appliedDiscount,
+            },
+        });
     };
 
     if (!checkoutItems.length) {
@@ -168,7 +138,7 @@ const Checkout = () => {
                         Checkout
                     </h1>
                     <p className="mt-2 text-sm text-slate-500">
-                        Complete your order with delivery and payment details.
+                        Complete your delivery details before moving to payment.
                     </p>
                 </div>
 
@@ -313,76 +283,6 @@ const Checkout = () => {
                                 </div>
                             </div>
                         </div>
-
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                            <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-600">
-                                    <CreditCard size={20} />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-900">
-                                        Payment Method
-                                    </h2>
-                                    <p className="text-sm text-slate-500">
-                                        Choose your preferred payment option
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 p-4">
-                                    <input
-                                        type="radio"
-                                        name="paymentMethod"
-                                        checked={paymentMethod === "cod"}
-                                        onChange={() => setPaymentMethod("cod")}
-                                    />
-                                    <Truck className="text-[#ff6f61]" size={20} />
-                                    <div>
-                                        <p className="font-semibold text-slate-800">
-                                            Cash on Delivery
-                                        </p>
-                                        <p className="text-sm text-slate-500">
-                                            Pay when your order arrives
-                                        </p>
-                                    </div>
-                                </label>
-
-                                <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 p-4">
-                                    <input
-                                        type="radio"
-                                        name="paymentMethod"
-                                        checked={paymentMethod === "card"}
-                                        onChange={() => setPaymentMethod("card")}
-                                    />
-                                    <CreditCard className="text-violet-600" size={20} />
-                                    <div>
-                                        <p className="font-semibold text-slate-800">
-                                            Credit / Debit Card
-                                        </p>
-                                        <p className="text-sm text-slate-500">
-                                            Secure card payment
-                                        </p>
-                                    </div>
-                                </label>
-
-                                <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 p-4">
-                                    <input
-                                        type="radio"
-                                        name="paymentMethod"
-                                        checked={paymentMethod === "upi"}
-                                        onChange={() => setPaymentMethod("upi")}
-                                    />
-                                    <Wallet className="text-emerald-600" size={20} />
-                                    <div>
-                                        <p className="font-semibold text-slate-800">UPI / Wallet</p>
-                                        <p className="text-sm text-slate-500">
-                                            Pay using UPI apps or wallet
-                                        </p>
-                                    </div>
-                                </label>
-                            </div>
-                        </div>
                     </div>
 
                     <div className="space-y-6">
@@ -426,10 +326,7 @@ const Checkout = () => {
 
                             <div className="mt-5 space-y-4">
                                 {checkoutItems.map((item) => (
-                                    <div
-                                        key={item.id}
-                                        className="flex gap-3 border-b border-slate-100 pb-4"
-                                    >
+                                    <div key={item.id} className="flex gap-3 border-b border-slate-100 pb-4">
                                         <img
                                             src={item.image}
                                             alt={item.name}
@@ -463,16 +360,6 @@ const Checkout = () => {
                                     <span>Rs {subtotal}</span>
                                 </div>
 
-                                <div className="flex items-center justify-between text-slate-600">
-                                    <span>Delivery Fee</span>
-                                    <span>{deliveryFee === 0 ? "FREE" : `Rs ${deliveryFee}`}</span>
-                                </div>
-
-                                <div className="flex items-center justify-between text-slate-600">
-                                    <span>Platform Fee</span>
-                                    <span>Rs {platformFee}</span>
-                                </div>
-
                                 <div className="flex items-center justify-between text-emerald-600">
                                     <span>Discount</span>
                                     <span>- Rs {appliedDiscount}</span>
@@ -480,19 +367,22 @@ const Checkout = () => {
 
                                 <div className="border-t border-slate-200 pt-3">
                                     <div className="flex items-center justify-between text-base font-bold text-slate-900">
-                                        <span>Total Amount</span>
-                                        <span>Rs {total}</span>
+                                        <span>Amount Before Payment Charges</span>
+                                        <span>Rs {totalAfterDiscount}</span>
                                     </div>
                                 </div>
                             </div>
 
+                            <p className="mt-4 text-xs leading-5 text-slate-500">
+                                Cash on Delivery or online payment charges will be shown on the next step.
+                            </p>
+
                             <button
                                 type="button"
-                                onClick={handlePlaceOrder}
-                                disabled={placingOrder}
-                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ff6f61] px-5 text-sm font-bold text-white transition hover:bg-[#f45d4f] disabled:cursor-not-allowed disabled:opacity-70"
+                                onClick={handleProceedToPayment}
+                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ff6f61] px-5 text-sm font-bold text-white transition hover:bg-[#f45d4f]"
                             >
-                                {placingOrder ? "Placing Order..." : "Place Order"}
+                                Proceed to Payment
                                 <ChevronRight size={18} />
                             </button>
 

@@ -47,12 +47,14 @@ const loginSlides = [
 
 const Login = () => {
   const navigate = useNavigate();
+  const OTP_RESEND_SECONDS = 60;
 
   const [otpSent, setOtpSent] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
   const [form, setForm] = useState({
     email: "",
     otp: ["", "", "", "", "", ""],
@@ -109,6 +111,7 @@ const Login = () => {
 
       setForm((prev) => ({ ...prev, otp: ["", "", "", "", "", ""] }));
       setOtpSent(true);
+      setResendTimer(OTP_RESEND_SECONDS);
       setMessage(res.data.message || "Login OTP sent to your email");
     } catch (err) {
       const msg =
@@ -122,6 +125,36 @@ const Login = () => {
           navigate("/register");
         }, 1200);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError("");
+    setMessage("");
+
+    if (!form.email || resendTimer > 0) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(`${API_BASE_URL}/auth/login/send-otp`, {
+        email: form.email,
+      });
+
+      setForm((prev) => ({ ...prev, otp: ["", "", "", "", "", ""] }));
+      setOtpSent(true);
+      setResendTimer(OTP_RESEND_SECONDS);
+      setMessage(res.data.message || "A new OTP has been sent to your email");
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        "Failed to resend login OTP. Please try again.";
+
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -153,7 +186,7 @@ const Login = () => {
       setMessage(res.data.message || "Login successful");
 
       setTimeout(() => {
-        navigate("/");
+        navigate("/admin");
       }, 1000);
     } catch (err) {
       const msg =
@@ -179,6 +212,25 @@ const Login = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!otpSent || resendTimer <= 0) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [otpSent, resendTimer]);
 
   const currentSlide = loginSlides[activeSlide];
   const SlideIcon = currentSlide.icon;
@@ -300,6 +352,22 @@ const Login = () => {
                               className="h-12 w-12 rounded-xl border border-slate-300 text-center text-lg font-bold outline-none focus:border-orange-500"
                             />
                           ))}
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-3 text-sm">
+                          <span className="text-slate-500">
+                            {resendTimer > 0
+                              ? `Resend OTP in ${resendTimer}s`
+                              : "Didn't receive the OTP?"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleResendOtp}
+                            disabled={loading || resendTimer > 0}
+                            className="font-semibold text-[#ff6f61] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                          >
+                            Resend OTP
+                          </button>
                         </div>
                       </div>
                     )}

@@ -56,6 +56,7 @@ const registerSlides = [
 
 const Register = () => {
   const navigate = useNavigate();
+  const OTP_RESEND_SECONDS = 60;
 
   const [otpSent, setOtpSent] = useState(false);
   const [isHealthCareExpert, setIsHealthCareExpert] = useState(false);
@@ -63,6 +64,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [resendTimer, setResendTimer] = useState(0);
 
   const [form, setForm] = useState({
     email: "",
@@ -121,6 +123,7 @@ const Register = () => {
 
       setForm((prev) => ({ ...prev, otp: ["", "", "", "", "", ""] }));
       setOtpSent(true);
+      setResendTimer(OTP_RESEND_SECONDS);
       setMessage(res.data.message || "Register OTP sent to your email");
     } catch (err) {
       const msg =
@@ -134,6 +137,37 @@ const Register = () => {
           navigate("/login");
         }, 1200);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError("");
+    setMessage("");
+
+    if (!form.email || resendTimer > 0) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(`${API_BASE_URL}/auth/register/send-otp`, {
+        email: form.email,
+        isHealthCareExpert,
+      });
+
+      setForm((prev) => ({ ...prev, otp: ["", "", "", "", "", ""] }));
+      setOtpSent(true);
+      setResendTimer(OTP_RESEND_SECONDS);
+      setMessage(res.data.message || "A new OTP has been sent to your email");
+    } catch (err) {
+      const msg =
+        err.response?.data?.message ||
+        "Failed to resend register OTP. Please try again.";
+
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -194,6 +228,25 @@ const Register = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (!otpSent || resendTimer <= 0) {
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      setResendTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [otpSent, resendTimer]);
 
   const currentSlide = registerSlides[activeSlide];
   const SlideIcon = currentSlide.icon;
@@ -328,6 +381,22 @@ const Register = () => {
                               className="h-12 w-12 rounded-xl border border-slate-300 text-center text-lg font-bold outline-none focus:border-orange-500"
                             />
                           ))}
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between gap-3 text-sm">
+                          <span className="text-slate-500">
+                            {resendTimer > 0
+                              ? `Resend OTP in ${resendTimer}s`
+                              : "Didn't receive the OTP?"}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleResendOtp}
+                            disabled={loading || resendTimer > 0}
+                            className="font-semibold text-[#ff6f61] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                          >
+                            Resend OTP
+                          </button>
                         </div>
                       </div>
                     )}

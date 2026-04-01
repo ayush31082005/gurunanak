@@ -215,6 +215,17 @@ const Header = () => {
     setLocationMenuOpen(false);
   };
 
+  const handleCartClick = (event) => {
+    const token = localStorage.getItem("token");
+
+    if (token) {
+      return;
+    }
+
+    event.preventDefault();
+    navigate("/login");
+  };
+
   return (
     <header className="fixed inset-x-0 top-0 z-[100] w-full border-b border-gray-200 bg-white">
       <div className="mx-auto w-full max-w-[1280px] px-3 sm:px-4 lg:px-6">
@@ -298,6 +309,7 @@ const Header = () => {
 
             <Link
               to="/cart"
+              onClick={handleCartClick}
               className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-slate-700 sm:h-auto sm:w-auto sm:border-0 sm:p-0 sm:text-sm sm:font-medium"
             >
               <ShoppingCart size={18} />

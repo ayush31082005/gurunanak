@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Minus, Plus, Trash2, ShieldCheck, ShoppingBag } from "lucide-react";
 import { useCart } from "../context/CartContext";
@@ -7,6 +8,14 @@ const Cart = () => {
   const { cartItems, cartTotal, removeFromCart, updateQuantity } = useCart();
 
   const totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <section className="min-h-screen bg-[#f6f7fb] py-6 sm:py-10">
