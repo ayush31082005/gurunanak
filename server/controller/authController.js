@@ -9,6 +9,14 @@ const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
+const formatUserResponse = (user) => ({
+    _id: user._id,
+    email: user.email,
+    isHealthCareExpert: user.isHealthCareExpert,
+    isVerified: user.isVerified,
+    role: user.role,
+});
+
 export const sendRegisterOtp = async (req, res) => {
     try {
         const { email, isHealthCareExpert } = req.body;
@@ -128,12 +136,7 @@ export const verifyRegisterOtp = async (req, res) => {
             success: true,
             message: "Registration successful",
             token,
-            user: {
-                _id: user._id,
-                email: user.email,
-                isHealthCareExpert: user.isHealthCareExpert,
-                isVerified: user.isVerified,
-            },
+            user: formatUserResponse(user),
         });
     } catch (error) {
         return res.status(500).json({
@@ -259,12 +262,7 @@ export const verifyLoginOtp = async (req, res) => {
             success: true,
             message: "Login successful",
             token,
-            user: {
-                _id: user._id,
-                email: user.email,
-                isHealthCareExpert: user.isHealthCareExpert,
-                isVerified: user.isVerified,
-            },
+            user: formatUserResponse(user),
         });
     } catch (error) {
         return res.status(500).json({
@@ -285,6 +283,77 @@ export const getMyProfile = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to fetch profile",
+            error: error.message,
+        });
+    }
+};
+
+export const createAdminUser = async (req, res) => {
+    try {
+        const { email, isHealthCareExpert = false, adminSetupKey } = req.body;
+        const expectedSetupKey = process.env.ADMIN_SETUP_KEY?.trim();
+
+        if (!expectedSetupKey) {
+            return res.status(500).json({
+                success: false,
+                message: "ADMIN_SETUP_KEY is not configured on the server",
+            });
+        }
+
+        const providedSetupKey =
+            req.headers["x-admin-setup-key"]?.toString().trim() ||
+            String(adminSetupKey || "").trim();
+
+        if (!providedSetupKey || providedSetupKey !== expectedSetupKey) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid admin setup key",
+            });
+        }
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required",
+            });
+        }
+
+        if (!isValidEmail(email)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address",
+            });
+        }
+
+        const normalizedEmail = email.toLowerCase().trim();
+        const existingUser = await User.findOne({ email: normalizedEmail });
+
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This email is already registered",
+            });
+        }
+
+        const user = await User.create({
+            email: normalizedEmail,
+            isHealthCareExpert: !!isHealthCareExpert,
+            isVerified: true,
+            role: "admin",
+        });
+
+        const token = generateToken(user._id);
+
+        return res.status(201).json({
+            success: true,
+            message: "Admin created successfully",
+            token,
+            user: formatUserResponse(user),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to create admin user",
             error: error.message,
         });
     }

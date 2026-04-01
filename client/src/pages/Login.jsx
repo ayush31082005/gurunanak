@@ -186,7 +186,7 @@ const Login = () => {
       setMessage(res.data.message || "Login successful");
 
       setTimeout(() => {
-        navigate("/admin");
+        navigate(res.data.user?.role === "admin" ? "/admin/dashboard" : "/");
       }, 1000);
     } catch (err) {
       const msg =

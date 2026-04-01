@@ -5,6 +5,7 @@ import {
     sendLoginOtp,
     verifyLoginOtp,
     getMyProfile,
+    createAdminUser,
 } from "../controller/authController.js";
 import { isAuth } from "../middleware/authMiddleware.js";
 
@@ -15,6 +16,7 @@ router.post("/register/verify-otp", verifyRegisterOtp);
 
 router.post("/login/send-otp", sendLoginOtp);
 router.post("/login/verify-otp", verifyLoginOtp);
+router.post("/admin/create", createAdminUser);
 
 router.get("/me", isAuth, getMyProfile);
 

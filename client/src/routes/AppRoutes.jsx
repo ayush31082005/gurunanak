@@ -23,6 +23,7 @@ import ImmunityBoosters from "../pages/ImmunityBoosters";
 import Homeopathy from "../pages/Homeopathy";
 import PateCare from "../pages/PateCare";
 import AdminLayout from "../components/admin/AdminLayout";
+import ProtectedAdminRoute from "../components/admin/ProtectedAdminRoute";
 import DashboardPage from "../pages/admin/DashboardPage";
 import ProductsPage from "../pages/admin/ProductsPage";
 import OrdersPage from "../pages/admin/OrdersPage";
@@ -61,16 +62,18 @@ const AppRoutes = () => {
 
       </Route>
 
-      <Route path="/admin" element={<AdminLayout />}>
+      <Route path="/admin" element={<ProtectedAdminRoute />}>
+        <Route element={<AdminLayout />}>
 
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="products" element={<ProductsPage />} />
-        <Route path="orders" element={<OrdersPage />} />
-        {/* <Route path="inventory" element={<InventoryPage />} /> */}
-        <Route path="customers" element={<CustomersPage />} />
-        <Route path="prescriptions" element={<PrescriptionsPage />} />
+          <Route index element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="orders" element={<OrdersPage />} />
+          {/* <Route path="inventory" element={<InventoryPage />} /> */}
+          <Route path="customers" element={<CustomersPage />} />
+          <Route path="prescriptions" element={<PrescriptionsPage />} />
 
+        </Route>
       </Route>
     </Routes>
   );
