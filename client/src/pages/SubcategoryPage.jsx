@@ -1,6 +1,10 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import PageHero from "../components/common/PageHero";
 import { getSubcategory } from "../data/categories";
+import ProductGrid from "../components/product/ProductGrid";
+import { useCart } from "../context/CartContext";
+import { allProducts } from "../data/products";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const tips = [
   "Best sellers and category highlights",
@@ -12,6 +16,8 @@ const tips = [
 const SubcategoryPage = () => {
   const { categorySlug, subSlug } = useParams();
   const result = getSubcategory(categorySlug, subSlug);
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   if (!result) {
     return (
@@ -29,6 +35,32 @@ const SubcategoryPage = () => {
   }
 
   const { category, link } = result;
+  const managedProducts = useManagedProducts({
+    fallbackProducts: allProducts,
+    allowedCategories: [link.label, category.label],
+  });
+
+  const subcategoryProducts = managedProducts.filter(
+    (product) => product.category === link.label
+  );
+
+  const displayProducts = subcategoryProducts.length
+    ? subcategoryProducts
+    : managedProducts;
+
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    navigate("/cart");
+  };
+
+  const handleBuyNow = (product) => {
+    navigate("/checkout", {
+      state: {
+        checkoutItems: [{ ...product, quantity: 1 }],
+        source: "buy-now",
+      },
+    });
+  };
 
   return (
     <>
@@ -43,8 +75,9 @@ const SubcategoryPage = () => {
           <div className="rounded-card border border-gray-200 bg-white p-7 shadow-card">
             <h2 className="mb-3 text-h2 text-textMain">About this page</h2>
             <p className="text-body-lg text-gray-600">
-              This page was added so every dropdown item in your header opens its own route. You can now replace this
-              content with real products, filters, banners or API data whenever you are ready.
+              Admin ke dwara add kiye gaye matching products yahan live dikhte hain. Agar exact
+              subcategory product abhi nahi hai, to {category.label.toLowerCase()} ke related
+              products show honge.
             </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -70,6 +103,14 @@ const SubcategoryPage = () => {
               </Link>
             </div>
           </div>
+        </div>
+
+        <div className="mt-8">
+          <ProductGrid
+            products={displayProducts}
+            onAddToCart={handleAddToCart}
+            onBuyNow={handleBuyNow}
+          />
         </div>
       </section>
     </>

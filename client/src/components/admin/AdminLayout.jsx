@@ -6,6 +6,7 @@ import AdminHeader from "./AdminHeader";
 const titleMap = {
     "/admin/dashboard": "Dashboard",
     "/admin/products": "Products",
+    "/admin/products/all": "All Products",
     "/admin/orders": "Orders",
     "/admin/inventory": "Inventory",
     "/admin/customers": "Customers",
@@ -15,7 +16,6 @@ const titleMap = {
 const AdminLayout = () => {
     const [mobileOpen, setMobileOpen] = useState(false);
     const location = useLocation();
-
     const title = titleMap[location.pathname] || "Dashboard";
 
     return (

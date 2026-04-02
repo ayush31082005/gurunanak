@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Sexual Wellness",
@@ -113,6 +114,11 @@ const sexualWellnessProducts = [
 ];
 
 const SexualWellness = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: sexualWellnessProducts,
+        allowedCategories: ["Sexual Wellness", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Sexual Wellness"
@@ -124,7 +130,7 @@ const SexualWellness = () => {
             heroDescription="A more professional hero banner for comfort, protection and intimate self-care essentials."
             heroImage="https://images.unsplash.com/photo-1515377905703-c4788e51af15?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={sexualWellnessProducts}
+            products={managedProducts}
             searchPlaceholder="Search sexual wellness products..."
         />
     );

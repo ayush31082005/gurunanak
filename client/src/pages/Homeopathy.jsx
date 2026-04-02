@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Homeopathy",
@@ -155,6 +156,11 @@ const homeopathyProducts = [
 ];
 
 const Homeopathy = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: homeopathyProducts,
+        allowedCategories: ["Homeopathy", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Homeopathy"
@@ -166,7 +172,7 @@ const Homeopathy = () => {
             heroDescription="A category-relevant hero image now leads the page for homeopathic wellness, skin, digestive and lifestyle care."
             heroImage="https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={homeopathyProducts}
+            products={managedProducts}
             searchPlaceholder="Search homeopathy products..."
         />
     );

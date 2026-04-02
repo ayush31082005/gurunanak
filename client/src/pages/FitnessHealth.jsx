@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Fitness & Health",
@@ -113,6 +114,11 @@ const fitnessProducts = [
 ];
 
 const FitnessHealth = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: fitnessProducts,
+        allowedCategories: ["Fitness & Health", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Fitness & Health"
@@ -124,7 +130,7 @@ const FitnessHealth = () => {
             heroDescription="From workout nutrition to smart wellness gear, browse a stronger and more energetic fitness collection."
             heroImage="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={fitnessProducts}
+            products={managedProducts}
             searchPlaceholder="Search fitness products..."
         />
     );

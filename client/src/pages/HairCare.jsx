@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Hair Care",
@@ -295,6 +296,11 @@ const hairCareProducts = [
 ];
 
 const HairCare = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: hairCareProducts,
+        allowedCategories: ["Hair Care", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Hair Care"
@@ -306,7 +312,7 @@ const HairCare = () => {
             heroDescription="Discover shampoos, oils, serums and repair treatments with a salon-style banner tailored to your hair routine."
             heroImage="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={hairCareProducts}
+            products={managedProducts}
             searchPlaceholder="Search hair care products..."
             hideBrokenImages
         />

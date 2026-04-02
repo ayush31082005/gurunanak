@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "../components/layout/MainLayout";
 import Home from "../pages/Home";
 import Products from "../pages/Products";
+import ProductDetails from "../pages/ProductDetails";
 import Categories from "../pages/Categories";
 import CategoryLanding from "../pages/CategoryLanding";
 import SubcategoryPage from "../pages/SubcategoryPage";
@@ -39,6 +40,7 @@ const AppRoutes = () => {
 
         <Route path="/" element={<Home />} />
         <Route path="/products" element={<Products />} />
+        <Route path="/products/:productId" element={<ProductDetails />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/shop/:categorySlug" element={<CategoryLanding />} />
         <Route path="/shop/:categorySlug/:subSlug" element={<SubcategoryPage />} />

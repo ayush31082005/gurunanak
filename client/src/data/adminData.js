@@ -87,6 +87,39 @@ export const prescriptionRequests = [
   },
 ];
 
+export const adminProductPageFilters = [
+  "All Products",
+  "Hair Care",
+  "Fitness & Health",
+  "Sexual Wellness",
+  "Vitamins & Nutrition",
+  "Supports & Braces",
+  "Immunity Boosters",
+  "Homeopathy",
+  "Pet Care",
+];
+
+export const adminProductCategoryGroups = {
+  "All Products": null,
+  "Hair Care": [
+    "Hair Care",
+    "Hair Oils",
+    "Shampoos & Conditioners",
+    "Hair Serums",
+    "Hair Creams & Masks",
+    "Hair Colour",
+    "Hair Growth Products",
+    "Essential Oils",
+  ],
+  "Fitness & Health": ["Fitness & Health"],
+  "Sexual Wellness": ["Sexual Wellness"],
+  "Vitamins & Nutrition": ["Vitamins & Nutrition"],
+  "Supports & Braces": ["Supports & Braces"],
+  "Immunity Boosters": ["Immunity Boosters"],
+  "Homeopathy": ["Homeopathy"],
+  "Pet Care": ["Pet Care"],
+};
+
 export const products = [
   {
     name: "Paracetamol 500mg",
@@ -103,6 +136,55 @@ export const products = [
     status: "In Stock",
   },
   {
+    name: "Cold Pressed Hair Oil",
+    category: "Hair Oils",
+    price: "Rs 349",
+    stock: 54,
+    status: "In Stock",
+  },
+  {
+    name: "Keratin Repair Shampoo",
+    category: "Shampoos & Conditioners",
+    price: "Rs 299",
+    stock: 28,
+    status: "In Stock",
+  },
+  {
+    name: "Anti-Frizz Hair Serum",
+    category: "Hair Serums",
+    price: "Rs 459",
+    stock: 24,
+    status: "In Stock",
+  },
+  {
+    name: "Deep Nourish Hair Mask",
+    category: "Hair Creams & Masks",
+    price: "Rs 525",
+    stock: 15,
+    status: "Low Stock",
+  },
+  {
+    name: "Natural Brown Hair Colour",
+    category: "Hair Colour",
+    price: "Rs 279",
+    stock: 36,
+    status: "In Stock",
+  },
+  {
+    name: "Advanced Root Activator",
+    category: "Hair Growth Products",
+    price: "Rs 799",
+    stock: 11,
+    status: "Low Stock",
+  },
+  {
+    name: "Rosemary Essential Oil",
+    category: "Essential Oils",
+    price: "Rs 189",
+    stock: 31,
+    status: "In Stock",
+  },
+  {
     name: "Whey Protein 1kg",
     category: "Fitness & Health",
     price: "Rs 1,899",
@@ -110,11 +192,46 @@ export const products = [
     status: "Low Stock",
   },
   {
+    name: "Ultra Thin Condom Pack",
+    category: "Sexual Wellness",
+    price: "Rs 249",
+    stock: 67,
+    status: "In Stock",
+  },
+  {
     name: "Vitamin D3 Capsules",
-    category: "Supplements",
+    category: "Vitamins & Nutrition",
     price: "Rs 249",
     stock: 60,
     status: "In Stock",
+  },
+  {
+    name: "Knee Support Brace",
+    category: "Supports & Braces",
+    price: "Rs 599",
+    stock: 22,
+    status: "In Stock",
+  },
+  {
+    name: "Daily Immunity Booster",
+    category: "Immunity Boosters",
+    price: "Rs 399",
+    stock: 40,
+    status: "In Stock",
+  },
+  {
+    name: "Homeopathic Cold Relief",
+    category: "Homeopathy",
+    price: "Rs 159",
+    stock: 26,
+    status: "In Stock",
+  },
+  {
+    name: "Pet Multivitamin Syrup",
+    category: "Pet Care",
+    price: "Rs 349",
+    stock: 19,
+    status: "Low Stock",
   },
 ];
 

@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Supports & Braces",
@@ -70,6 +71,11 @@ const supportsProducts = [
 ];
 
 const SupportsBraces = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: supportsProducts,
+        allowedCategories: ["Supports & Braces", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Supports & Braces"
@@ -81,7 +87,7 @@ const SupportsBraces = () => {
             heroDescription="Banner updated with an orthopaedic support visual that fits posture, ankle, foot and back care."
             heroImage="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={supportsProducts}
+            products={managedProducts}
             searchPlaceholder="Search support products..."
         />
     );

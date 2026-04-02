@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Immunity Boosters",
@@ -92,6 +93,11 @@ const immunityProducts = [
 ];
 
 const ImmunityBoosters = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: immunityProducts,
+        allowedCategories: ["Immunity Boosters", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Immunity Boosters"
@@ -103,7 +109,7 @@ const ImmunityBoosters = () => {
             heroDescription="A warm herbal banner for chyawanprash, antioxidants, ayurvedic care and tea-based immunity support."
             heroImage="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={immunityProducts}
+            products={managedProducts}
             searchPlaceholder="Search immunity products..."
         />
     );

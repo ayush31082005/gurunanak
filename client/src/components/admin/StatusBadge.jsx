@@ -11,6 +11,7 @@ const statusStyles = {
     Approved: "bg-[#ff6f61]/15 text-[#ff6f61]",
     "Low Stock": "bg-orange-100 text-orange-700",
     "In Stock": "bg-[#ff6f61]/15 text-[#ff6f61]",
+    "Out of Stock": "bg-rose-100 text-rose-700",
 };
 
 const StatusBadge = ({ text }) => {

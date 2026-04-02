@@ -14,7 +14,6 @@ const menuItems = [
     { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
     { label: "Products", path: "/admin/products", icon: Pill },
     { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
-    // { label: "Inventory", path: "/admin/inventory", icon: Package },
     { label: "Customers", path: "/admin/customers", icon: Users },
     { label: "Prescriptions", path: "/admin/prescriptions", icon: FileText },
 ];
@@ -39,8 +38,9 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
             )}
 
             <aside
-                className={`fixed left-0 top-0 z-40 h-full w-[280px] transform border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0 ${mobileOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
+                className={`fixed left-0 top-0 z-40 flex h-full w-[280px] flex-col overflow-hidden border-r border-slate-200 bg-white transition-transform duration-300 lg:translate-x-0 ${
+                    mobileOpen ? "translate-x-0" : "-translate-x-full"
+                }`}
             >
                 <div className="flex h-20 items-center justify-between border-b border-slate-200 px-6">
                     <div>
@@ -56,7 +56,7 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
                     </button>
                 </div>
 
-                <div className="px-4 py-6">
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
                     <p className="px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
                         Main Menu
                     </p>
@@ -71,9 +71,10 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
                                     to={item.path}
                                     onClick={() => setMobileOpen(false)}
                                     className={({ isActive }) =>
-                                        `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${isActive
-                                            ? "bg-[#ff6f61] text-white shadow-lg shadow-[#ff6f61]/25"
-                                            : "text-slate-600 hover:bg-slate-100"
+                                        `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
+                                            isActive
+                                                ? "bg-[#ff6f61] text-white shadow-lg shadow-[#ff6f61]/25"
+                                                : "text-slate-600 hover:bg-slate-100"
                                         }`
                                     }
                                 >

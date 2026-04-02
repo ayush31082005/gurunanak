@@ -1,4 +1,5 @@
 import CategoryProductPage from "../components/common/CategoryProductPage";
+import useManagedProducts from "../hooks/useManagedProducts";
 
 const filterOptions = [
     "All Vitamins & Nutrition",
@@ -260,6 +261,11 @@ const vitaminsProducts = [
 ];
 
 const VitaminsNutrition = () => {
+    const managedProducts = useManagedProducts({
+        fallbackProducts: vitaminsProducts,
+        allowedCategories: ["Vitamins & Nutrition", ...filterOptions.slice(1)],
+    });
+
     return (
         <CategoryProductPage
             pageTitle="Vitamins & Nutrition"
@@ -271,7 +277,7 @@ const VitaminsNutrition = () => {
             heroDescription="Give the page a stronger first impression with a supplements-focused banner linked to daily wellness."
             heroImage="https://images.unsplash.com/photo-1514995669114-6081e934b693?auto=format&fit=crop&w=1600&q=80"
             filterOptions={filterOptions}
-            products={vitaminsProducts}
+            products={managedProducts}
             searchPlaceholder="Search vitamins & nutrition..."
         />
     );
