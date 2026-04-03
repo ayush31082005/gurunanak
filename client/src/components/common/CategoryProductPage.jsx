@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
+import { proceedToCheckoutWithAuth } from "../../utils/checkout";
 
 const CategoryProductPage = ({
     pageTitle,
@@ -134,18 +135,7 @@ const CategoryProductPage = ({
     };
 
     const handleBuyNow = (product) => {
-        navigate("/checkout", {
-            state: {
-                checkoutItems: [
-                    {
-                        ...product,
-                        pack: product.size || product.pack || product.qty,
-                        quantity: 1,
-                    },
-                ],
-                source: "buy-now",
-            },
-        });
+        proceedToCheckoutWithAuth(navigate, product);
     };
 
     const handleViewDetails = (product) => {

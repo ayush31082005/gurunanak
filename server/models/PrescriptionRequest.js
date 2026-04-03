@@ -2,10 +2,21 @@ import mongoose from "mongoose";
 
 const prescriptionRequestSchema = new mongoose.Schema(
     {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
         name: {
             type: String,
             required: true,
             trim: true,
+        },
+        email: {
+            type: String,
+            required: true,
+            trim: true,
+            lowercase: true,
         },
         mobile: {
             type: String,
@@ -44,7 +55,7 @@ const prescriptionRequestSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ["submitted", "reviewed", "processed"],
+            enum: ["submitted", "reviewed", "processed", "rejected"],
             default: "submitted",
         },
         notificationSent: {

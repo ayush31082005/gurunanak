@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
     MapPin,
@@ -10,11 +10,22 @@ import {
 } from "lucide-react";
 import { useCart } from "../context/CartContext";
 
+const CHECKOUT_ADDRESS_STORAGE_KEY = "checkoutAddress";
+
+const getStoredCheckoutAddress = () => {
+    try {
+        const storedAddress = localStorage.getItem(CHECKOUT_ADDRESS_STORAGE_KEY);
+        return storedAddress ? JSON.parse(storedAddress) : null;
+    } catch {
+        return null;
+    }
+};
+
 const Checkout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { cartItems } = useCart();
-    const savedAddress = location.state?.address;
+    const savedAddress = location.state?.address || getStoredCheckoutAddress();
     const [address, setAddress] = useState({
         fullName: savedAddress?.fullName || "",
         phone: savedAddress?.phone || "",
@@ -47,6 +58,23 @@ const Checkout = () => {
         [checkoutItems]
     );
     const totalAfterDiscount = Math.max(subtotal - appliedDiscount, 0);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+
+        if (token) {
+            return;
+        }
+
+        navigate("/login", {
+            state: {
+                message: "Please login first to continue with checkout.",
+                redirectTo: "/checkout",
+                checkoutState: location.state,
+            },
+            replace: true,
+        });
+    }, [location.state, navigate]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -97,6 +125,9 @@ const Checkout = () => {
             alert("Please enter valid 6 digit pincode");
             return;
         }
+
+        localStorage.setItem(CHECKOUT_ADDRESS_STORAGE_KEY, JSON.stringify(address));
+        window.dispatchEvent(new Event("profiledatachange"));
 
         navigate("/payment", {
             state: {

@@ -5,6 +5,7 @@ import ProductGrid from "../components/product/ProductGrid";
 import { useCart } from "../context/CartContext";
 import { allProducts } from "../data/products";
 import useManagedProducts from "../hooks/useManagedProducts";
+import { proceedToCheckoutWithAuth } from "../utils/checkout";
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -54,19 +55,7 @@ const ProductDetails = () => {
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
-    navigate("/checkout", {
-      state: {
-        checkoutItems: [
-          {
-            ...product,
-            pack: product.size || product.pack || product.qty,
-            quantity: 1,
-          },
-        ],
-        source: "buy-now",
-      },
-    });
+    proceedToCheckoutWithAuth(navigate, product);
   };
 
   if (!product) {
@@ -220,21 +209,7 @@ const ProductDetails = () => {
                   navigate("/cart");
                 }}
                 onBuyNow={(relatedProduct) => {
-                  navigate("/checkout", {
-                    state: {
-                      checkoutItems: [
-                        {
-                          ...relatedProduct,
-                          pack:
-                            relatedProduct.size ||
-                            relatedProduct.pack ||
-                            relatedProduct.qty,
-                          quantity: 1,
-                        },
-                      ],
-                      source: "buy-now",
-                    },
-                  });
+                  proceedToCheckoutWithAuth(navigate, relatedProduct);
                 }}
               />
             </div>

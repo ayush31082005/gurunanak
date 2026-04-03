@@ -1,9 +1,48 @@
 import { Phone, X } from "lucide-react";
 import { useState } from "react";
+import API from "../../api";
 
 const CallBanner = () => {
   const [visible, setVisible] = useState(true);
   const [phone, setPhone] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    const normalizedPhone = phone.replace(/\D/g, "").slice(0, 10);
+
+    if (!/^\d{10}$/.test(normalizedPhone)) {
+      alert("Please enter a valid 10-digit mobile number");
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const storedUser = localStorage.getItem("user");
+      let parsedUser = null;
+
+      try {
+        parsedUser = storedUser ? JSON.parse(storedUser) : null;
+      } catch {
+        parsedUser = null;
+      }
+
+      const { data } = await API.post("/contact/callback", {
+        phone: normalizedPhone,
+        email: parsedUser?.email || "",
+        source: window.location.pathname || "website",
+      });
+
+      if (data.success) {
+        alert("Callback request sent successfully");
+        setPhone("");
+      }
+    } catch (error) {
+      alert(error?.response?.data?.message || "Failed to send callback request");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   if (!visible) return null;
 
@@ -53,16 +92,21 @@ const CallBanner = () => {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
+                  onChange={(e) => setPhone(e.target.value.replace(/[^\d]/g, "").slice(0, 10))}
                   placeholder="Enter phone number"
                   className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
                 />
               </div>
 
               {/* CTA Button */}
-              <button className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#ff6f61] px-5 text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:w-auto sm:min-w-[220px]">
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#ff6f61] px-5 text-sm font-semibold text-white transition hover:bg-[#f45d4f] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[220px]"
+              >
                 <Phone size={16} />
-                <span>Get a Call Back</span>
+                <span>{isSubmitting ? "Sending..." : "Get a Call Back"}</span>
               </button>
             </div>
           </div>

@@ -33,63 +33,81 @@ const orderItemSchema = new mongoose.Schema(
     { _id: false }
 );
 
-const orderSchema = new mongoose.Schema({
-    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-    items: {
-        type: [orderItemSchema],
-        required: true,
-        validate: {
-            validator: (items) => Array.isArray(items) && items.length > 0,
-            message: "At least one order item is required",
+const orderSchema = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
         },
-    },
 
-    shippingInfo: {
-        fullName: String,
-        phone: String,
-        email: String,
-        address: String,
-        city: String,
-        state: String,
-        pincode: String
-    },
+        items: {
+            type: [orderItemSchema],
+            required: true,
+            validate: {
+                validator: (items) => Array.isArray(items) && items.length > 0,
+                message: "At least one order item is required",
+            },
+        },
 
-    paymentMethod: String,
-    subtotal: {
-        type: Number,
-        default: 0,
-    },
-    deliveryFee: {
-        type: Number,
-        default: 0,
-    },
-    codFee: {
-        type: Number,
-        default: 0,
-    },
-    platformFee: {
-        type: Number,
-        default: 0,
-    },
-    discount: {
-        type: Number,
-        default: 0,
-    },
-    total: Number,
+        shippingInfo: {
+            fullName: String,
+            phone: String,
+            email: String,
+            address: String,
+            city: String,
+            state: String,
+            pincode: String,
+        },
 
-    razorpayOrderId: String,
-    razorpayPaymentId: String,
+        paymentMethod: {
+            type: String,
+            default: "cod",
+        },
 
-    status: { type: String, default: "pending" },
+        subtotal: {
+            type: Number,
+            default: 0,
+        },
+        deliveryFee: {
+            type: Number,
+            default: 0,
+        },
+        codFee: {
+            type: Number,
+            default: 0,
+        },
+        platformFee: {
+            type: Number,
+            default: 0,
+        },
+        discount: {
+            type: Number,
+            default: 0,
+        },
+        total: {
+            type: Number,
+            default: 0,
+        },
 
-    tracking: [
-        {
-            status: String,
-            message: String,
-            timestamp: Date
-        }
-    ]
-}, { timestamps: true });
+        razorpayOrderId: String,
+        razorpayPaymentId: String,
+
+        status: {
+            type: String,
+            default: "pending",
+        },
+
+        tracking: [
+            {
+                status: String,
+                message: String,
+                timestamp: Date,
+            },
+        ],
+    },
+    { timestamps: true }
+);
 
 const Order = mongoose.model("Order", orderSchema);
 

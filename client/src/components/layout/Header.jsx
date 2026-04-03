@@ -20,6 +20,9 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCity, setSelectedCity] = useState("New Delhi");
   const [locationMenuOpen, setLocationMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
+  const [userName, setUserName] = useState("");
+
   const { cartCount } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,6 +36,24 @@ const Header = () => {
     "Chandigarh",
     "Jaipur",
   ];
+
+  const getDisplayName = (user) => {
+    const rawName =
+      user?.name ||
+      user?.fullName ||
+      user?.username ||
+      user?.userName ||
+      user?.email?.split("@")[0] ||
+      "";
+
+    if (!rawName) {
+      return "User";
+    }
+
+    return rawName
+      .replace(/[._-]+/g, " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+  };
 
   useEffect(() => {
     setActiveDesktopMenu(null);
@@ -53,6 +74,35 @@ const Header = () => {
 
     setSearchQuery("");
   }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const updateAuthState = () => {
+      const token = localStorage.getItem("token");
+      const user = localStorage.getItem("user");
+
+      setIsLoggedIn(!!token);
+
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setUserName(getDisplayName(parsedUser));
+        } catch (error) {
+          setUserName("User");
+        }
+      } else {
+        setUserName("");
+      }
+    };
+
+    updateAuthState();
+    window.addEventListener("storage", updateAuthState);
+    window.addEventListener("authchange", updateAuthState);
+
+    return () => {
+      window.removeEventListener("storage", updateAuthState);
+      window.removeEventListener("authchange", updateAuthState);
+    };
+  }, []);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -162,14 +212,12 @@ const Header = () => {
 
   const renderDropdownContent = (category, closeMenu, compact = false) => (
     <div
-      className={`rounded-[20px] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] ${
-        compact ? "p-4" : "p-5"
-      }`}
+      className={`rounded-[20px] border border-slate-200 bg-white shadow-[0_18px_50px_rgba(15,23,42,0.12)] ${compact ? "p-4" : "p-5"
+        }`}
     >
       <div
-        className={`grid gap-5 ${
-          category.sections.length > 1 ? "md:grid-cols-2" : "grid-cols-1"
-        }`}
+        className={`grid gap-5 ${category.sections.length > 1 ? "md:grid-cols-2" : "grid-cols-1"
+          }`}
       >
         {category.sections.map((section, sectionIndex) => (
           <div key={`${category.slug}-${sectionIndex}`}>
@@ -233,7 +281,7 @@ const Header = () => {
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
             <Link to="/" className="flex shrink-0 items-center gap-2">
               <h1 className="text-[20px] font-extrabold leading-none text-slate-800 sm:text-[22px]">
-                GURUNANAK
+                𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘
               </h1>
             </Link>
 
@@ -244,10 +292,13 @@ const Header = () => {
                 className="flex items-center gap-1 text-sm font-medium text-gray-700 transition hover:text-[#ff6f61]"
               >
                 <MapPin size={16} className="text-orange-500" />
-                <span className="max-w-[90px] truncate lg:max-w-none">{selectedCity}</span>
+                <span className="max-w-[90px] truncate lg:max-w-none">
+                  {selectedCity}
+                </span>
                 <ChevronDown
                   size={14}
-                  className={`text-gray-500 transition ${locationMenuOpen ? "rotate-180" : ""}`}
+                  className={`text-gray-500 transition ${locationMenuOpen ? "rotate-180" : ""
+                    }`}
                 />
               </button>
 
@@ -258,11 +309,10 @@ const Header = () => {
                       key={city}
                       type="button"
                       onClick={() => handleSelectCity(city)}
-                      className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-medium transition ${
-                        selectedCity === city
-                          ? "bg-orange-50 text-[#ff6f61]"
-                          : "text-slate-700 hover:bg-slate-50"
-                      }`}
+                      className={`flex w-full items-center rounded-xl px-3 py-2 text-left text-sm font-medium transition ${selectedCity === city
+                        ? "bg-orange-50 text-[#ff6f61]"
+                        : "text-slate-700 hover:bg-slate-50"
+                        }`}
                     >
                       {city}
                     </button>
@@ -277,7 +327,10 @@ const Header = () => {
               onSubmit={handleSearchSubmit}
               className="mx-2 flex h-[40px] w-full max-w-[420px] items-center rounded-full border border-gray-200 bg-[#f8f8fb] px-4 lg:max-w-[520px] xl:max-w-[620px]"
             >
-              <button type="submit" className="shrink-0 text-gray-400 transition hover:text-[#ff6f61]">
+              <button
+                type="submit"
+                className="shrink-0 text-gray-400 transition hover:text-[#ff6f61]"
+              >
                 <Search size={18} />
               </button>
               <input
@@ -291,21 +344,33 @@ const Header = () => {
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-5">
-            <Link
-              to="/login"
-              className="hidden items-center gap-1 text-sm font-medium text-gray-700 hover:text-black lg:flex"
-            >
-              <User size={16} />
-              <span>Login</span>
-            </Link>
+            {!isLoggedIn ? (
+              <>
+                <Link
+                  to="/login"
+                  className="hidden items-center gap-1 text-sm font-medium text-gray-700 hover:text-black lg:flex"
+                >
+                  <User size={16} />
+                  <span>Login</span>
+                </Link>
 
-            <Link
-              to="/register"
-              className="hidden items-center gap-1 text-sm font-medium text-gray-700 hover:text-black lg:flex"
-            >
-              <User size={16} />
-              <span>Register</span>
-            </Link>
+                <Link
+                  to="/register"
+                  className="hidden items-center gap-1 text-sm font-medium text-gray-700 hover:text-black lg:flex"
+                >
+                  <User size={16} />
+                  <span>Register</span>
+                </Link>
+              </>
+            ) : (
+              <Link
+                to="/user-dashboard"
+                className="hidden items-center gap-2 text-sm font-medium text-gray-700 hover:text-black lg:flex"
+              >
+                <User size={16} />
+                <span className="max-w-[120px] truncate">{userName || "User"}</span>
+              </Link>
+            )}
 
             <Link
               to="/cart"
@@ -314,9 +379,18 @@ const Header = () => {
             >
               <ShoppingCart size={18} />
               <span className="hidden sm:inline sm:ml-1">Cart</span>
-              <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1/3 translate-x-1/3 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-semibold text-white sm:-right-2 sm:-top-2 sm:translate-x-0 sm:translate-y-0">
-                {cartCount}
-              </span>
+              {isLoggedIn ? (
+                <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1/3 translate-x-1/3 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-semibold text-white sm:-right-2 sm:-top-2 sm:translate-x-0 sm:translate-y-0">
+                  {cartCount}
+                </span>
+              ) : null}
+            </Link>
+
+            <Link
+              to="/upload-prescription"
+              className="hidden rounded-full bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:block lg:px-5 lg:py-2.5"
+            >
+              Quick Order
             </Link>
 
             <button
@@ -325,13 +399,6 @@ const Header = () => {
             >
               {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
             </button>
-
-            <Link
-              to="/upload-prescription"
-              className="hidden rounded-full bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:block lg:px-5 lg:py-2.5"
-            >
-              Quick Order
-            </Link>
           </div>
         </div>
 
@@ -340,7 +407,10 @@ const Header = () => {
             onSubmit={handleSearchSubmit}
             className="flex h-[40px] w-full items-center rounded-full border border-gray-200 bg-[#f8f8fb] px-4"
           >
-            <button type="submit" className="shrink-0 text-gray-400 transition hover:text-[#ff6f61]">
+            <button
+              type="submit"
+              className="shrink-0 text-gray-400 transition hover:text-[#ff6f61]"
+            >
               <Search size={18} />
             </button>
             <input
@@ -365,20 +435,18 @@ const Header = () => {
             >
               <Link
                 to={getCategoryPath(item.slug)}
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-1.5 whitespace-nowrap text-[11px] font-medium transition xl:text-[12px] ${
-                  activeDesktopMenu === item.slug
-                    ? "text-orange-600"
-                    : "text-slate-700 hover:text-black"
-                }`}
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-1.5 whitespace-nowrap text-[11px] font-medium transition xl:text-[12px] ${activeDesktopMenu === item.slug
+                  ? "text-orange-600"
+                  : "text-slate-700 hover:text-black"
+                  }`}
               >
                 <span>{item.label}</span>
                 <ChevronDown
                   size={11}
-                  className={`transition ${
-                    activeDesktopMenu === item.slug
-                      ? "rotate-180 text-orange-500"
-                      : "text-slate-500"
-                  }`}
+                  className={`transition ${activeDesktopMenu === item.slug
+                    ? "rotate-180 text-orange-500"
+                    : "text-slate-500"
+                    }`}
                 />
               </Link>
 
@@ -409,20 +477,18 @@ const Header = () => {
                     currentMenu === item.slug ? null : item.slug
                   )
                 }
-                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] font-medium transition ${
-                  activeTabletMenu === item.slug
-                    ? "text-orange-600"
-                    : "text-slate-700"
-                }`}
+                className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] font-medium transition ${activeTabletMenu === item.slug
+                  ? "text-orange-600"
+                  : "text-slate-700"
+                  }`}
               >
                 <span>{item.label}</span>
                 <ChevronDown
                   size={11}
-                  className={`transition ${
-                    activeTabletMenu === item.slug
-                      ? "rotate-180 text-orange-500"
-                      : "text-slate-500"
-                  }`}
+                  className={`transition ${activeTabletMenu === item.slug
+                    ? "rotate-180 text-orange-500"
+                    : "text-slate-500"
+                    }`}
                 />
               </button>
             ))}
@@ -453,11 +519,10 @@ const Header = () => {
                     key={city}
                     type="button"
                     onClick={() => handleSelectCity(city)}
-                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
-                      selectedCity === city
-                        ? "bg-orange-50 text-[#ff6f61]"
-                        : "bg-slate-50 text-slate-700 hover:bg-slate-100"
-                    }`}
+                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium transition ${selectedCity === city
+                      ? "bg-orange-50 text-[#ff6f61]"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100"
+                      }`}
                   >
                     <MapPin size={14} className="text-orange-500" />
                     <span>{city}</span>
@@ -467,23 +532,36 @@ const Header = () => {
             </div>
 
             <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-slate-700"
-              >
-                <User size={16} />
-                <span>Login</span>
-              </Link>
+              {!isLoggedIn ? (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-slate-700"
+                  >
+                    <User size={16} />
+                    <span>Login</span>
+                  </Link>
 
-              <Link
-                to="/register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-slate-700"
-              >
-                <User size={16} />
-                <span>Register</span>
-              </Link>
+                  <Link
+                    to="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-slate-700"
+                  >
+                    <User size={16} />
+                    <span>Register</span>
+                  </Link>
+                </>
+              ) : (
+                <Link
+                  to="/user-dashboard"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-slate-700"
+                >
+                  <User size={16} />
+                  <span className="truncate">{userName || "User"}</span>
+                </Link>
+              )}
 
               <Link
                 to="/upload-prescription"
@@ -506,20 +584,18 @@ const Header = () => {
                         currentCategory === item.slug ? null : item.slug
                       )
                     }
-                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium transition ${
-                      activeMobileCategory === item.slug
-                        ? "bg-orange-50 text-orange-600"
-                        : "text-slate-700 hover:bg-gray-50"
-                    }`}
+                    className={`flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium transition ${activeMobileCategory === item.slug
+                      ? "bg-orange-50 text-orange-600"
+                      : "text-slate-700 hover:bg-gray-50"
+                      }`}
                   >
                     <span>{item.label}</span>
                     <ChevronDown
                       size={16}
-                      className={`transition ${
-                        activeMobileCategory === item.slug
-                          ? "rotate-180 text-orange-500"
-                          : "text-slate-500"
-                      }`}
+                      className={`transition ${activeMobileCategory === item.slug
+                        ? "rotate-180 text-orange-500"
+                        : "text-slate-500"
+                        }`}
                     />
                   </button>
 

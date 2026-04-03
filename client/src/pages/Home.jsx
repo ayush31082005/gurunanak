@@ -16,6 +16,7 @@ import {
   allProducts,
 } from "../data/products";
 import useManagedProducts from "../hooks/useManagedProducts";
+import { proceedToCheckoutWithAuth } from "../utils/checkout";
 
 const skincareCategories = new Set([
   "Acne Care",
@@ -93,12 +94,7 @@ const Home = () => {
   };
 
   const handleBuyNow = (product) => {
-    navigate("/checkout", {
-      state: {
-        checkoutItems: [{ ...product, quantity: 1 }],
-        source: "buy-now",
-      },
-    });
+    proceedToCheckoutWithAuth(navigate, product);
   };
 
   return (

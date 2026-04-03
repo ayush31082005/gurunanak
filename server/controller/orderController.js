@@ -1,6 +1,9 @@
 import crypto from "crypto";
 import Order from "../models/Order.js";
 import sendEmail from "../utils/sendEmail.js";
+import { sendOrderNotification } from "../utils/sendOrderNotification.js";
+
+const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
 
 const normalizeItems = (items = []) =>
     items
@@ -12,7 +15,12 @@ const normalizeItems = (items = []) =>
             price: Number(item.price),
             quantity: Number(item.quantity),
         }))
-        .filter((item) => item.name && Number.isFinite(item.price) && Number.isFinite(item.quantity));
+        .filter(
+            (item) =>
+                item.name &&
+                Number.isFinite(item.price) &&
+                Number.isFinite(item.quantity)
+        );
 
 const validateOrderPayload = ({ items, shippingInfo }) => {
     const normalizedItems = normalizeItems(items);
@@ -45,10 +53,10 @@ const validateOrderPayload = ({ items, shippingInfo }) => {
 };
 
 const getPricing = (normalizedItems, pricing = {}) => {
-    const subtotal = Number(pricing.subtotal) || normalizedItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0
-    );
+    const subtotal =
+        Number(pricing.subtotal) ||
+        normalizedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+
     const discount = Number(pricing.discount) || 0;
 
     return {
@@ -80,15 +88,45 @@ const getCodFee = ({ subtotal, paymentMethod, isFirstOrder }) => {
 
 const sendOrderConfirmationEmail = (email, orderId, items, total) => {
     const orderIdShort = orderId.toString().slice(-8).toUpperCase();
-    const itemSummary = items
-        .map((item) => `${item.name} x ${item.quantity}`)
-        .join(", ");
+    const itemSummary = items.map((item) => `${item.name} x ${item.quantity}`).join(", ");
 
     return sendEmail(
         email,
         `Order Confirmed: #${orderIdShort}`,
-        `Dear customer,\n\nYour order has been placed successfully.\n\nOrder ID: #${orderIdShort}\nItems: ${itemSummary}\nTotal: Rs ${total}\n\nThank you for shopping with us.`
+        `Dear customer,
+
+Your order has been placed successfully.
+
+Order ID: #${orderIdShort}
+Items: ${itemSummary}
+Total: Rs ${total}
+
+Thank you for shopping with us.`
     );
+};
+
+const allowedAdminStatuses = new Set([
+    "pending",
+    "payment_pending",
+    "placed",
+    "shipped",
+    "delivered",
+    "cancelled",
+]);
+
+const cancellableUserStatuses = new Set([
+    "pending",
+    "payment_pending",
+    "placed",
+]);
+
+const statusMessages = {
+    pending: "Order marked as pending by admin",
+    payment_pending: "Order marked as awaiting payment by admin",
+    placed: "Order confirmed by admin",
+    shipped: "Order shipped by admin",
+    delivered: "Order delivered successfully",
+    cancelled: "Order cancelled by admin",
 };
 
 const createRazorpayApiOrder = async (amount, receipt) => {
@@ -133,6 +171,7 @@ export const createOrder = async (req, res) => {
 
         if (paymentMethod !== "cod") {
             return res.status(400).json({
+                success: false,
                 message: "Online payments must be completed through Razorpay checkout",
             });
         }
@@ -140,18 +179,25 @@ export const createOrder = async (req, res) => {
         const { error, normalizedItems } = validateOrderPayload({ items, shippingInfo });
 
         if (error) {
-            return res.status(400).json({ message: error });
+            return res.status(400).json({
+                success: false,
+                message: error,
+            });
         }
 
         const { subtotal, discount } = getPricing(normalizedItems, pricing);
         const isFirstOrder = !(await hasPreviousConfirmedOrder(req.user._id));
         const codFee = getCodFee({ subtotal, paymentMethod, isFirstOrder });
         const total = Math.max(subtotal + codFee - discount, 0);
+        const normalizedShippingInfo = {
+            ...shippingInfo,
+            email: normalizeEmail(req.user.email),
+        };
 
         const order = await Order.create({
             user: req.user._id,
             items: normalizedItems,
-            shippingInfo,
+            shippingInfo: normalizedShippingInfo,
             paymentMethod,
             subtotal,
             deliveryFee: 0,
@@ -159,18 +205,24 @@ export const createOrder = async (req, res) => {
             platformFee: 0,
             discount,
             total,
-            status: paymentMethod === "cod" ? "pending" : "placed",
+            status: "pending",
             tracking: [
                 {
-                    status: paymentMethod === "cod" ? "pending" : "placed",
+                    status: "pending",
                     message: "Order placed successfully",
                     timestamp: new Date(),
                 },
             ],
         });
 
-        sendOrderConfirmationEmail(req.user.email, order._id, normalizedItems, total).catch((error) => {
-            console.error("Order confirmation email failed:", error.message);
+        sendOrderConfirmationEmail(req.user.email, order._id, normalizedItems, total).catch(
+            (error) => {
+                console.error("Order confirmation email failed:", error.message);
+            }
+        );
+
+        sendOrderNotification(order).catch((error) => {
+            console.error("Admin order notification failed:", error.message);
         });
 
         return res.status(201).json({
@@ -179,8 +231,11 @@ export const createOrder = async (req, res) => {
             order,
         });
     } catch (error) {
-        console.error("Order error:", error);
-        return res.status(500).json({ message: "Failed to place order" });
+        console.error("Create order error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to place order",
+        });
     }
 };
 
@@ -194,13 +249,19 @@ export const createRazorpayOrder = async (req, res) => {
         } = req.body;
 
         if (!["card", "upi"].includes(paymentMethod)) {
-            return res.status(400).json({ message: "Please select an online payment method" });
+            return res.status(400).json({
+                success: false,
+                message: "Please select an online payment method",
+            });
         }
 
         const { error, normalizedItems } = validateOrderPayload({ items, shippingInfo });
 
         if (error) {
-            return res.status(400).json({ message: error });
+            return res.status(400).json({
+                success: false,
+                message: error,
+            });
         }
 
         const { subtotal, discount } = getPricing(normalizedItems, pricing);
@@ -208,11 +269,15 @@ export const createRazorpayOrder = async (req, res) => {
         const amountInPaise = Math.round(total * 100);
         const receipt = `rcpt_${Date.now()}`;
         const razorpayOrder = await createRazorpayApiOrder(amountInPaise, receipt);
+        const normalizedShippingInfo = {
+            ...shippingInfo,
+            email: normalizeEmail(req.user.email),
+        };
 
         const order = await Order.create({
             user: req.user._id,
             items: normalizedItems,
-            shippingInfo,
+            shippingInfo: normalizedShippingInfo,
             paymentMethod,
             subtotal,
             deliveryFee: 0,
@@ -239,14 +304,15 @@ export const createRazorpayOrder = async (req, res) => {
             currency: razorpayOrder.currency,
             orderId: order._id,
             customer: {
-                name: shippingInfo.fullName,
-                email: shippingInfo.email,
-                contact: shippingInfo.phone,
+                name: normalizedShippingInfo.fullName,
+                email: normalizedShippingInfo.email,
+                contact: normalizedShippingInfo.phone,
             },
         });
     } catch (error) {
-        console.error("Razorpay order error:", error);
+        console.error("Create razorpay order error:", error);
         return res.status(500).json({
+            success: false,
             message: error.message || "Failed to start online payment",
         });
     }
@@ -258,10 +324,14 @@ export const verifyRazorpayPayment = async (req, res) => {
             razorpay_order_id,
             razorpay_payment_id,
             razorpay_signature,
+            orderId,
         } = req.body;
 
-        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature) {
-            return res.status(400).json({ message: "Razorpay payment details are required" });
+        if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !orderId) {
+            return res.status(400).json({
+                success: false,
+                message: "Razorpay payment details are required",
+            });
         }
 
         const expectedSignature = crypto
@@ -270,17 +340,23 @@ export const verifyRazorpayPayment = async (req, res) => {
             .digest("hex");
 
         if (expectedSignature !== razorpay_signature) {
-            return res.status(400).json({ message: "Payment verification failed" });
+            return res.status(400).json({
+                success: false,
+                message: "Payment verification failed",
+            });
         }
 
         const order = await Order.findOne({
-            _id: req.body.orderId,
+            _id: orderId,
             user: req.user._id,
             razorpayOrderId: razorpay_order_id,
         });
 
         if (!order) {
-            return res.status(404).json({ message: "Order not found for payment verification" });
+            return res.status(404).json({
+                success: false,
+                message: "Order not found for payment verification",
+            });
         }
 
         order.razorpayPaymentId = razorpay_payment_id;
@@ -290,28 +366,186 @@ export const verifyRazorpayPayment = async (req, res) => {
             message: "Payment received and order confirmed",
             timestamp: new Date(),
         });
+
         await order.save();
 
-        sendOrderConfirmationEmail(req.user.email, order._id, order.items, order.total).catch((error) => {
-            console.error("Order confirmation email failed:", error.message);
+        sendOrderConfirmationEmail(req.user.email, order._id, order.items, order.total).catch(
+            (error) => {
+                console.error("Order confirmation email failed:", error.message);
+            }
+        );
+
+        sendOrderNotification(order).catch((error) => {
+            console.error("Admin order notification failed:", error.message);
         });
 
-        return res.json({
+        return res.status(200).json({
             success: true,
             message: "Payment verified and order confirmed",
             order,
         });
     } catch (error) {
-        console.error("Razorpay verification error:", error);
-        return res.status(500).json({ message: "Failed to verify payment" });
+        console.error("Verify payment error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to verify payment",
+        });
     }
 };
 
 export const myOrders = async (req, res) => {
     try {
-        const orders = await Order.find({ user: req.user._id }).sort("-createdAt");
-        return res.json(orders);
+        const userEmail = normalizeEmail(req.user.email);
+        const orders = await Order.find({
+            "shippingInfo.email": userEmail,
+        }).sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            count: orders.length,
+            orders,
+        });
     } catch (error) {
-        return res.status(500).json({ message: "Failed to fetch orders" });
+        console.error("My orders error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch orders",
+        });
+    }
+};
+
+export const getMySingleOrder = async (req, res) => {
+    try {
+        const userEmail = normalizeEmail(req.user.email);
+        const order = await Order.findOne({
+            _id: req.params.id,
+            "shippingInfo.email": userEmail,
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            order,
+        });
+    } catch (error) {
+        console.error("Single order error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch order",
+        });
+    }
+};
+
+export const cancelMyOrder = async (req, res) => {
+    try {
+        const userEmail = normalizeEmail(req.user.email);
+        const order = await Order.findOne({
+            _id: req.params.id,
+            "shippingInfo.email": userEmail,
+        });
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found",
+            });
+        }
+
+        if (!cancellableUserStatuses.has(order.status)) {
+            return res.status(400).json({
+                success: false,
+                message: "This order cannot be cancelled now",
+            });
+        }
+
+        order.status = "cancelled";
+        order.tracking.push({
+            status: "cancelled",
+            message: "Order cancelled by user",
+            timestamp: new Date(),
+        });
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Order cancelled successfully",
+            order,
+        });
+    } catch (error) {
+        console.error("Cancel my order error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to cancel order",
+        });
+    }
+};
+
+export const getAllOrders = async (req, res) => {
+    try {
+        const orders = await Order.find({})
+            .populate("user", "email role")
+            .sort({ createdAt: -1 });
+
+        return res.status(200).json({
+            success: true,
+            count: orders.length,
+            orders,
+        });
+    } catch (error) {
+        console.error("Get all orders error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch all orders",
+        });
+    }
+};
+
+export const updateOrderStatus = async (req, res) => {
+    try {
+        const nextStatus = String(req.body.status || "").trim().toLowerCase();
+
+        if (!allowedAdminStatuses.has(nextStatus)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please select a valid order status",
+            });
+        }
+
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found",
+            });
+        }
+
+        order.status = nextStatus;
+        order.tracking.push({
+            status: nextStatus,
+            message: statusMessages[nextStatus] || "Order updated by admin",
+            timestamp: new Date(),
+        });
+
+        await order.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Order status updated successfully",
+            order,
+        });
+    } catch (error) {
+        console.error("Update order status error:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update order status",
+        });
     }
 };

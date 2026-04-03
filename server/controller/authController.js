@@ -1,5 +1,8 @@
 import User from "../models/User.js";
 import Otp from "../models/Otp.js";
+import Order from "../models/Order.js";
+import Product from "../models/Product.js";
+import PrescriptionRequest from "../models/PrescriptionRequest.js";
 import generateOtp from "../utils/generateOtp.js";
 import generateToken from "../utils/generateToken.js";
 import sendEmailOtp from "../utils/sendEmailOtp.js";
@@ -9,8 +12,21 @@ const isValidEmail = (email) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 };
 
+const formatDisplayName = (email = "") => {
+    const localPart = email.split("@")[0] || "";
+
+    if (!localPart) {
+        return "User";
+    }
+
+    return localPart
+        .replace(/[._-]+/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+};
+
 const formatUserResponse = (user) => ({
     _id: user._id,
+    name: formatDisplayName(user.email),
     email: user.email,
     isHealthCareExpert: user.isHealthCareExpert,
     isVerified: user.isVerified,
@@ -354,6 +370,128 @@ export const createAdminUser = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to create admin user",
+            error: error.message,
+        });
+    }
+};
+
+export const getAdminCustomers = async (req, res) => {
+    try {
+        const users = await User.find({ role: "user" })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const userIds = users.map((user) => user._id);
+        const orders = userIds.length
+            ? await Order.find({ user: { $in: userIds } })
+                  .sort({ createdAt: -1 })
+                  .select("user shippingInfo createdAt")
+                  .lean()
+            : [];
+
+        const orderCountByUser = new Map();
+        const latestShippingByUser = new Map();
+
+        orders.forEach((order) => {
+            const userId = String(order.user);
+
+            orderCountByUser.set(userId, (orderCountByUser.get(userId) || 0) + 1);
+
+            if (!latestShippingByUser.has(userId)) {
+                latestShippingByUser.set(userId, order.shippingInfo || {});
+            }
+        });
+
+        const customers = users.map((user) => {
+            const userId = String(user._id);
+            const shippingInfo = latestShippingByUser.get(userId) || {};
+
+            return {
+                _id: user._id,
+                name: shippingInfo.fullName || formatDisplayName(user.email),
+                email: user.email,
+                phone: shippingInfo.phone || "N/A",
+                city: shippingInfo.city || "N/A",
+                orders: orderCountByUser.get(userId) || 0,
+                joined: user.createdAt,
+                isVerified: user.isVerified,
+            };
+        });
+
+        return res.status(200).json({
+            success: true,
+            totalUsers: users.length,
+            customers,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch customers",
+            error: error.message,
+        });
+    }
+};
+
+export const getAdminDashboard = async (req, res) => {
+    try {
+        const [orders, totalUsers, lowStockItems, prescriptionCount] = await Promise.all([
+            Order.find({})
+                .sort({ createdAt: -1 })
+                .limit(5)
+                .populate("user", "email")
+                .lean(),
+            User.countDocuments({ role: "user" }),
+            Product.countDocuments({
+                $or: [{ stock: { $lte: 10 } }, { status: { $in: ["Low Stock", "Out of Stock"] } }],
+            }),
+            PrescriptionRequest.countDocuments({}),
+        ]);
+
+        const salesSummary = await Order.aggregate([
+            {
+                $match: {
+                    status: { $ne: "cancelled" },
+                },
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalSales: { $sum: "$total" },
+                    totalOrders: { $sum: 1 },
+                },
+            },
+        ]);
+
+        const totals = salesSummary[0] || { totalSales: 0, totalOrders: 0 };
+
+        const recentOrders = orders.map((order) => ({
+            _id: order._id,
+            customer:
+                order.shippingInfo?.fullName ||
+                order.user?.email ||
+                order.shippingInfo?.email ||
+                "N/A",
+            amount: order.total || 0,
+            status: order.status,
+            payment: order.paymentMethod,
+            createdAt: order.createdAt,
+        }));
+
+        return res.status(200).json({
+            success: true,
+            stats: {
+                totalSales: totals.totalSales || 0,
+                totalOrders: totals.totalOrders || 0,
+                activeCustomers: totalUsers,
+                lowStockItems,
+                prescriptions: prescriptionCount,
+            },
+            recentOrders,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch dashboard data",
             error: error.message,
         });
     }

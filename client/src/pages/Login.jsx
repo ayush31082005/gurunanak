@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import axios from "axios";
 import {
@@ -47,12 +47,13 @@ const loginSlides = [
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const OTP_RESEND_SECONDS = 60;
 
   const [otpSent, setOtpSent] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(location.state?.message || "");
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
   const [form, setForm] = useState({
@@ -62,6 +63,49 @@ const Login = () => {
 
   const API_BASE_URL =
     import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+    const redirectTo = location.state?.redirectTo;
+    const checkoutState = location.state?.checkoutState;
+
+    if (!token) {
+      return;
+    }
+
+    try {
+      const user = storedUser ? JSON.parse(storedUser) : null;
+      if (user?.role === "admin") {
+        navigate("/admin/dashboard", { replace: true });
+        return;
+      }
+
+      if (redirectTo) {
+        navigate(redirectTo, {
+          state: checkoutState,
+          replace: true,
+        });
+        return;
+      }
+
+      navigate("/user-dashboard", { replace: true });
+    } catch (error) {
+      if (redirectTo) {
+        navigate(redirectTo, {
+          state: checkoutState,
+          replace: true,
+        });
+        return;
+      }
+
+      navigate("/user-dashboard", { replace: true });
+    }
+  }, [location.state, navigate]);
+
+  useEffect(() => {
+    setMessage(location.state?.message || "");
+  }, [location.state]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -182,11 +226,28 @@ const Login = () => {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
+      window.dispatchEvent(new Event("authchange"));
 
       setMessage(res.data.message || "Login successful");
 
       setTimeout(() => {
-        navigate(res.data.user?.role === "admin" ? "/admin/dashboard" : "/");
+        const redirectTo = location.state?.redirectTo;
+        const checkoutState = location.state?.checkoutState;
+
+        if (res.data.user?.role === "admin") {
+          navigate("/admin/dashboard", { replace: true });
+          return;
+        }
+
+        if (redirectTo) {
+          navigate(redirectTo, {
+            state: checkoutState,
+            replace: true,
+          });
+          return;
+        }
+
+        navigate("/user-dashboard", { replace: true });
       }, 1000);
     } catch (err) {
       const msg =

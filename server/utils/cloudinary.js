@@ -78,3 +78,42 @@ export const uploadPrescriptionToCloudinary = async ({
 
     return payload;
 };
+
+export const deletePrescriptionFromCloudinary = async (publicId) => {
+    if (!publicId) {
+        return null;
+    }
+
+    const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    const signature = buildSignature(
+        {
+            public_id: publicId,
+            timestamp,
+        },
+        apiSecret
+    );
+
+    const formData = new FormData();
+    formData.append("public_id", publicId);
+    formData.append("api_key", apiKey);
+    formData.append("timestamp", String(timestamp));
+    formData.append("signature", signature);
+
+    const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+        {
+            method: "POST",
+            body: formData,
+        }
+    );
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+        throw new Error(payload?.error?.message || "Cloudinary delete failed");
+    }
+
+    return payload;
+};

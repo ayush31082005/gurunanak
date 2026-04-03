@@ -5,6 +5,7 @@ import ProductGrid from "../components/product/ProductGrid";
 import { useCart } from "../context/CartContext";
 import { allProducts } from "../data/products";
 import useManagedProducts from "../hooks/useManagedProducts";
+import { proceedToCheckoutWithAuth } from "../utils/checkout";
 
 const tips = [
   "Best sellers and category highlights",
@@ -54,12 +55,7 @@ const SubcategoryPage = () => {
   };
 
   const handleBuyNow = (product) => {
-    navigate("/checkout", {
-      state: {
-        checkoutItems: [{ ...product, quantity: 1 }],
-        source: "buy-now",
-      },
-    });
+    proceedToCheckoutWithAuth(navigate, product);
   };
 
   return (

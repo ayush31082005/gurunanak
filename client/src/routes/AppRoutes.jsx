@@ -14,6 +14,7 @@ import Register from "../pages/Register";
 import Cart from "../pages/Cart";
 import NotFound from "../pages/NotFound";
 import Checkout from "../pages/Checkout";
+import Payment from "../pages/Payment";
 import HealthResourceCenter from "../pages/HealthResourceCenter";
 import HairCare from "../pages/HairCare";
 import SexualWellness from "../pages/SexualWellness";
@@ -31,6 +32,7 @@ import OrdersPage from "../pages/admin/OrdersPage";
 // import InventoryPage from "../pages/admin/InventoryPage";
 import CustomersPage from "../pages/admin/CustomersPage";
 import PrescriptionsPage from "../pages/admin/PrescriptionsPage";
+import UserDashboard from "../pages/UserDashboard";
 
 
 const AppRoutes = () => {
@@ -51,6 +53,7 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/cart" element={<Cart />} />
         <Route path="/checkout" element={<Checkout />} />
+        <Route path="/payment" element={<Payment />} />
         <Route path="/health-resource-center" element={<HealthResourceCenter />} />
         <Route path="/hair-care" element={<HairCare />} />
         <Route path="/fitness-health" element={<FitnessHealth />} />
@@ -60,6 +63,7 @@ const AppRoutes = () => {
         <Route path="/immunity-boosters" element={<ImmunityBoosters />} />
         <Route path="/homeopathy" element={<Homeopathy />} />
         <Route path="/pet-care" element={<PateCare />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="*" element={<NotFound />} />
 
       </Route>
@@ -74,7 +78,7 @@ const AppRoutes = () => {
           {/* <Route path="inventory" element={<InventoryPage />} /> */}
           <Route path="customers" element={<CustomersPage />} />
           <Route path="prescriptions" element={<PrescriptionsPage />} />
-
+          <Route path="user-dashboard" element={<UserDashboard />} />
         </Route>
       </Route>
     </Routes>

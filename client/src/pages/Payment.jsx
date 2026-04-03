@@ -198,6 +198,7 @@ const Payment = () => {
             const status = error.response?.status;
             const message =
                 error.response?.data?.message ||
+                error.message ||
                 (status === 401
                     ? "Please login first to place your order"
                     : "Failed to place order");

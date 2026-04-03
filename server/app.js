@@ -8,6 +8,9 @@ import prescriptionRoutes from "./routes/prescriptionRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
+import complaintRoutes from "./routes/complaintRoutes.js";
+
+
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -34,5 +37,7 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+
+app.use("/api/complaints", complaintRoutes);
 
 export default app;

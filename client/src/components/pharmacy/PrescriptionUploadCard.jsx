@@ -1,6 +1,6 @@
-import { useRef, useState } from "react";
-import axios from "axios";
+import { useEffect, useRef, useState } from "react";
 import Button from "../common/Button";
+import API from "../../api";
 
 const steps = [
   "Upload clear prescription image",
@@ -11,10 +11,8 @@ const steps = [
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ||
-  import.meta.env.VITE_API_URL ||
-  "http://localhost:5000/api";
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
 const formatFileSize = (size) => {
   if (size < 1024 * 1024) {
@@ -39,6 +37,7 @@ const PrescriptionUploadCard = () => {
   const fileInputRef = useRef(null);
   const [form, setForm] = useState({
     name: "",
+    email: "",
     mobile: "",
     address: "",
   });
@@ -47,6 +46,20 @@ const PrescriptionUploadCard = () => {
   const [isDragActive, setIsDragActive] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || storedUser?.name || "",
+        email: prev.email || storedUser?.email || "",
+      }));
+    } catch {
+      // Ignore invalid localStorage data.
+    }
+  }, []);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -107,13 +120,20 @@ const PrescriptionUploadCard = () => {
   const handleSubmit = async () => {
     if (
       !form.name.trim() ||
+      !form.email.trim() ||
       !form.mobile.trim() ||
       !form.address.trim() ||
       !selectedFile
     ) {
       setError(
-        "Full name, mobile number, address, and prescription file are required."
+        "Full name, email, mobile number, address, and prescription file are required."
       );
+      setSuccessMessage("");
+      return;
+    }
+
+    if (!isValidEmail(form.email.trim())) {
+      setError("Please enter a valid email address.");
       setSuccessMessage("");
       return;
     }
@@ -131,8 +151,9 @@ const PrescriptionUploadCard = () => {
 
       const fileData = await convertFileToDataUrl(selectedFile);
 
-      await axios.post(`${API_BASE_URL}/prescriptions`, {
+      await API.post("/prescriptions", {
         name: form.name.trim(),
+        email: form.email.trim(),
         mobile: form.mobile.trim(),
         address: form.address.trim(),
         fileData,
@@ -143,6 +164,7 @@ const PrescriptionUploadCard = () => {
       setSuccessMessage("Prescription submitted successfully.");
       setForm({
         name: "",
+        email: "",
         mobile: "",
         address: "",
       });
@@ -184,6 +206,20 @@ const PrescriptionUploadCard = () => {
               value={form.name}
               onChange={handleChange}
               placeholder="Enter your name"
+              className="w-full rounded-card border border-gray-200 px-4 py-3 outline-none transition focus:border-primary"
+            />
+          </div>
+
+          <div>
+            <label className="mb-2 block text-small font-semibold text-textMain">
+              Email address
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
               className="w-full rounded-card border border-gray-200 px-4 py-3 outline-none transition focus:border-primary"
             />
           </div>
