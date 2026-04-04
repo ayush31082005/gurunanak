@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
 import CategoryHeroBanner from "../components/common/CategoryHeroBanner";
 
 const filterOptions = [
@@ -86,7 +85,6 @@ const allResources = [...diseaseData, ...medicineData, ...therapeuticClassData];
 const HealthResourceCenter = () => {
     const [searchParams] = useSearchParams();
     const [selectedFilter, setSelectedFilter] = useState("All Diseases");
-    const [searchTerm, setSearchTerm] = useState("");
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     useEffect(() => {
@@ -102,14 +100,9 @@ const HealthResourceCenter = () => {
 
     const filteredData = useMemo(() => {
         return allResources.filter((item) => {
-            const matchesFilter = item.category === selectedFilter;
-            const matchesSearch =
-                item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description.toLowerCase().includes(searchTerm.toLowerCase());
-
-            return matchesFilter && matchesSearch;
+            return item.category === selectedFilter;
         });
-    }, [selectedFilter, searchTerm]);
+    }, [selectedFilter]);
 
     return (
         <section className="min-h-screen bg-[#f6f7fb] pt-0 pb-8">
@@ -134,20 +127,6 @@ const HealthResourceCenter = () => {
                         </div>
 
                         <div className="flex w-full flex-col gap-3 sm:flex-row lg:absolute lg:right-0 lg:top-1/2 lg:w-auto lg:-translate-y-1/2 lg:items-center">
-                            <div className="relative w-full sm:w-[320px]">
-                                <Search
-                                    size={18}
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Search resources..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-11 pr-4 text-sm outline-none focus:border-[#ff6f61]"
-                                />
-                            </div>
-
                             <div className="relative w-full sm:w-[280px]">
                                 <button
                                     type="button"
@@ -198,7 +177,7 @@ const HealthResourceCenter = () => {
                                     No results found
                                 </h3>
                                 <p className="mt-2 text-sm text-slate-500">
-                                    Try changing the filter or search keyword.
+                                    Try changing the selected filter.
                                 </p>
                             </div>
                         ) : (

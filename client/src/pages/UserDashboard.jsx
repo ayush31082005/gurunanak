@@ -1,7 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { gsap } from "gsap";
+import {
+    FileText,
+    House,
+    LogOut,
+    Menu,
+    Package,
+    ShoppingCart,
+    TriangleAlert,
+    X,
+} from "lucide-react";
 import API from "../api";
+import Header from "../components/layout/Header";
 
 const CHECKOUT_ADDRESS_STORAGE_KEY = "checkoutAddress";
 
@@ -204,17 +215,12 @@ const UserDashboard = () => {
 
     useEffect(() => {
         const ctx = gsap.context(() => {
-            gsap.set([sidebarRef.current, heroRef.current, contentRef.current], {
+            gsap.set([heroRef.current, contentRef.current], {
                 opacity: 0,
                 y: 28,
             });
 
-            gsap.to(sidebarRef.current, {
-                opacity: 1,
-                y: 0,
-                duration: 0.7,
-                ease: "power3.out",
-            });
+            gsap.set(sidebarRef.current, { opacity: 1 });
 
             gsap.to(heroRef.current, {
                 opacity: 1,
@@ -382,11 +388,11 @@ const UserDashboard = () => {
     };
 
     const menuItems = [
-        { key: "home", label: "Home" },
-        { key: "cart", label: "Cart" },
-        { key: "orders", label: "Orders" },
-        { key: "prescription", label: "Prescription" },
-        { key: "complain", label: "Complain" },
+        { key: "home", label: "Home", icon: House },
+        { key: "cart", label: "Cart", icon: ShoppingCart },
+        { key: "orders", label: "Orders", icon: Package },
+        { key: "prescription", label: "Prescription", icon: FileText },
+        { key: "complain", label: "Complain", icon: TriangleAlert },
     ];
 
     const quickStats = [
@@ -407,6 +413,12 @@ const UserDashboard = () => {
         },
     ];
 
+    const recentOrders = useMemo(() => {
+        return [...orders]
+            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .slice(0, 3);
+    }, [orders]);
+
     const PanelShell = ({ title, subtitle, children }) => (
         <div className="dashboard-panel-card overflow-hidden rounded-[28px] border border-white/60 bg-white/80 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-5">
             <div className="mb-4 flex flex-col gap-1.5 sm:flex-row sm:items-end sm:justify-between">
@@ -422,7 +434,9 @@ const UserDashboard = () => {
     const InfoCard = ({ label, value }) => (
         <div className="dashboard-panel-card h-fit rounded-[22px] border border-slate-200/70 bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
-            <p className="mt-2 text-[15px] font-bold leading-6 text-slate-800">{value || "Not available"}</p>
+            <p className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-bold leading-6 text-slate-800">
+                {value || "Not available"}
+            </p>
         </div>
     );
 
@@ -457,12 +471,83 @@ const UserDashboard = () => {
                 </div>
             </div>
 
-            <div className="grid max-w-[560px] items-start gap-4 md:grid-cols-2">
-                <InfoCard label="User Name" value={displayName} />
-                <InfoCard label="Email Address" value={userData?.email} />
-                <InfoCard label="Phone Number" value={userData?.phone || userData?.mobile} />
-                <InfoCard label="Address" value={buildAddressText(userData?.address) || "No address added yet"} />
+            <div className="grid max-w-full items-start gap-4 md:grid-cols-2 xl:grid-cols-12">
+                <div className="xl:col-span-2">
+                    <InfoCard label="User Name" value={displayName} />
+                </div>
+                <div className="xl:col-span-3">
+                    <InfoCard label="Email Address" value={userData?.email} />
+                </div>
+                <div className="xl:col-span-2">
+                    <InfoCard label="Phone Number" value={userData?.phone || userData?.mobile} />
+                </div>
+                <div className="xl:col-span-5">
+                    <InfoCard label="Address" value={buildAddressText(userData?.address) || "No address added yet"} />
+                </div>
             </div>
+
+            <PanelShell title="Recent Orders" subtitle="Your latest orders are shown here.">
+                {ordersLoading ? (
+                    <div className="rounded-[24px] bg-slate-50 p-6 text-center text-slate-500">
+                        Loading orders...
+                    </div>
+                ) : recentOrders.length === 0 ? (
+                    <div className="rounded-[24px] bg-slate-50 p-6 text-center text-slate-500">
+                        No recent orders found.
+                    </div>
+                ) : (
+                    <div className="grid gap-4 xl:grid-cols-3">
+                        {recentOrders.map((order) => (
+                            <div
+                                key={order._id}
+                                className="dashboard-panel-card rounded-[24px] border border-slate-200 bg-white p-5"
+                            >
+                                <div className="flex items-start justify-between gap-3">
+                                    <div>
+                                        <p className="font-mono text-xs font-semibold text-slate-500">
+                                            {order._id}
+                                        </p>
+                                        <p className="mt-2 text-sm font-medium text-slate-600">
+                                            {new Date(order.createdAt).toLocaleDateString()}
+                                        </p>
+                                    </div>
+                                    <span
+                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                            }`}
+                                    >
+                                        {order.status}
+                                    </span>
+                                </div>
+
+                                <div className="mt-4 space-y-2">
+                                    {order.items?.slice(0, 2).map((item, index) => (
+                                        <div
+                                            key={`${order._id}-${index}`}
+                                            className="rounded-2xl bg-slate-50 px-3 py-2"
+                                        >
+                                            <p className="text-sm font-semibold text-slate-800">
+                                                {item.name}
+                                            </p>
+                                            <p className="mt-1 text-xs text-slate-500">
+                                                Qty: {item.quantity || 1}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between">
+                                    <p className="text-sm text-slate-500">
+                                        {order.items?.length || 0} items
+                                    </p>
+                                    <p className="text-lg font-extrabold text-[#FF6F61]">
+                                        Rs. {order.total ?? 0}
+                                    </p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </PanelShell>
         </div>
     );
 
@@ -501,8 +586,93 @@ const UserDashboard = () => {
             ) : orders.length === 0 ? (
                 <div className="rounded-[24px] bg-slate-50 p-8 text-center text-slate-500">No orders found.</div>
             ) : (
-                <div className="space-y-3">
-                    {orders.map((order) => (
+                <div className="dashboard-panel-card overflow-hidden rounded-[26px] border border-slate-200 bg-white">
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[980px] border-collapse">
+                            <thead>
+                                <tr className="bg-gradient-to-r from-slate-50 to-[#fff4f1]/80 text-left">
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Order</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Items</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Payment</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Amount</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {orders.map((order) => {
+                                    const canCancel = ["pending", "payment_pending", "placed"].includes(order.status);
+
+                                    return (
+                                        <tr
+                                            key={`table-${order._id}`}
+                                            className="border-t border-slate-100 align-top transition hover:bg-slate-50/70"
+                                        >
+                                            <td className="px-4 py-4">
+                                                <p className="font-mono text-xs font-semibold text-slate-700">{order._id}</p>
+                                                <p className="mt-2 text-sm font-medium text-slate-800">
+                                                    {new Date(order.createdAt).toLocaleDateString()}
+                                                </p>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="space-y-2">
+                                                    {order.items?.length ? (
+                                                        order.items.map((item, index) => (
+                                                            <div
+                                                                key={`${order._id}-${index}`}
+                                                                className="rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2"
+                                                            >
+                                                                <p className="text-sm font-semibold text-slate-800">{item.name}</p>
+                                                                <p className="mt-1 text-xs text-slate-500">
+                                                                    Qty: {item.quantity || 1}
+                                                                    {item.pack ? ` • ${item.pack}` : ""}
+                                                                </p>
+                                                            </div>
+                                                        ))
+                                                    ) : (
+                                                        <p className="text-sm text-slate-500">No items found</p>
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <div className="space-y-2 text-sm text-slate-600">
+                                                    <p className="font-semibold text-slate-800">{order.paymentMethod || "N/A"}</p>
+                                                    <p>Subtotal: Rs. {order.subtotal ?? 0}</p>
+                                                    <p>Discount: Rs. {order.discount ?? 0}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <p className="text-lg font-extrabold text-[#FF6F61]">Rs. {order.total ?? 0}</p>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                <span
+                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                                        }`}
+                                                >
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-4">
+                                                {canCancel ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleOrderCancel(order._id)}
+                                                        disabled={cancellingOrderId === order._id}
+                                                        className="rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-600 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {cancellingOrderId === order._id ? "Cancelling..." : "Cancel Order"}
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-sm text-slate-400">Not available</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                    {false ? orders.map((order) => (
                         <div
                             key={order._id}
                             className="dashboard-panel-card overflow-hidden rounded-[26px] border border-slate-200 bg-white"
@@ -560,7 +730,7 @@ const UserDashboard = () => {
                                 </div>
                             </div>
                         </div>
-                    ))}
+                    )) : null}
                 </div>
             )}
         </PanelShell>
@@ -577,45 +747,77 @@ const UserDashboard = () => {
                     No prescriptions found.
                 </div>
             ) : (
-                <div className="space-y-4">
-                    {prescriptions.map((prescription) => (
-                        <div
-                            key={prescription._id}
-                            className="dashboard-panel-card rounded-[26px] border border-slate-200 bg-white p-5"
-                        >
-                            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <h3 className="text-lg font-bold text-slate-800">Prescription ID: {prescription._id}</h3>
-                                <span
-                                    className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusTone[prescription.status] || "bg-[#ffe7e3] text-[#FF6F61]"
-                                        }`}
-                                >
-                                    {prescription.status}
-                                </span>
-                            </div>
-
-                            <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                                <div className="rounded-2xl bg-slate-50 px-4 py-3">
-                                    Uploaded On: {new Date(prescription.createdAt).toLocaleDateString()}
-                                </div>
-                                <div className="rounded-2xl bg-slate-50 px-4 py-3">Name: {prescription.name}</div>
-                                <div className="rounded-2xl bg-slate-50 px-4 py-3">File: {prescription.fileName}</div>
-                                <div className="rounded-2xl bg-slate-50 px-4 py-3">Email: {prescription.email}</div>
-                                <div className="rounded-2xl bg-slate-50 px-4 py-3">Mobile: {prescription.mobile}</div>
-                                <div className="rounded-2xl bg-slate-50 px-4 py-3">Address: {prescription.address}</div>
-                            </div>
-
-                            {prescription.fileUrl ? (
-                                <a
-                                    href={prescription.fileUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#FF6F61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
-                                >
-                                    View Uploaded File
-                                </a>
-                            ) : null}
-                        </div>
-                    ))}
+                <div className="dashboard-panel-card overflow-hidden rounded-[26px] border border-slate-200 bg-white">
+                    <div className="overflow-x-auto">
+                        <table className="w-full min-w-[980px] border-collapse">
+                            <thead>
+                                <tr className="bg-slate-50/90 text-left">
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Prescription</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Patient</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Contact</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Address</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Status</th>
+                                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {prescriptions.map((prescription) => (
+                                    <tr
+                                        key={prescription._id}
+                                        className="border-t border-slate-100 align-top transition hover:bg-slate-50/70"
+                                    >
+                                        <td className="px-4 py-4">
+                                            <p className="font-mono text-xs font-semibold text-slate-700">{prescription._id}</p>
+                                            <p className="mt-2 text-sm font-medium text-slate-800">
+                                                {new Date(prescription.createdAt).toLocaleDateString()}
+                                            </p>
+                                            <p className="mt-2 text-xs text-slate-500">
+                                                {prescription.fileName || "No file name"}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <div className="space-y-2 text-sm text-slate-600">
+                                                <p className="font-semibold text-slate-800">{prescription.name || "N/A"}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <div className="space-y-2 text-sm text-slate-600">
+                                                <p>{prescription.email || "N/A"}</p>
+                                                <p>{prescription.mobile || "N/A"}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <p className="max-w-[240px] text-sm text-slate-600">
+                                                {prescription.address || "N/A"}
+                                            </p>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            <span
+                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[prescription.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                                    }`}
+                                            >
+                                                {prescription.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4">
+                                            {prescription.fileUrl ? (
+                                                <a
+                                                    href={prescription.fileUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="inline-flex items-center gap-2 rounded-full bg-[#FF6F61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                                                >
+                                                    View File
+                                                </a>
+                                            ) : (
+                                                <span className="text-sm text-slate-400">Not available</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             )}
         </PanelShell>
@@ -767,8 +969,17 @@ const UserDashboard = () => {
         setIsMobileSidebarOpen(false);
     };
 
+    const closeMobileSidebar = () => {
+        setIsMobileSidebarOpen(false);
+    };
+
     return (
-        <section ref={pageRef} className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(255,237,213,0.9),_transparent_35%),linear-gradient(180deg,#fff7ed_0%,#f8fafc_28%,#f8fafc_100%)]">
+        <>
+        <Header />
+        <section
+            ref={pageRef}
+            className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(255,237,213,0.9),_transparent_35%),linear-gradient(180deg,#fff7ed_0%,#f8fafc_28%,#f8fafc_100%)] pt-[114px] md:pt-[94px] lg:pt-[98px]"
+        >
             <div
                 ref={floatingBlobOneRef}
                 className="pointer-events-none absolute left-[-60px] top-[140px] h-56 w-56 rounded-full bg-[#ffc1ba]/30 blur-3xl"
@@ -778,88 +989,103 @@ const UserDashboard = () => {
                 className="pointer-events-none absolute right-[-50px] top-[220px] h-64 w-64 rounded-full bg-sky-200/30 blur-3xl"
             />
 
-            <div className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 sm:pt-5 lg:px-8">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-                    <div className="lg:hidden">
+            {isMobileSidebarOpen ? (
+                <div
+                    className="fixed inset-x-0 bottom-0 top-[114px] z-30 bg-slate-900/50 md:top-[94px] lg:hidden"
+                    onClick={closeMobileSidebar}
+                    onTouchEnd={closeMobileSidebar}
+                />
+            ) : null}
+
+            <aside
+                ref={sidebarRef}
+                className={`fixed left-0 top-[114px] z-40 flex h-[calc(100vh-114px)] w-[280px] flex-col overflow-hidden border-r border-slate-200 bg-white transition-transform duration-300 md:top-[94px] md:h-[calc(100vh-94px)] lg:top-[98px] lg:h-[calc(100vh-98px)] lg:translate-x-0 ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    }`}
+            >
+                <div className="flex h-20 items-center justify-between border-b border-slate-200 px-6">
+                    <div>
+                        <h1 className="text-lg font-bold text-slate-900">Gurunanak Pharmacy</h1>
+                    </div>
+
+                    <button
+                        type="button"
+                        className="relative z-10 rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden"
+                        onClick={closeMobileSidebar}
+                        onTouchEnd={closeMobileSidebar}
+                        aria-label="Close sidebar"
+                    >
+                        <X size={20} />
+                    </button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
+                    <div className="rounded-3xl bg-gradient-to-br from-[#ff6f61] to-[#f45d4f] px-4 py-5 text-white shadow-lg shadow-[#ff6f61]/20">
+                        <p className="text-sm font-semibold text-white/80">Logged in as</p>
+                        <h2 className="mt-2 text-xl font-bold">{displayName}</h2>
+                        <p className="mt-1 break-words text-sm text-white/80">
+                            {userData?.email || "user@email.com"}
+                        </p>
+                    </div>
+
+                    <p className="mt-6 px-3 text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                        Main Menu
+                    </p>
+
+                    <nav className="mt-4 space-y-2">
+                        {menuItems.map((item) => {
+                            const isActive = activeTab === item.key;
+                            const Icon = item.icon;
+
+                            return (
+                                <button
+                                    key={item.key}
+                                    type="button"
+                                    onClick={() => handleMenuItemClick(item.key)}
+                                    className={`dashboard-menu-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${isActive
+                                        ? "bg-[#ff6f61] text-white shadow-lg shadow-[#ff6f61]/25"
+                                        : "text-slate-600 hover:bg-slate-100"
+                                        }`}
+                                >
+                                    <Icon size={18} />
+                                    {item.label}
+                                </button>
+                            );
+                        })}
+                    </nav>
+
+                    <div className="mt-8 border-t border-slate-200 pt-6">
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="dashboard-menu-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#ff6f61]"
+                        >
+                            <LogOut size={18} />
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </aside>
+
+            <div className="lg:pl-[280px]">
+                <div className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 sm:pt-5 lg:px-8">
+                    <div className="mb-4 lg:hidden">
                         <button
                             type="button"
                             onClick={() => setIsMobileSidebarOpen(true)}
-                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_16px_40px_rgba(15,23,42,0.08)] backdrop-blur-xl"
+                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 shadow-[0_16px_40px_rgba(15,23,42,0.08)]"
                         >
+                            <Menu size={18} />
                             Menu
                         </button>
                     </div>
 
-                    {isMobileSidebarOpen ? (
-                        <div
-                            className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[2px] lg:hidden"
-                            onClick={() => setIsMobileSidebarOpen(false)}
-                        />
-                    ) : null}
-
-                    <aside
-                        ref={sidebarRef}
-                        className={`w-full lg:w-[260px] lg:shrink-0 lg:self-start ${isMobileSidebarOpen
-                            ? "fixed inset-y-0 left-0 z-50 max-w-[320px] p-4 lg:static lg:block lg:max-w-none lg:p-0"
-                            : "hidden lg:block"
-                            }`}
-                    >
-                        <div className="overflow-hidden rounded-[28px] border border-white/70 bg-white/95 p-3 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl lg:sticky lg:top-24">
-                            <div className="mb-3 flex items-center justify-between lg:hidden">
-                                <p className="text-sm font-bold uppercase tracking-[0.16em] text-slate-400">
-                                    Dashboard Menu
-                                </p>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsMobileSidebarOpen(false)}
-                                    className="rounded-full border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700"
-                                >
-                                    Close
-                                </button>
-                            </div>
-
-                            <div className="relative overflow-hidden rounded-[22px] bg-gradient-to-br from-[#FF6F61] to-[#FF6F61] p-4 text-white">
-                                <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-white/15 blur-2xl" />
-                                <div className="relative">
-                                    <h2 className="text-lg font-bold">{displayName}</h2>
-                                    <p className="mt-1 text-sm text-white/80">{userData?.email || "user@email.com"}</p>
-                                </div>
-                            </div>
-
-                            <div className="mt-3 space-y-1.5">
-                                {menuItems.map((item) => {
-                                    const isActive = activeTab === item.key;
-
-                                    return (
-                                        <button
-                                            key={item.key}
-                                            onClick={() => handleMenuItemClick(item.key)}
-                                            className={`dashboard-menu-item flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-sm font-semibold transition ${isActive
-                                                ? "bg-gradient-to-r from-[#FF6F61] to-[#FF6F61] text-white shadow-[0_16px_30px_rgba(255,111,97,0.28)]"
-                                                : "text-slate-700 hover:bg-[#fff4f1] hover:text-[#FF6F61]"
-                                                }`}
-                                        >
-                                            <span>{item.label}</span>
-                                        </button>
-                                    );
-                                })}
-
-                                <button
-                                    onClick={handleLogout}
-                                    className="dashboard-menu-item flex w-full rounded-2xl px-4 py-2.5 text-left text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
-                                >
-                                    <span>Logout</span>
-                                </button>
-                            </div>
-                        </div>
-                    </aside>
-
-                    <div ref={contentRef} className="min-w-0 flex-1">
+                    <div ref={contentRef} className="min-w-0">
                         {renderContent()}
                     </div>
                 </div>
             </div>
         </section>
+        </>
     );
 };
 

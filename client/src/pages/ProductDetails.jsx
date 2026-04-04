@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { ShoppingCart, Star, Zap } from "lucide-react";
 import ProductGrid from "../components/product/ProductGrid";
@@ -23,6 +23,10 @@ const ProductDetails = () => {
       ) || null,
     [managedProducts, productId]
   );
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [productId]);
 
   const relatedProducts = useMemo(() => {
     if (!product) return [];

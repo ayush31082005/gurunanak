@@ -79,11 +79,11 @@ const HeroBanner = () => {
         <div className="relative z-10 mx-auto flex max-w-[1280px] flex-col items-center justify-center gap-8 px-4 py-10 sm:px-6 sm:py-12 lg:px-8 lg:py-14">
           {/* Left Content */}
           <div className="w-full max-w-2xl text-center lg:text-left">
-            <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-white backdrop-blur-sm sm:text-sm">
+            {/* <span className="inline-flex rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold tracking-wide text-white backdrop-blur-sm sm:text-sm">
               {slide.badge}
-            </span>
+            </span> */}
 
-            <h1 className="mt-5 text-3xl font-extrabold leading-tight text-white sm:text-4xl md:text-5xl lg:text-[56px] xl:text-6xl">
+            <h1 className="mt-5 text-[2.1rem] font-extrabold leading-tight text-white sm:text-[2.7rem] md:text-[3.15rem] lg:text-[3.5rem] xl:text-[3.9rem]">
               {slide.title}{" "}
               <span className="text-cyan-300">{slide.highlight}</span>
               <br />

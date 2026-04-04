@@ -39,12 +39,12 @@ const FeaturedBrands = () => {
   }, [isPaused]);
 
   return (
-    <section className="bg-[#f8fafc] py-10 sm:py-12 lg:py-14">
+    <section className="bg-[#f8fafc] py-3 sm:py-5 lg:py-6">
       <div className="container-padded">
         <SectionHeader title="Featured brands" showSeeAll={false} />
 
         <div
-          className="relative mt-6"
+          className="relative mt-2"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={() => setIsPaused(true)}
@@ -58,15 +58,15 @@ const FeaturedBrands = () => {
 
           <div
             ref={trackRef}
-            className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide"
+            className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
           >
             {items.map((brand, index) => (
               <div
                 key={`${brand.id}-${index}`}
-                className="group flex min-w-[120px] flex-shrink-0 flex-col items-center sm:min-w-[140px] md:min-w-[160px]"
+                className="group flex min-w-[108px] flex-shrink-0 flex-col items-center sm:min-w-[126px] md:min-w-[140px]"
               >
                 {/* Card */}
-                <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-sm transition-all duration-500 ease-out group-hover:-translate-y-0.5 group-hover:shadow-md sm:h-28 sm:w-28 sm:p-2.5 md:h-32 md:w-32 md:p-3">
+                <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 shadow-sm transition-all duration-500 ease-out group-hover:-translate-y-0.5 group-hover:shadow-md sm:h-24 sm:w-24 sm:p-2 md:h-28 md:w-28 md:p-2.5">
                   <div className="flex h-full w-full items-center justify-center rounded-xl bg-white">
                     <img
                       src={brand.image}
@@ -77,7 +77,7 @@ const FeaturedBrands = () => {
                 </div>
 
                 {/* Name */}
-                <p className="mt-3 max-w-[100px] text-center text-sm font-semibold text-slate-800 sm:max-w-[120px] sm:text-[15px]">
+                <p className="mt-2 max-w-[92px] text-center text-xs font-semibold text-slate-800 sm:max-w-[108px] sm:text-[13px] md:text-sm">
                   {brand.name}
                 </p>
               </div>

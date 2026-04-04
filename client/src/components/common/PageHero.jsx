@@ -11,7 +11,7 @@ const PageHero = ({ title, description, crumbs = [], backgroundImage = "" }) => 
                 </>
             ) : null}
 
-            <div className="container-padded relative py-8 text-center">
+            <div className="container-padded relative py-5 text-center sm:py-6">
                 {crumbs.length ? (
                     <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-sm text-slate-500">
                         {crumbs.map((crumb, index) => (
@@ -23,12 +23,12 @@ const PageHero = ({ title, description, crumbs = [], backgroundImage = "" }) => 
                     </div>
                 ) : null}
 
-                <h1 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
                     {title}
                 </h1>
 
                 {description ? (
-                    <p className="mx-auto mt-3 max-w-3xl text-sm leading-7 text-slate-500 sm:text-base">
+                    <p className="mx-auto mt-2 max-w-3xl text-sm leading-6 text-slate-500 sm:text-base">
                         {description}
                     </p>
                 ) : null}

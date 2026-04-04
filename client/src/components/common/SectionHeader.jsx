@@ -8,7 +8,7 @@ const SectionHeader = ({
 }) => {
   return (
     <div
-      className={`mb-6 flex w-full flex-col gap-3 ${align === "center"
+      className={`mb-3 flex w-full flex-col gap-2 ${align === "center"
           ? "items-center text-center"
           : "items-start text-left"
         } sm:flex-row sm:items-center sm:justify-between`}
@@ -21,7 +21,7 @@ const SectionHeader = ({
 
         {/* Underline */}
         <span
-          className={`mt-2 block h-[3px] rounded-full bg-orange-500 ${align === "center" ? "mx-auto w-20" : "w-16"
+          className={`mt-1.5 block h-[3px] rounded-full bg-orange-500 ${align === "center" ? "mx-auto w-20" : "w-16"
             }`}
         />
       </div>

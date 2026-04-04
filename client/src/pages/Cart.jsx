@@ -10,6 +10,8 @@ const Cart = () => {
   const totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -18,23 +20,27 @@ const Cart = () => {
   }, [navigate]);
 
   return (
-    <section className="min-h-screen bg-[#f6f7fb] py-6 sm:py-10">
+    <section className="min-h-screen bg-[#f6f7fb] py-4 sm:py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <div className="grid min-h-[650px] grid-cols-1 lg:grid-cols-[1.15fr_0.85fr]">
+          <div
+            className={`grid grid-cols-1 lg:items-start lg:grid-cols-[1.15fr_0.85fr] ${
+              cartItems.length === 0 ? "min-h-[650px]" : ""
+            }`}
+          >
             {/* Left Side */}
-            <div className="border-b border-slate-200 bg-[#fafafa] px-5 py-8 sm:px-8 lg:border-b-0 lg:border-r lg:px-10 lg:py-10">
+            <div className="border-b border-slate-200 bg-[#fafafa] px-4 py-5 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r lg:px-8 lg:py-8">
               <div className="max-w-3xl">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50">
-                    <ShoppingBag size={26} className="text-[#ff6f61]" />
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50">
+                    <ShoppingBag size={22} className="text-[#ff6f61]" />
                   </div>
 
                   <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
+                    <h1 className="text-[34px] font-extrabold tracking-tight text-slate-900 sm:text-4xl">
                       My Cart
                     </h1>
-                    <p className="mt-1 text-sm text-slate-500 sm:text-base">
+                    <p className="mt-0.5 text-sm text-slate-500 sm:text-base">
                       Review your selected medicines and wellness products.
                     </p>
                   </div>
@@ -62,18 +68,18 @@ const Cart = () => {
                     </Link>
                   </div>
                 ) : (
-                  <div className="mt-8 space-y-4">
+                  <div className="mt-5 space-y-3">
                     {cartItems.map((item) => (
                       <div
                         key={item.id}
-                        className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md sm:p-5"
+                        className="rounded-[24px] border border-slate-200 bg-white p-3.5 shadow-sm transition hover:shadow-md sm:p-4"
                       >
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                           <div className="flex justify-center sm:block">
                             <img
                               src={item.image}
                               alt={item.name}
-                              className="h-24 w-24 rounded-2xl bg-slate-50 object-contain p-3"
+                              className="h-20 w-20 rounded-2xl bg-slate-50 object-contain p-2.5"
                             />
                           </div>
 
@@ -82,12 +88,12 @@ const Cart = () => {
                               {item.category}
                             </p>
 
-                            <h2 className="mt-1 text-base font-bold text-slate-900 sm:text-lg">
+                            <h2 className="mt-1 text-[15px] font-bold text-slate-900 sm:text-lg">
                               {item.name}
                             </h2>
 
                             {item.qty ? (
-                              <p className="mt-1 text-sm text-slate-500">{item.qty}</p>
+                              <p className="mt-1 text-xs text-slate-500 sm:text-sm">{item.qty}</p>
                             ) : null}
 
                             <p className="mt-3 text-xl font-extrabold text-slate-900">
@@ -95,7 +101,7 @@ const Cart = () => {
                             </p>
                           </div>
 
-                          <div className="flex flex-col items-center gap-3 sm:items-end">
+                          <div className="flex flex-col items-center gap-2.5 sm:items-end">
                             <div className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 p-1">
                               <button
                                 onClick={() =>

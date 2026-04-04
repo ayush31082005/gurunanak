@@ -52,12 +52,12 @@ const AyurvedaBrands = () => {
   const items = isMobileView ? [...ayurvedaBrands, ...ayurvedaBrands] : ayurvedaBrands;
 
   return (
-    <section className="bg-white py-10">
+    <section className="bg-white py-2 sm:py-3 lg:py-4">
       <div className="container-padded">
         <SectionHeader title="Ayurveda top brands" showSeeAll={false} />
 
         <div
-          className="relative"
+          className="relative mt-1"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={() => setIsPaused(true)}
@@ -72,14 +72,14 @@ const AyurvedaBrands = () => {
 
           <div
             ref={trackRef}
-            className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide"
+            className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
           >
             {items.map((brand, index) => (
               <div
                 key={`${brand.id}-${index}`}
-                className="flex h-32 w-36 flex-shrink-0 flex-col items-center justify-center gap-3 p-2 text-center cursor-pointer transition-all duration-500 ease-out hover:-translate-y-0.5"
+                className="flex h-28 w-32 flex-shrink-0 flex-col items-center justify-center gap-2 p-1.5 text-center cursor-pointer transition-all duration-500 ease-out hover:-translate-y-0.5"
               >
-                <div className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-full ${brand.bg} shadow-sm`}>
+                <div className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ${brand.bg} shadow-sm`}>
                   <img
                     src={brand.image}
                     alt={brand.name}
@@ -88,10 +88,10 @@ const AyurvedaBrands = () => {
                       event.currentTarget.onerror = null;
                       event.currentTarget.src = brand.fallbackImage;
                     }}
-                    className="h-14 w-14 object-contain"
+                    className="h-11 w-11 object-contain"
                   />
                 </div>
-                <span className="line-clamp-2 text-sm font-semibold leading-tight text-textMain">
+                <span className="line-clamp-2 text-xs font-semibold leading-tight text-textMain">
                   {brand.name}
                 </span>
               </div>

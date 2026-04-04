@@ -220,7 +220,7 @@ const CategoryProductPage = ({
         tempFilter !== allLabel || tempBrands.length > 0;
 
     return (
-        <section className="min-h-screen bg-[#f6f6f6] pb-10 pt-6">
+        <section className="min-h-screen bg-[#f6f6f6] pb-8 pt-4 sm:pt-5">
             <div className="w-full px-0 sm:px-0 lg:px-0">
                 <div className="flex items-start gap-5">
                     <aside className="hidden self-start lg:block lg:w-[118px] lg:shrink-0">
@@ -268,14 +268,14 @@ const CategoryProductPage = ({
                     </aside>
 
                     <div className="min-w-0 flex-1 pl-2 pr-3 sm:pl-3 sm:pr-4 lg:pl-4 lg:pr-5">
-                        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+                        <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
-                                <h1 className="text-[24px] font-bold leading-tight text-[#111827] sm:text-[34px]">
+                                <h1 className="text-[22px] font-bold leading-tight text-[#111827] sm:text-[28px]">
                                     {selectedFilter === allLabel ? allHeading : selectedFilter}
                                 </h1>
                             </div>
 
-                            <div className="flex shrink-0 items-center gap-3">
+                            <div className="flex shrink-0 items-center gap-3 self-start sm:self-auto">
                                 <button
                                     type="button"
                                     onClick={openSortPopup}
@@ -296,16 +296,16 @@ const CategoryProductPage = ({
                             </div>
                         </div>
 
-                        <div className="mb-8 overflow-hidden rounded-[10px] bg-[#edf2f7]">
+                        <div className="mb-2 overflow-hidden rounded-[10px] bg-[#edf2f7]">
                             <img
                                 src={heroImage}
                                 alt={pageTitle}
-                                className="h-[120px] w-full object-cover sm:h-[150px] lg:h-[160px]"
+                                className="h-[90px] w-full object-cover sm:h-[110px] lg:h-[120px]"
                             />
                         </div>
 
-                        <div className="mb-5 flex justify-end">
-                            <span className="inline-flex h-11 items-center justify-center rounded-2xl bg-white px-4 text-sm font-semibold text-slate-600">
+                        <div className="mb-2 flex justify-end">
+                            <span className="inline-flex h-9 items-center justify-center rounded-2xl bg-white px-3.5 text-sm font-semibold text-slate-600">
                                 {filteredProducts.length} products
                             </span>
                         </div>
@@ -562,8 +562,8 @@ const CategoryProductPage = ({
                                         type="button"
                                         onClick={applyFilter}
                                         className={`inline-flex min-w-[170px] items-center justify-center rounded-[10px] px-6 py-3 text-[15px] font-semibold transition ${hasAnyActiveFilters
-                                            ? "bg-[#dbe4f0] text-[#64748b] hover:bg-[#d1dbe8]"
-                                            : "bg-[#e5e7eb] text-[#9ca3af]"
+                                            ? "bg-[#FF6F61] text-white hover:bg-[#f56557]"
+                                            : "bg-[#ffd8d4] text-white"
                                             }`}
                                     >
                                         Apply

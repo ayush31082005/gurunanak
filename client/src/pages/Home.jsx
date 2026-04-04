@@ -4,7 +4,6 @@ import HealthConcerns from "../components/home/HealthConcerns";
 import FeaturedBrands from "../components/home/FeaturedBrands";
 import PersonalCare from "../components/home/PersonalCare";
 import AyurvedaBrands from "../components/home/AyurvedaBrands";
-import PromoStrip from "../components/home/PromoStrip";
 import ProductSection from "../components/product/ProductSection";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
@@ -136,8 +135,6 @@ const Home = () => {
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
       />
-
-      <PromoStrip />
     </>
   );
 };

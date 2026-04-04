@@ -44,7 +44,7 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
             >
                 <div className="flex h-20 items-center justify-between border-b border-slate-200 px-6">
                     <div>
-                        <h1 className="text-lg font-bold text-slate-900">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</h1>
+                        <h1 className="text-lg font-bold text-slate-900">Gurunanak Pharmacy</h1>
                         <p className="text-sm text-slate-500">Pharmacy Dashboard</p>
                     </div>
 

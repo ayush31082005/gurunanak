@@ -33,6 +33,10 @@ import OrdersPage from "../pages/admin/OrdersPage";
 import CustomersPage from "../pages/admin/CustomersPage";
 import PrescriptionsPage from "../pages/admin/PrescriptionsPage";
 import UserDashboard from "../pages/UserDashboard";
+import PrivacyPolicy from "../pages/footer/PrivacyPolicy";
+import ShippingPolicy from "../pages/footer/ShippingPolicy";
+import ReturnPolicy from "../pages/footer/ReturnPolicy";
+import About from "../pages/footer/About";
 
 
 const AppRoutes = () => {
@@ -63,10 +67,15 @@ const AppRoutes = () => {
         <Route path="/immunity-boosters" element={<ImmunityBoosters />} />
         <Route path="/homeopathy" element={<Homeopathy />} />
         <Route path="/pet-care" element={<PateCare />} />
-        <Route path="/user-dashboard" element={<UserDashboard />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/shipping" element={<ShippingPolicy />} />
+        <Route path="/returns" element={<ReturnPolicy />} />
+        <Route path="/about" element={<About />} />
         <Route path="*" element={<NotFound />} />
 
       </Route>
+
+      <Route path="/user-dashboard" element={<UserDashboard />} />
 
       <Route path="/admin" element={<ProtectedAdminRoute />}>
         <Route element={<AdminLayout />}>

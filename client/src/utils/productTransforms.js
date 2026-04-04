@@ -24,11 +24,33 @@ const getCategoryId = (category) => {
     return "";
 };
 
+const FALLBACK_PRODUCT_IMAGE = "/product/meyer.png";
+
 const normalizeImageUrl = (image) => {
-    if (!image) return "";
-    if (/^https?:\/\//i.test(image)) return image;
-    if (image.startsWith("/")) return `${API_ORIGIN}${image}`;
-    return `${API_ORIGIN}/${image}`;
+    if (!image) return FALLBACK_PRODUCT_IMAGE;
+
+    const normalizedImage = String(image).trim();
+
+    if (!normalizedImage) return FALLBACK_PRODUCT_IMAGE;
+    if (/^https?:\/\//i.test(normalizedImage)) return normalizedImage;
+
+    if (normalizedImage.startsWith("/uploads/")) {
+        return `${API_ORIGIN}${normalizedImage}`;
+    }
+
+    if (normalizedImage.startsWith("uploads/")) {
+        return `${API_ORIGIN}/${normalizedImage}`;
+    }
+
+    if (normalizedImage.startsWith("/")) {
+        return normalizedImage;
+    }
+
+    if (normalizedImage.startsWith("product/")) {
+        return `/${normalizedImage}`;
+    }
+
+    return `${API_ORIGIN}/${normalizedImage}`;
 };
 
 const deriveDiscount = (price, oldPrice, discount) => {

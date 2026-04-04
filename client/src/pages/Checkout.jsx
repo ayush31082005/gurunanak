@@ -11,6 +11,7 @@ import {
 import { useCart } from "../context/CartContext";
 
 const CHECKOUT_ADDRESS_STORAGE_KEY = "checkoutAddress";
+const USER_CITY_STORAGE_KEY = "userCity";
 
 const getStoredCheckoutAddress = () => {
     try {
@@ -25,7 +26,9 @@ const Checkout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { cartItems } = useCart();
+
     const savedAddress = location.state?.address || getStoredCheckoutAddress();
+
     const [address, setAddress] = useState({
         fullName: savedAddress?.fullName || "",
         phone: savedAddress?.phone || "",
@@ -36,10 +39,15 @@ const Checkout = () => {
         state: savedAddress?.state || "",
         pincode: savedAddress?.pincode || "",
     });
+
     const [coupon, setCoupon] = useState("");
     const [appliedDiscount, setAppliedDiscount] = useState(
         Number(location.state?.appliedDiscount) || 0
     );
+
+    const [availableAreas, setAvailableAreas] = useState([]);
+    const [isFetchingPincode, setIsFetchingPincode] = useState(false);
+    const [pincodeError, setPincodeError] = useState("");
 
     const checkoutItems = useMemo(() => {
         const stateItems = location.state?.checkoutItems;
@@ -57,14 +65,13 @@ const Checkout = () => {
         () => checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0),
         [checkoutItems]
     );
+
     const totalAfterDiscount = Math.max(subtotal - appliedDiscount, 0);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
 
-        if (token) {
-            return;
-        }
+        if (token) return;
 
         navigate("/login", {
             state: {
@@ -76,9 +83,114 @@ const Checkout = () => {
         });
     }, [location.state, navigate]);
 
+    useEffect(() => {
+        if (!savedAddress?.pincode || savedAddress?.pincode.length !== 6) return;
+
+        const fetchInitialAreas = async () => {
+            try {
+                const res = await fetch(
+                    `https://api.postalpincode.in/pincode/${savedAddress.pincode}`
+                );
+                const data = await res.json();
+
+                if (data?.[0]?.Status === "Success" && Array.isArray(data[0].PostOffice)) {
+                    const postOffices = data[0].PostOffice;
+                    const areaNames = [...new Set(postOffices.map((po) => po.Name).filter(Boolean))];
+                    setAvailableAreas(areaNames);
+                }
+            } catch {
+                // ignore silently
+            }
+        };
+
+        fetchInitialAreas();
+    }, [savedAddress?.pincode]);
+
     const handleChange = (e) => {
         const { name, value } = e.target;
         setAddress((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const fetchAddressFromPincode = async (pincode) => {
+        if (pincode.length !== 6) {
+            setPincodeError("");
+            setAvailableAreas([]);
+            setAddress((prev) => ({
+                ...prev,
+                pincode,
+                city: "",
+                state: "",
+                area: "",
+            }));
+            return;
+        }
+
+        setIsFetchingPincode(true);
+        setPincodeError("");
+
+        try {
+            const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+            const data = await res.json();
+
+            if (
+                data?.[0]?.Status === "Success" &&
+                Array.isArray(data[0].PostOffice) &&
+                data[0].PostOffice.length
+            ) {
+                const postOffices = data[0].PostOffice;
+                const firstPostOffice = postOffices[0];
+
+                const areaNames = [
+                    ...new Set(postOffices.map((po) => po.Name).filter(Boolean)),
+                ];
+
+                setAvailableAreas(areaNames);
+
+                setAddress((prev) => ({
+                    ...prev,
+                    pincode,
+                    city: firstPostOffice.District || "",
+                    state: firstPostOffice.State || "",
+                    area:
+                        areaNames.includes(prev.area) && prev.area
+                            ? prev.area
+                            : areaNames[0] || "",
+                }));
+            } else {
+                setAvailableAreas([]);
+                setPincodeError("Invalid pincode. Please enter a valid 6 digit pincode.");
+                setAddress((prev) => ({
+                    ...prev,
+                    pincode,
+                    city: "",
+                    state: "",
+                    area: "",
+                }));
+            }
+        } catch (error) {
+            setAvailableAreas([]);
+            setPincodeError("Unable to fetch address details. Please try again.");
+            setAddress((prev) => ({
+                ...prev,
+                pincode,
+                city: "",
+                state: "",
+                area: "",
+            }));
+        } finally {
+            setIsFetchingPincode(false);
+        }
+    };
+
+    const handlePincodeChange = (e) => {
+        const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+
+        setAddress((prev) => ({
+            ...prev,
+            pincode: value,
+        }));
+
+        fetchAddressFromPincode(value);
     };
 
     const handleApplyCoupon = () => {
@@ -126,8 +238,16 @@ const Checkout = () => {
             return;
         }
 
+        if (pincodeError) {
+            alert("Please enter a valid pincode");
+            return;
+        }
+
         localStorage.setItem(CHECKOUT_ADDRESS_STORAGE_KEY, JSON.stringify(address));
+        localStorage.setItem(USER_CITY_STORAGE_KEY, address.city);
+
         window.dispatchEvent(new Event("profiledatachange"));
+        window.dispatchEvent(new Event("citychange"));
 
         navigate("/payment", {
             state: {
@@ -238,31 +358,41 @@ const Checkout = () => {
                                     />
                                 </div>
 
-                                <div className="sm:col-span-2">
+                                <div>
                                     <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                        House No. / Flat / Building
+                                        Pincode
                                     </label>
                                     <input
                                         type="text"
-                                        name="house"
-                                        value={address.house}
-                                        onChange={handleChange}
-                                        placeholder="Flat, house number, building name"
+                                        name="pincode"
+                                        value={address.pincode}
+                                        onChange={handlePincodeChange}
+                                        placeholder="Enter pincode"
                                         className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#ff6f61]"
                                     />
+                                    {isFetchingPincode ? (
+                                        <p className="mt-2 text-xs text-slate-500">
+                                            Fetching city and state...
+                                        </p>
+                                    ) : null}
+                                    {pincodeError ? (
+                                        <p className="mt-2 text-xs font-medium text-red-500">
+                                            {pincodeError}
+                                        </p>
+                                    ) : null}
                                 </div>
 
-                                <div className="sm:col-span-2">
+                                <div>
                                     <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                        Area / Street / Locality
+                                        State
                                     </label>
                                     <input
                                         type="text"
-                                        name="area"
-                                        value={address.area}
-                                        onChange={handleChange}
-                                        placeholder="Area, street, sector, landmark"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#ff6f61]"
+                                        name="state"
+                                        value={address.state}
+                                        readOnly
+                                        placeholder="State auto filled"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none"
                                     />
                                 </div>
 
@@ -274,41 +404,52 @@ const Checkout = () => {
                                         type="text"
                                         name="city"
                                         value={address.city}
-                                        onChange={handleChange}
-                                        placeholder="Enter city"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#ff6f61]"
+                                        readOnly
+                                        placeholder="City auto filled"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none"
                                     />
                                 </div>
 
                                 <div>
                                     <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                        State
+                                        Area / Locality
                                     </label>
-                                    <input
-                                        type="text"
-                                        name="state"
-                                        value={address.state}
-                                        onChange={handleChange}
-                                        placeholder="Enter state"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#ff6f61]"
-                                    />
+                                    {availableAreas.length > 0 ? (
+                                        <select
+                                            name="area"
+                                            value={address.area}
+                                            onChange={handleChange}
+                                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-[#ff6f61]"
+                                        >
+                                            <option value="">Select area</option>
+                                            {availableAreas.map((areaName, index) => (
+                                                <option key={`${areaName}-${index}`} value={areaName}>
+                                                    {areaName}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            name="area"
+                                            value={address.area}
+                                            onChange={handleChange}
+                                            placeholder="Area, street, sector, landmark"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#ff6f61]"
+                                        />
+                                    )}
                                 </div>
 
-                                <div>
+                                <div className="sm:col-span-2">
                                     <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                        Pincode
+                                        House No. / Flat / Building
                                     </label>
                                     <input
                                         type="text"
-                                        name="pincode"
-                                        value={address.pincode}
-                                        onChange={(e) =>
-                                            setAddress((prev) => ({
-                                                ...prev,
-                                                pincode: e.target.value.replace(/\D/g, "").slice(0, 6),
-                                            }))
-                                        }
-                                        placeholder="Enter pincode"
+                                        name="house"
+                                        value={address.house}
+                                        onChange={handleChange}
+                                        placeholder="Flat, house number, building name"
                                         className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#ff6f61]"
                                     />
                                 </div>
@@ -351,9 +492,7 @@ const Checkout = () => {
                         </div>
 
                         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                            <h2 className="text-lg font-bold text-slate-900">
-                                Order Summary
-                            </h2>
+                            <h2 className="text-lg font-bold text-slate-900">Order Summary</h2>
 
                             <div className="mt-5 space-y-4">
                                 {checkoutItems.map((item) => (
@@ -424,9 +563,7 @@ const Checkout = () => {
                         </div>
 
                         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-                            <h3 className="text-base font-bold text-slate-900">
-                                Need Help?
-                            </h3>
+                            <h3 className="text-base font-bold text-slate-900">Need Help?</h3>
                             <div className="mt-4 space-y-3 text-sm text-slate-600">
                                 <div className="flex items-center gap-3">
                                     <Phone size={16} className="text-[#ff6f61]" />

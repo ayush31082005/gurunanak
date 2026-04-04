@@ -56,6 +56,8 @@ const Login = () => {
   const [message, setMessage] = useState(location.state?.message || "");
   const [error, setError] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
+  const [authenticatedUser, setAuthenticatedUser] = useState(null);
   const [form, setForm] = useState({
     email: "",
     otp: ["", "", "", "", "", ""],
@@ -106,6 +108,28 @@ const Login = () => {
   useEffect(() => {
     setMessage(location.state?.message || "");
   }, [location.state]);
+
+  const handleSuccessPopupClose = () => {
+    setShowSuccessPopup(false);
+
+    const redirectTo = location.state?.redirectTo;
+    const checkoutState = location.state?.checkoutState;
+
+    if (authenticatedUser?.role === "admin") {
+      navigate("/admin/dashboard", { replace: true });
+      return;
+    }
+
+    if (redirectTo) {
+      navigate(redirectTo, {
+        state: checkoutState,
+        replace: true,
+      });
+      return;
+    }
+
+    navigate("/user-dashboard", { replace: true });
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -229,26 +253,8 @@ const Login = () => {
       window.dispatchEvent(new Event("authchange"));
 
       setMessage(res.data.message || "Login successful");
-
-      setTimeout(() => {
-        const redirectTo = location.state?.redirectTo;
-        const checkoutState = location.state?.checkoutState;
-
-        if (res.data.user?.role === "admin") {
-          navigate("/admin/dashboard", { replace: true });
-          return;
-        }
-
-        if (redirectTo) {
-          navigate(redirectTo, {
-            state: checkoutState,
-            replace: true,
-          });
-          return;
-        }
-
-        navigate("/user-dashboard", { replace: true });
-      }, 1000);
+      setAuthenticatedUser(res.data.user || null);
+      setShowSuccessPopup(true);
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -297,27 +303,51 @@ const Login = () => {
   const SlideIcon = currentSlide.icon;
 
   return (
-    <section className="min-h-screen bg-[#f6f7fb] py-6 sm:py-10">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <div className="grid min-h-[650px] grid-cols-1 lg:grid-cols-2">
-            <div className="hidden border-r border-slate-200 bg-[#fafafa] px-10 py-12 lg:flex lg:flex-col lg:items-center lg:justify-center">
+    <>
+      {showSuccessPopup ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
+          <div className="w-full max-w-md rounded-[28px] bg-white p-6 text-center shadow-[0_20px_60px_rgba(15,23,42,0.22)] sm:p-8">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-3xl text-emerald-600">
+              ✓
+            </div>
+            <h3 className="mt-5 text-2xl font-bold text-slate-900">
+              Login Successful
+            </h3>
+            <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
+              Your account login is complete. Press OK to continue.
+            </p>
+            <button
+              type="button"
+              onClick={handleSuccessPopupClose}
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#ff6f61] px-6 text-sm font-bold text-white transition hover:bg-[#f45d4f]"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <section className="bg-[#f6f7fb] py-3 sm:py-4">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+            <div className="grid min-h-[400px] grid-cols-1 lg:grid-cols-2">
+            <div className="hidden border-r border-slate-200 bg-[#fafafa] px-8 py-5 lg:flex lg:flex-col lg:items-center lg:justify-center">
               <div className="max-w-md text-center">
-                <div className={`mx-auto flex h-32 w-32 items-center justify-center rounded-full shadow-inner ${currentSlide.bg}`}>
-                  <div className={`flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-sm ${currentSlide.accent}`}>
-                    <SlideIcon size={42} />
+                <div className={`mx-auto flex h-28 w-28 items-center justify-center rounded-full shadow-inner ${currentSlide.bg}`}>
+                  <div className={`flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-sm ${currentSlide.accent}`}>
+                    <SlideIcon size={36} />
                   </div>
                 </div>
 
-                <h1 className="mt-8 text-4xl font-extrabold tracking-tight text-slate-800">
+                <h1 className="mt-6 text-3xl font-extrabold tracking-tight text-slate-800">
                   {currentSlide.title}
                 </h1>
 
-                <p className="mt-5 text-lg leading-8 text-slate-500">
+                <p className="mt-3 text-base leading-7 text-slate-500">
                   {currentSlide.description}
                 </p>
 
-                <div className="mt-8 flex items-center justify-center gap-2">
+                <div className="mt-6 flex items-center justify-center gap-2">
                   {loginSlides.map((_, index) => (
                     <span
                       key={index}
@@ -330,18 +360,18 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-12">
+            <div className="flex items-center justify-center px-5 py-3 sm:px-7 lg:px-10">
               <div className="w-full max-w-md">
                 <div className="text-center lg:text-left">
-                  <h2 className="text-3xl font-extrabold text-slate-900 sm:text-4xl">
+                  <h2 className="text-3xl font-extrabold text-slate-900 sm:text-[38px]">
                     Login
                   </h2>
-                  <p className="mt-3 text-sm leading-6 text-slate-500">
+                  <p className="mt-2 text-sm leading-6 text-slate-500">
                     Sign in to continue.
                   </p>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5">
+                <div className="mt-4 grid grid-cols-2 rounded-2xl bg-slate-100 p-1.5">
                   <button
                     type="button"
                     className="col-span-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow"
@@ -357,11 +387,11 @@ const Login = () => {
                   initial={{ opacity: 0, x: 14 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="mt-7"
+                  className="mt-5"
                 >
                   <form
                     onSubmit={otpSent ? handleVerifyOtp : handleSendOtp}
-                    className="space-y-5"
+                    className="space-y-4"
                   >
                     <div>
                       <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -448,7 +478,7 @@ const Login = () => {
                   </form>
                 </motion.div>
 
-                <p className="mt-7 text-center text-sm text-slate-500">
+                <p className="mt-5 text-center text-sm text-slate-500">
                   New on Gurunanak?{" "}
                   <Link
                     to="/register"
@@ -461,8 +491,9 @@ const Login = () => {
             </div>
           </div>
         </div>
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 };
 
