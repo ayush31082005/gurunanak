@@ -413,7 +413,7 @@ const CategoryProductPage = ({
                                                         <button
                                                             type="button"
                                                             onClick={() => handleAddToCart(item)}
-                                                            className="rounded-xl border border-[#ff6f61] px-4 py-2 text-sm font-semibold text-[#ff6f61] transition hover:bg-[#ff6f61] hover:text-white"
+                                                            className="rounded-xl border border-[#87CEEB] px-4 py-2 text-sm font-semibold text-[#87CEEB] transition hover:bg-[#87CEEB] hover:text-white"
                                                         >
                                                             Add
                                                         </button>
@@ -421,7 +421,7 @@ const CategoryProductPage = ({
                                                         <button
                                                             type="button"
                                                             onClick={() => handleBuyNow(item)}
-                                                            className="rounded-xl bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f45d4f]"
+                                                            className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                                                         >
                                                             Buy Now
                                                         </button>
@@ -562,7 +562,7 @@ const CategoryProductPage = ({
                                         type="button"
                                         onClick={applyFilter}
                                         className={`inline-flex min-w-[170px] items-center justify-center rounded-[10px] px-6 py-3 text-[15px] font-semibold transition ${hasAnyActiveFilters
-                                            ? "bg-[#FF6F61] text-white hover:bg-[#f56557]"
+                                            ? "bg-[#87CEEB] text-white hover:bg-[#6EC6E8]"
                                             : "bg-[#ffd8d4] text-white"
                                             }`}
                                     >

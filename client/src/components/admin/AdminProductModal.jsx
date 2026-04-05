@@ -182,7 +182,7 @@ const AdminProductModal = ({
                                     name="name"
                                     value={formData.name}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter product name"
                                 />
                             </div>
@@ -196,7 +196,7 @@ const AdminProductModal = ({
                                     name="qty"
                                     value={formData.qty}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter quantity"
                                 />
                             </div>
@@ -209,7 +209,7 @@ const AdminProductModal = ({
                                     name="category"
                                     value={formData.category}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                 >
                                     <option value="">Select category</option>
                                     {categories.map((category) => (
@@ -230,7 +230,7 @@ const AdminProductModal = ({
                                     name="price"
                                     value={formData.price}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter price"
                                 />
                             </div>
@@ -245,7 +245,7 @@ const AdminProductModal = ({
                                     name="oldPrice"
                                     value={formData.oldPrice}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter old price"
                                 />
                             </div>
@@ -260,7 +260,7 @@ const AdminProductModal = ({
                                     name="stock"
                                     value={formData.stock}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter stock"
                                 />
                             </div>
@@ -275,7 +275,7 @@ const AdminProductModal = ({
                                     name="discount"
                                     value={formData.discount}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter discount %"
                                 />
                             </div>
@@ -292,7 +292,7 @@ const AdminProductModal = ({
                                     name="rating"
                                     value={formData.rating}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter rating"
                                 />
                             </div>
@@ -307,7 +307,7 @@ const AdminProductModal = ({
                                     name="ratingCount"
                                     value={formData.ratingCount}
                                     onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter rating quantity"
                                 />
                             </div>
@@ -322,7 +322,7 @@ const AdminProductModal = ({
                                 rows="4"
                                 value={formData.description}
                                 onChange={handleChange}
-                                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#ff6f61]"
+                                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                 placeholder="Enter product description"
                             />
                         </div>
@@ -331,7 +331,7 @@ const AdminProductModal = ({
                             <label className="mb-2 block text-sm font-semibold text-slate-700">
                                 Product Image
                             </label>
-                            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-medium text-slate-600 transition hover:border-[#ff6f61] hover:text-[#ff6f61]">
+                            <label className="flex cursor-pointer items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm font-medium text-slate-600 transition hover:border-[#87CEEB] hover:text-[#87CEEB]">
                                 <Upload size={16} />
                                 {formData.image
                                     ? formData.image.name
@@ -366,7 +366,7 @@ const AdminProductModal = ({
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-[#ff6f61] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f45d4f] disabled:cursor-not-allowed disabled:opacity-70"
+                                className="inline-flex items-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {isSubmitting ? (
                                     <LoaderCircle size={16} className="animate-spin" />

@@ -22,7 +22,7 @@ const ProductCard = ({ product, selected = false, onAddToCart, onBuyNow }) => {
   return (
     <div
       className={`group h-full overflow-hidden rounded-[22px] border bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${
-        selected ? "border-orange-500 ring-2 ring-orange-100" : "border-slate-200"
+        selected ? "border-sky-400 ring-2 ring-sky-100" : "border-slate-200"
       }`}
     >
       <div className="relative bg-slate-50 p-2 sm:p-2.5">
@@ -59,7 +59,7 @@ const ProductCard = ({ product, selected = false, onAddToCart, onBuyNow }) => {
         ) : null}
 
         <Link to={`/products/${id}`}>
-          <h3 className="min-h-[34px] text-[11px] font-bold leading-4 text-slate-800 transition-colors hover:text-orange-600 sm:min-h-[34px] sm:text-[13px] sm:leading-5">
+          <h3 className="min-h-[34px] text-[11px] font-bold leading-4 text-slate-800 transition-colors hover:text-sky-500 sm:min-h-[34px] sm:text-[13px] sm:leading-5">
             {name}
           </h3>
         </Link>
@@ -106,7 +106,7 @@ const ProductCard = ({ product, selected = false, onAddToCart, onBuyNow }) => {
           <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             <button
               onClick={() => onAddToCart?.(product)}
-              className="inline-flex items-center justify-center gap-1 rounded-full border border-orange-500 px-2 py-1.5 text-[10px] font-semibold text-orange-600 transition hover:bg-orange-50 sm:gap-2 sm:px-3 sm:text-xs"
+              className="inline-flex items-center justify-center gap-1 rounded-full border border-sky-400 px-2 py-1.5 text-[10px] font-semibold text-sky-500 transition hover:bg-sky-50 sm:gap-2 sm:px-3 sm:text-xs"
             >
               <ShoppingCart size={12} />
               Add Cart
@@ -114,7 +114,7 @@ const ProductCard = ({ product, selected = false, onAddToCart, onBuyNow }) => {
 
             <button
               onClick={() => onBuyNow?.(product)}
-              className="inline-flex items-center justify-center gap-1 rounded-full bg-[#ff6f61] px-2 py-1.5 text-[10px] font-semibold text-white transition hover:bg-[#f45d4f] sm:gap-2 sm:px-3 sm:text-xs"
+              className="inline-flex items-center justify-center gap-1 rounded-full bg-[#87CEEB] px-2 py-1.5 text-[10px] font-semibold text-white transition hover:bg-[#6EC6E8] sm:gap-2 sm:px-3 sm:text-xs"
             >
               <Zap size={12} />
               Buy Now

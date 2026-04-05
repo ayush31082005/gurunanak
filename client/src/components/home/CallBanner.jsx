@@ -49,7 +49,7 @@ const CallBanner = () => {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 px-2 py-2 shadow-[0_-6px_24px_rgba(0,0,0,0.08)] backdrop-blur-md sm:px-3">
       <div className="mx-auto max-w-[1280px]">
-        <div className="relative rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-sm sm:px-4 lg:px-4">
+        <div className="relative px-3 py-3 sm:px-4 lg:px-4">
           {/* Close Button */}
           <button
             onClick={() => setVisible(false)}
@@ -62,7 +62,7 @@ const CallBanner = () => {
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             {/* Left Content */}
             <div className="flex min-w-0 items-start gap-2.5 pr-6 lg:max-w-[48%]">
-              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-sky-500">
                 <Phone size={16} />
               </div>
 
@@ -71,10 +71,10 @@ const CallBanner = () => {
                   Order Medicines on Call
                 </p>
                 <p className="mt-0.5 text-[11px] leading-5 text-slate-600 sm:text-xs">
-                  Call us at{" "}
+                    Call us at{" "}
                   <a
                     href="tel:18002122323"
-                    className="font-semibold text-orange-600 hover:underline"
+                    className="font-semibold text-sky-500 hover:underline"
                   >
                     1800-212-2323
                   </a>{" "}
@@ -86,7 +86,7 @@ const CallBanner = () => {
             {/* Right Content */}
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
               {/* Phone Input */}
-              <div className="flex h-10 w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 focus-within:border-orange-500 focus-within:bg-white sm:flex-1 lg:w-[250px]">
+              <div className="flex h-10 w-full items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 focus-within:border-sky-400 focus-within:bg-white sm:flex-1 lg:w-[250px]">
                 <span className="text-xs font-medium text-slate-500">IN</span>
                 <span className="text-xs text-slate-400">+91</span>
                 <input
@@ -103,7 +103,7 @@ const CallBanner = () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#ff6f61] px-4 text-xs font-semibold text-white transition hover:bg-[#f45d4f] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[190px]"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#87CEEB] px-4 text-xs font-semibold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[190px]"
               >
                 <Phone size={14} />
                 <span>{isSubmitting ? "Sending..." : "Get a Call Back"}</span>

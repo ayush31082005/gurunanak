@@ -21,7 +21,7 @@ const SectionHeader = ({
 
         {/* Underline */}
         <span
-          className={`mt-1.5 block h-[3px] rounded-full bg-orange-500 ${align === "center" ? "mx-auto w-20" : "w-16"
+          className={`mt-1.5 block h-[3px] rounded-full bg-sky-400 ${align === "center" ? "mx-auto w-20" : "w-16"
             }`}
         />
       </div>
@@ -30,7 +30,7 @@ const SectionHeader = ({
       {showSeeAll && (
         <Link
           to={to}
-          className="inline-flex items-center gap-1 rounded-full border border-orange-500 px-4 py-1.5 text-sm font-semibold text-orange-500 transition-all hover:bg-orange-50 hover:gap-2"
+          className="inline-flex items-center gap-1 rounded-full border border-sky-400 px-4 py-1.5 text-sm font-semibold text-sky-500 transition-all hover:bg-sky-50 hover:gap-2"
         >
           See all
           <span className="text-base">›</span>

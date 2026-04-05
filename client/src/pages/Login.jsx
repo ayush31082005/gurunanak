@@ -319,7 +319,7 @@ const Login = () => {
             <button
               type="button"
               onClick={handleSuccessPopupClose}
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#ff6f61] px-6 text-sm font-bold text-white transition hover:bg-[#f45d4f]"
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#87CEEB] px-6 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
             >
               OK
             </button>
@@ -455,7 +455,7 @@ const Login = () => {
                             type="button"
                             onClick={handleResendOtp}
                             disabled={loading || resendTimer > 0}
-                            className="font-semibold text-[#ff6f61] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                            className="font-semibold text-[#87CEEB] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
                           >
                             Resend OTP
                           </button>
@@ -466,7 +466,7 @@ const Login = () => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#ff6f61] px-5 text-sm font-bold text-white transition hover:bg-[#f45d4f] disabled:cursor-not-allowed disabled:opacity-70"
+                      className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#87CEEB] px-5 text-sm font-bold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {loading
                         ? "Please wait..."
@@ -482,7 +482,7 @@ const Login = () => {
                   New on Gurunanak?{" "}
                   <Link
                     to="/register"
-                    className="font-semibold text-[#ff6f61] hover:underline"
+                    className="font-semibold text-[#87CEEB] hover:underline"
                   >
                     Sign Up
                   </Link>

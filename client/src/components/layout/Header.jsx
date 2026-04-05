@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   MapPin,
@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import { categoryMenu } from "../../data/categories";
+import { allProducts } from "../../data/products";
+import useManagedProducts from "../../hooks/useManagedProducts";
 
 const USER_CITY_STORAGE_KEY = "userCity";
 const CHECKOUT_ADDRESS_STORAGE_KEY = "checkoutAddress";
@@ -26,10 +28,16 @@ const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
+  const [activeSearchSurface, setActiveSearchSurface] = useState(null);
 
   const { cartCount } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
+  const desktopSearchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
+  const searchableProducts = useManagedProducts({
+    fallbackProducts: allProducts,
+  });
 
   const cityOptions = [
     "New Delhi",
@@ -90,6 +98,7 @@ const Header = () => {
     setActiveTabletMenu(null);
     setActiveMobileCategory(null);
     setMobileMenuOpen(false);
+    setActiveSearchSurface(null);
   }, [location.pathname]);
 
   useEffect(() => {
@@ -154,9 +163,65 @@ const Header = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        desktopSearchRef.current?.contains(event.target) ||
+        mobileSearchRef.current?.contains(event.target)
+      ) {
+        return;
+      }
+
+      setActiveSearchSurface(null);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const activeTabletCategory = categoryMenu.find(
     (item) => item.slug === activeTabletMenu
   );
+
+  const searchSuggestions = useMemo(() => {
+    const trimmedQuery = searchQuery.trim().toLowerCase();
+
+    if (!trimmedQuery) return [];
+
+    return searchableProducts
+      .filter((product) => {
+        const name = product.name?.toLowerCase() || "";
+        const category = product.category?.toLowerCase() || "";
+        const brand = product.brand?.toLowerCase() || "";
+        const qty = product.qty?.toLowerCase() || "";
+
+        return (
+          name.includes(trimmedQuery) ||
+          category.includes(trimmedQuery) ||
+          brand.includes(trimmedQuery) ||
+          qty.includes(trimmedQuery)
+        );
+      })
+      .sort((a, b) => {
+        const aName = a.name?.toLowerCase() || "";
+        const bName = b.name?.toLowerCase() || "";
+        const aStarts = aName.startsWith(trimmedQuery) ? 0 : 1;
+        const bStarts = bName.startsWith(trimmedQuery) ? 0 : 1;
+
+        if (aStarts !== bStarts) return aStarts - bStarts;
+        return aName.localeCompare(bName);
+      })
+      .slice(0, 6);
+  }, [searchQuery, searchableProducts]);
+
+  const showDesktopSuggestions =
+    activeSearchSurface === "desktop" && searchQuery.trim() && searchSuggestions.length > 0;
+
+  const showMobileSuggestions =
+    activeSearchSurface === "mobile" && searchQuery.trim() && searchSuggestions.length > 0;
 
   const getDesktopDropdownPosition = (index) => {
     if (index >= categoryMenu.length - 2) {
@@ -243,7 +308,7 @@ const Header = () => {
                   key={link.slug}
                   to={getSubcategoryPath(category.slug, link)}
                   onClick={closeMenu}
-                  className="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-orange-50 hover:text-orange-600"
+                  className="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 transition hover:bg-sky-50 hover:text-sky-500"
                 >
                   {link.label}
                 </Link>
@@ -259,6 +324,7 @@ const Header = () => {
     event.preventDefault();
 
     const trimmedQuery = searchQuery.trim();
+    setActiveSearchSurface(null);
 
     if (!trimmedQuery) {
       navigate("/products");
@@ -267,6 +333,43 @@ const Header = () => {
 
     navigate(`/products?search=${encodeURIComponent(trimmedQuery)}`);
   };
+
+  const handleSuggestionSelect = (product) => {
+    setSearchQuery(product.name || "");
+    setActiveSearchSurface(null);
+    navigate(`/products/${product.id}`);
+  };
+
+  const renderSearchSuggestions = () => (
+    <div className="absolute left-0 right-0 top-[calc(100%+10px)] z-[130] overflow-hidden rounded-[20px] border border-slate-200 bg-white shadow-[0_22px_60px_rgba(15,23,42,0.16)]">
+      {searchSuggestions.map((product) => (
+        <button
+          key={product.id}
+          type="button"
+          onMouseDown={(event) => {
+            event.preventDefault();
+            handleSuggestionSelect(product);
+          }}
+          className="flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition hover:bg-sky-50 last:border-b-0"
+        >
+          <img
+            src={product.image}
+            alt={product.name}
+            className="h-11 w-11 shrink-0 rounded-xl border border-slate-100 bg-slate-50 object-contain p-1.5"
+          />
+
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-800">
+              {product.name}
+            </p>
+            <p className="mt-1 truncate text-xs text-slate-500">
+              {product.category || "Product"}
+            </p>
+          </div>
+        </button>
+      ))}
+    </div>
+  );
 
   const handleSelectCity = (city) => {
     setSelectedCity(city);
@@ -320,7 +423,7 @@ const Header = () => {
 
             <div className="hidden md:block">
               <div className="flex items-center gap-1 text-sm font-medium text-gray-700">
-                <MapPin size={16} className="text-orange-500" />
+                <MapPin size={16} className="text-sky-500" />
                 <span className="max-w-[110px] truncate lg:max-w-none">
                   {selectedCity}
                 </span>
@@ -329,24 +432,35 @@ const Header = () => {
           </div>
 
           <div className="hidden flex-1 justify-center md:flex">
-            <form
-              onSubmit={handleSearchSubmit}
-              className="mx-2 flex h-[40px] w-full max-w-[420px] items-center rounded-full border border-gray-200 bg-[#f8f8fb] px-4 lg:max-w-[520px] xl:max-w-[620px]"
+            <div
+              ref={desktopSearchRef}
+              className="relative mx-2 w-full max-w-[420px] lg:max-w-[520px] xl:max-w-[620px]"
             >
-              <button
-                type="submit"
-                className="shrink-0 text-gray-400 transition hover:text-[#ff6f61]"
+              <form
+                onSubmit={handleSearchSubmit}
+                className="flex h-[40px] w-full items-center rounded-full border border-gray-200 bg-[#f8f8fb] px-4"
               >
-                <Search size={18} />
-              </button>
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search medicines, wellness products and more..."
-                className="ml-3 w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
-              />
-            </form>
+                <button
+                  type="submit"
+                  className="shrink-0 text-gray-400 transition hover:text-[#87CEEB]"
+                >
+                  <Search size={18} />
+                </button>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onFocus={() => setActiveSearchSurface("desktop")}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    setActiveSearchSurface("desktop");
+                  }}
+                  placeholder="Search medicines, wellness products and more..."
+                  className="ml-3 w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+                />
+              </form>
+
+              {showDesktopSuggestions ? renderSearchSuggestions() : null}
+            </div>
           </div>
 
           <div className="flex shrink-0 items-center gap-2 sm:gap-3 lg:gap-5">
@@ -386,7 +500,7 @@ const Header = () => {
               <ShoppingCart size={18} />
               <span className="hidden sm:inline sm:ml-1">Cart</span>
               {isLoggedIn ? (
-                <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1/3 translate-x-1/3 items-center justify-center rounded-full bg-orange-500 px-1 text-[10px] font-semibold text-white sm:-right-2 sm:-top-2 sm:translate-x-0 sm:translate-y-0">
+                <span className="absolute right-0 top-0 flex h-4 min-w-4 -translate-y-1/3 translate-x-1/3 items-center justify-center rounded-full bg-sky-500 px-1 text-[10px] font-semibold text-white sm:-right-2 sm:-top-2 sm:translate-x-0 sm:translate-y-0">
                   {cartCount}
                 </span>
               ) : null}
@@ -395,7 +509,7 @@ const Header = () => {
             <Link
               to="/upload-prescription"
               onClick={handleQuickOrderClick}
-              className="hidden rounded-full bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f45d4f] sm:block lg:px-5 lg:py-2.5"
+              className="hidden rounded-full bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8] sm:block lg:px-5 lg:py-2.5"
             >
               Quick Order
             </Link>
@@ -410,24 +524,32 @@ const Header = () => {
         </div>
 
         <div className="pb-2 md:hidden">
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex h-[40px] w-full items-center rounded-full border border-gray-200 bg-[#f8f8fb] px-4"
-          >
-            <button
-              type="submit"
-              className="shrink-0 text-gray-400 transition hover:text-[#ff6f61]"
+          <div ref={mobileSearchRef} className="relative">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex h-[40px] w-full items-center rounded-full border border-gray-200 bg-[#f8f8fb] px-4"
             >
-              <Search size={18} />
-            </button>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Search medicines, wellness products..."
-              className="ml-3 w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
-            />
-          </form>
+              <button
+                type="submit"
+                className="shrink-0 text-gray-400 transition hover:text-[#87CEEB]"
+              >
+                <Search size={18} />
+              </button>
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setActiveSearchSurface("mobile")}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setActiveSearchSurface("mobile");
+                }}
+                placeholder="Search medicines, wellness products..."
+                className="ml-3 w-full bg-transparent text-sm text-gray-700 outline-none placeholder:text-gray-400"
+              />
+            </form>
+
+            {showMobileSuggestions ? renderSearchSuggestions() : null}
+          </div>
         </div>
       </div>
 
@@ -443,7 +565,7 @@ const Header = () => {
               <Link
                 to={getCategoryPath(item.slug)}
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-1.5 whitespace-nowrap text-[11px] font-medium transition xl:text-[12px] ${activeDesktopMenu === item.slug
-                  ? "text-orange-600"
+                  ? "text-sky-500"
                   : "text-slate-700 hover:text-black"
                   }`}
               >
@@ -451,7 +573,7 @@ const Header = () => {
                 <ChevronDown
                   size={11}
                   className={`transition ${activeDesktopMenu === item.slug
-                    ? "rotate-180 text-orange-500"
+                    ? "rotate-180 text-sky-500"
                     : "text-slate-500"
                     }`}
                 />
@@ -485,7 +607,7 @@ const Header = () => {
                   )
                 }
                 className={`flex shrink-0 items-center gap-1 whitespace-nowrap text-[11px] font-medium transition ${activeTabletMenu === item.slug
-                  ? "text-orange-600"
+                  ? "text-sky-500"
                   : "text-slate-700"
                   }`}
               >
@@ -493,7 +615,7 @@ const Header = () => {
                 <ChevronDown
                   size={11}
                   className={`transition ${activeTabletMenu === item.slug
-                    ? "rotate-180 text-orange-500"
+                    ? "rotate-180 text-sky-500"
                     : "text-slate-500"
                     }`}
                 />
@@ -545,7 +667,7 @@ const Header = () => {
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
               <div className="mb-4 flex items-center gap-2 border-b border-slate-200 px-1 pb-4 text-sm text-slate-700">
-                <MapPin size={16} className="text-[#ff6f61]" />
+                <MapPin size={16} className="text-[#87CEEB]" />
                 <span className="truncate">{selectedCity}</span>
               </div>
 
@@ -560,7 +682,7 @@ const Header = () => {
                       }
                       className={`flex w-full items-center justify-between rounded-[6px] border px-4 py-3 text-left text-[15px] font-medium transition ${
                         activeMobileCategory === item.slug
-                          ? "border-[#ffb36c] bg-[#fff7f2] text-slate-900"
+                          ? "border-[#BFE8F8] bg-[#F7FDFF] text-slate-900"
                           : "border-transparent text-slate-800 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
@@ -659,7 +781,7 @@ const Header = () => {
                     setMobileMenuOpen(false);
                   }
                 }}
-                className="mb-3 flex items-center justify-center rounded-[6px] bg-[#ff6f61] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#f45d4f]"
+                className="mb-3 flex items-center justify-center rounded-[6px] bg-[#87CEEB] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
               >
                 Quick Order
               </Link>
@@ -668,7 +790,7 @@ const Header = () => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 border border-[#ffb8b1] px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#ff6f61] transition hover:bg-[#fff1ef]"
+                  className="flex w-full items-center justify-center gap-2 border border-[#BFE8F8] px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#87CEEB] transition hover:bg-[#EEF9FE]"
                 >
                   <LogOut size={16} />
                   Logout

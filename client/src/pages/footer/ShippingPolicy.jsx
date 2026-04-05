@@ -65,7 +65,7 @@ const ShippingPolicy = () => {
         <section className="min-h-screen bg-[#f8fafc] py-8 sm:py-10">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Hero */}
-                <div className="overflow-hidden rounded-[32px] bg-gradient-to-r from-[#eefaf3] via-white to-[#f8fffb] shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+                <div className="overflow-hidden rounded-[32px] bg-gradient-to-r from-[#eefaf3] via-white to-[#f8fffb]">
                     <div className="grid items-center gap-8 px-6 py-10 sm:px-8 lg:grid-cols-2 lg:px-12 lg:py-14">
                         <div>
                             <div className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600">
@@ -75,7 +75,7 @@ const ShippingPolicy = () => {
 
                             <h1 className="mt-5 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
                                 Shipping Policy for <br />
-                                <span className="text-[#ff6f61]">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</span>
+                                <span className="text-[#87CEEB]">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</span>
                             </h1>
 
                             <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
@@ -86,8 +86,8 @@ const ShippingPolicy = () => {
                             </p>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            <div className="p-2">
                                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                                     <PackageCheck size={22} />
                                 </div>
@@ -100,8 +100,8 @@ const ShippingPolicy = () => {
                                 </p>
                             </div>
 
-                            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1ef] text-[#ff6f61]">
+                            <div className="p-2">
+                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
                                     <Clock3 size={22} />
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900">
@@ -121,9 +121,9 @@ const ShippingPolicy = () => {
                     {shippingHighlights.map((item, index) => (
                         <div
                             key={index}
-                            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                            className="p-2"
                         >
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1ef] text-[#ff6f61]">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
                                 {item.icon}
                             </div>
                             <h2 className="text-lg font-bold text-slate-900">{item.title}</h2>
@@ -137,7 +137,7 @@ const ShippingPolicy = () => {
                 {/* Main content */}
                 <div className="mt-8 grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
                             <div className="mb-4 flex items-center gap-3">
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                                     <FileText size={20} />
@@ -163,7 +163,7 @@ const ShippingPolicy = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
                             <div className="mb-4 flex items-center gap-3">
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                                     <Truck size={20} />
@@ -177,9 +177,9 @@ const ShippingPolicy = () => {
                                 {shippingSteps.map((step, index) => (
                                     <div
                                         key={index}
-                                        className="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                        className="flex gap-4 border-l-2 border-[#87CEEB] pl-4"
                                     >
-                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ff6f61] text-sm font-bold text-white">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#87CEEB] text-sm font-bold text-white">
                                             {index + 1}
                                         </div>
                                         <p className="text-sm font-medium leading-6 text-slate-700">
@@ -190,7 +190,7 @@ const ShippingPolicy = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
                             <div className="mb-4 flex items-center gap-3">
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                                     <AlertCircle size={20} />
@@ -209,7 +209,7 @@ const ShippingPolicy = () => {
                                 {delayReasons.map((reason, index) => (
                                     <div
                                         key={index}
-                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+                                        className="border-l-2 border-[#87CEEB] pl-4 text-sm font-medium text-slate-700"
                                     >
                                         {reason}
                                     </div>
@@ -217,7 +217,7 @@ const ShippingPolicy = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
                             <div className="mb-4 flex items-center gap-3">
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-50 text-violet-600">
                                     <ShieldCheck size={20} />
@@ -231,7 +231,7 @@ const ShippingPolicy = () => {
                                 {importantNotes.map((note, index) => (
                                     <div
                                         key={index}
-                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-700"
+                                        className="border-l-2 border-[#87CEEB] pl-4 text-sm leading-6 text-slate-700"
                                     >
                                         {note}
                                     </div>
@@ -242,7 +242,7 @@ const ShippingPolicy = () => {
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="p-1 sm:p-2">
                             <h3 className="text-xl font-extrabold text-slate-900">
                                 Delivery Coverage
                             </h3>
@@ -253,7 +253,7 @@ const ShippingPolicy = () => {
                             </p>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="p-1 sm:p-2">
                             <h3 className="text-xl font-extrabold text-slate-900">
                                 Address Accuracy
                             </h3>
@@ -265,21 +265,21 @@ const ShippingPolicy = () => {
                             </p>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="p-1 sm:p-2">
                             <h3 className="text-xl font-extrabold text-slate-900">
                                 Contact Support
                             </h3>
 
                             <div className="mt-5 space-y-4">
-                                <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-                                    <Phone size={18} className="text-[#ff6f61]" />
+                                <div className="flex items-center gap-3">
+                                    <Phone size={18} className="text-[#87CEEB]" />
                                     <span className="text-sm font-medium text-slate-700">
                                         +91 98765 43210
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-                                    <Mail size={18} className="text-[#ff6f61]" />
+                                <div className="flex items-center gap-3">
+                                    <Mail size={18} className="text-[#87CEEB]" />
                                     <span className="text-sm font-medium text-slate-700">
                                         shipping@gurunanakpharmacy.com
                                     </span>

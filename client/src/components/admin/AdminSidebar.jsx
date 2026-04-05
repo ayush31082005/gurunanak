@@ -73,7 +73,7 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
                                     className={({ isActive }) =>
                                         `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
                                             isActive
-                                                ? "bg-[#ff6f61] text-white shadow-lg shadow-[#ff6f61]/25"
+                                                ? "bg-[#87CEEB] text-white shadow-lg shadow-[#87CEEB]/25"
                                                 : "text-slate-600 hover:bg-slate-100"
                                         }`
                                     }
@@ -89,7 +89,7 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#ff6f61]"
+                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#87CEEB]"
                         >
                             <LogOut size={18} />
                             Logout

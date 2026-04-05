@@ -125,7 +125,7 @@ const PrescriptionsPage = () => {
                     <button
                         type="button"
                         onClick={fetchPrescriptions}
-                        className="rounded-xl bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                        className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                     >
                         Refresh Prescriptions
                     </button>
@@ -189,7 +189,7 @@ const PrescriptionsPage = () => {
                                                     handleStatusChange(item._id, event.target.value)
                                                 }
                                                 disabled={updatingPrescriptionId === item._id}
-                                                className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-[#ff6f61] disabled:cursor-not-allowed disabled:opacity-60"
+                                                className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-[#87CEEB] disabled:cursor-not-allowed disabled:opacity-60"
                                             >
                                                 {prescriptionStatusOptions.map((option) => (
                                                     <option key={option.value} value={option.value}>

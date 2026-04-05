@@ -83,7 +83,7 @@ const CustomersPage = () => {
                     <button
                         type="button"
                         onClick={fetchCustomers}
-                        className="rounded-xl bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                        className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                     >
                         Refresh Customers
                     </button>

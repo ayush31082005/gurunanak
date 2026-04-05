@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ShoppingCart, Star, Zap } from "lucide-react";
+import { Headphones, ShoppingCart, Star, Truck, Zap } from "lucide-react";
 import ProductGrid from "../components/product/ProductGrid";
 import { useCart } from "../context/CartContext";
 import { allProducts } from "../data/products";
@@ -73,7 +73,7 @@ const ProductDetails = () => {
               </p>
               <Link
                 to="/products"
-                className="mt-5 inline-flex rounded-xl bg-[#ff6f61] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#f45d4f]"
+                className="mt-5 inline-flex rounded-xl bg-[#87CEEB] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
               >
                 Browse Products
               </Link>
@@ -103,6 +103,48 @@ const ProductDetails = () => {
                   alt={product.name}
                   className="mx-auto h-[210px] w-full object-contain sm:h-[290px]"
                 />
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="flex items-center gap-3 px-1 py-1">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#87CEEB]">
+                    <Truck size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Fast Delivery</p>
+                    <p className="text-xs text-slate-500">Quick doorstep service available</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 px-1 py-1">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#87CEEB]">
+                    <Headphones size={18} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">24/7 Support</p>
+                    <p className="text-xs text-slate-500">Help whenever you need assistance</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl border border-slate-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Available Stock
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">
+                    {product.stock ?? 0} units
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Quantity
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-slate-900">
+                    {product.qty || "Standard pack"}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -149,7 +191,7 @@ const ProductDetails = () => {
                   <button
                     type="button"
                     onClick={handleAddToCart}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#ff6f61] px-5 py-3 text-sm font-semibold text-[#ff6f61] transition hover:bg-[#ff6f61] hover:text-white"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#87CEEB] px-5 py-3 text-sm font-semibold text-[#87CEEB] transition hover:bg-[#87CEEB] hover:text-white"
                   >
                     <ShoppingCart size={16} />
                     Add to Cart
@@ -158,7 +200,7 @@ const ProductDetails = () => {
                   <button
                     type="button"
                     onClick={handleBuyNow}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#ff6f61] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#f45d4f]"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                   >
                     <Zap size={16} />
                     Buy Now
@@ -169,26 +211,6 @@ const ProductDetails = () => {
               <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
                 <h2 className="text-xl font-bold text-slate-900">Product Details</h2>
                 <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">{description}</p>
-
-                <div className="mt-6 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-slate-200 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Available Stock
-                    </p>
-                    <p className="mt-2 text-base font-semibold text-slate-900">
-                      {product.stock ?? 0} units
-                    </p>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      Quantity
-                    </p>
-                    <p className="mt-2 text-base font-semibold text-slate-900">
-                      {product.qty || "Standard pack"}
-                    </p>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

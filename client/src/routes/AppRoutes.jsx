@@ -37,6 +37,7 @@ import PrivacyPolicy from "../pages/footer/PrivacyPolicy";
 import ShippingPolicy from "../pages/footer/ShippingPolicy";
 import ReturnPolicy from "../pages/footer/ReturnPolicy";
 import About from "../pages/footer/About";
+import TermsConditions from "../pages/footer/TermsConditions";
 
 
 const AppRoutes = () => {
@@ -68,9 +69,15 @@ const AppRoutes = () => {
         <Route path="/homeopathy" element={<Homeopathy />} />
         <Route path="/pet-care" element={<PateCare />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         <Route path="/shipping" element={<ShippingPolicy />} />
+        <Route path="/shipping-policy" element={<ShippingPolicy />} />
         <Route path="/returns" element={<ReturnPolicy />} />
+        <Route path="/return-policy" element={<ReturnPolicy />} />
         <Route path="/about" element={<About />} />
+        <Route path="/about-us" element={<About />} />
+        <Route path="/terms" element={<TermsConditions />} />
+        <Route path="/terms-and-conditions" element={<TermsConditions />} />
         <Route path="*" element={<NotFound />} />
 
       </Route>

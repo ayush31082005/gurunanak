@@ -86,9 +86,9 @@ const DashboardPage = () => {
                                 <div>
                                     <p className="text-sm font-medium text-slate-500">{card.title}</p>
                                     <h3 className="mt-3 text-2xl font-bold text-slate-900">{card.value}</h3>
-                                    <p className="mt-2 text-sm text-[#ff6f61]">{card.change}</p>
+                                    <p className="mt-2 text-sm text-[#87CEEB]">{card.change}</p>
                                 </div>
-                                <div className="rounded-2xl bg-[#ff6f61]/10 p-3 text-[#ff6f61]">
+                                <div className="rounded-2xl bg-[#87CEEB]/10 p-3 text-[#87CEEB]">
                                     <Icon size={22} />
                                 </div>
                             </div>
@@ -110,7 +110,7 @@ const DashboardPage = () => {
                         <button
                             type="button"
                             onClick={fetchDashboardData}
-                            className="rounded-xl bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                            className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                         >
                             Refresh Dashboard
                         </button>

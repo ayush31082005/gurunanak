@@ -72,17 +72,17 @@ const AboutUs = () => {
         <section className="min-h-screen bg-[#f8fafc] py-8 sm:py-10">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Hero Section */}
-                <div className="overflow-hidden rounded-[32px] bg-gradient-to-r from-[#fff3f1] via-white to-[#f5fbff] shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+                <div className="overflow-hidden rounded-[32px] bg-gradient-to-r from-[#F2FBFF] via-white to-[#f5fbff]">
                     <div className="grid items-center gap-8 px-6 py-10 sm:px-8 lg:grid-cols-2 lg:px-12 lg:py-14">
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full bg-[#fff1ef] px-4 py-2 text-sm font-semibold text-[#ff6f61]">
+                            <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF9FE] px-4 py-2 text-sm font-semibold text-[#87CEEB]">
                                 <HeartPulse size={16} />
                                 About Us
                             </div>
 
                             <h1 className="mt-5 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
                                 Welcome to <br />
-                                <span className="text-[#ff6f61]">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</span>
+                                <span className="text-[#87CEEB]">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</span>
                             </h1>
 
                             <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
@@ -100,9 +100,9 @@ const AboutUs = () => {
                             </p>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="rounded-3xl border border-[#ffe2dc] bg-white p-5 shadow-sm">
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1ef] text-[#ff6f61]">
+                        <div className="grid gap-6 sm:grid-cols-2">
+                            <div className="p-2">
+                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
                                     <Pill size={22} />
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900">
@@ -114,7 +114,7 @@ const AboutUs = () => {
                                 </p>
                             </div>
 
-                            <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                            <div className="p-2">
                                 <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
                                     <Stethoscope size={22} />
                                 </div>
@@ -135,9 +135,9 @@ const AboutUs = () => {
                     {highlights.map((item, index) => (
                         <div
                             key={index}
-                            className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm"
+                            className="p-2"
                         >
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1ef] text-[#ff6f61]">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
                                 {item.icon}
                             </div>
                             <h2 className="text-lg font-bold text-slate-900">{item.title}</h2>
@@ -151,7 +151,7 @@ const AboutUs = () => {
                 {/* Main Content */}
                 <div className="mt-8 grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
                             <h2 className="text-2xl font-extrabold text-slate-900">
                                 Who We Are
                             </h2>
@@ -175,7 +175,7 @@ const AboutUs = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
                             <h2 className="text-2xl font-extrabold text-slate-900">
                                 What We Offer
                             </h2>
@@ -183,7 +183,7 @@ const AboutUs = () => {
                                 {services.map((service, index) => (
                                     <div
                                         key={index}
-                                        className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700"
+                                        className="border-l-2 border-[#87CEEB] pl-4 text-sm font-medium text-slate-700"
                                     >
                                         {service}
                                     </div>
@@ -191,7 +191,19 @@ const AboutUs = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                        <div className="p-1 sm:p-2">
+                            <h2 className="text-2xl font-extrabold text-slate-900">
+                                Our Vision
+                            </h2>
+                            <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
+                                Our vision is to become a trusted digital healthcare destination
+                                where people can easily find medicines, wellness essentials, and
+                                daily care products with convenience, confidence, and peace of
+                                mind.
+                            </p>
+                        </div>
+
+                        <div className="p-1 sm:p-2">
                             <h2 className="text-2xl font-extrabold text-slate-900">
                                 Our Mission
                             </h2>
@@ -204,22 +216,53 @@ const AboutUs = () => {
                             </p>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-                            <h2 className="text-2xl font-extrabold text-slate-900">
-                                Our Vision
-                            </h2>
-                            <p className="mt-4 text-sm leading-7 text-slate-600 sm:text-base">
-                                Our vision is to become a trusted digital healthcare destination
-                                where people can easily find medicines, wellness essentials, and
-                                daily care products with convenience, confidence, and peace of
-                                mind.
-                            </p>
+                        <div className="grid gap-6 md:grid-cols-2">
+                            <div className="p-1 sm:p-2">
+                                <h3 className="text-xl font-extrabold text-slate-900">
+                                    Why Choose Us
+                                </h3>
+                                <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
+                                    <p>Easy and modern online pharmacy experience</p>
+                                    <p>Simple product browsing and checkout process</p>
+                                    <p>Prescription upload and support options</p>
+                                    <p>Customer-focused healthcare shopping platform</p>
+                                    <p>Clear policies and helpful support experience</p>
+                                </div>
+                            </div>
+
+                            <div className="p-1 sm:p-2">
+                                <h3 className="text-xl font-extrabold text-slate-900">
+                                    Contact Us
+                                </h3>
+
+                                <div className="mt-5 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <Phone size={18} className="text-[#87CEEB]" />
+                                        <span className="text-sm font-medium text-slate-700">
+                                            +91 98765 43210
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-3">
+                                        <Mail size={18} className="text-[#87CEEB]" />
+                                        <span className="text-sm font-medium text-slate-700">
+                                            support@gurunanakpharmacy.com
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <p className="mt-4 text-sm leading-7 text-slate-600">
+                                    We are here to help you with your healthcare shopping journey.
+                                    Reach out to us for support, order-related questions, or general
+                                    assistance.
+                                </p>
+                            </div>
                         </div>
                     </div>
 
                     {/* Sidebar */}
                     <div className="space-y-6">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <div className="p-1 sm:p-2">
                             <h3 className="text-xl font-extrabold text-slate-900">
                                 Our Core Values
                             </h3>
@@ -227,10 +270,10 @@ const AboutUs = () => {
                                 {values.map((value, index) => (
                                     <div
                                         key={index}
-                                        className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                                        className="border-l-2 border-[#87CEEB] pl-4"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#fff1ef] text-[#ff6f61]">
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
                                                 {value.icon}
                                             </div>
                                             <div>
@@ -245,47 +288,6 @@ const AboutUs = () => {
                                     </div>
                                 ))}
                             </div>
-                        </div>
-
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h3 className="text-xl font-extrabold text-slate-900">
-                                Why Choose Us
-                            </h3>
-                            <div className="mt-4 space-y-3 text-sm leading-7 text-slate-600">
-                                <p>Easy and modern online pharmacy experience</p>
-                                <p>Simple product browsing and checkout process</p>
-                                <p>Prescription upload and support options</p>
-                                <p>Customer-focused healthcare shopping platform</p>
-                                <p>Clear policies and helpful support experience</p>
-                            </div>
-                        </div>
-
-                        <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h3 className="text-xl font-extrabold text-slate-900">
-                                Contact Us
-                            </h3>
-
-                            <div className="mt-5 space-y-4">
-                                <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-                                    <Phone size={18} className="text-[#ff6f61]" />
-                                    <span className="text-sm font-medium text-slate-700">
-                                        +91 98765 43210
-                                    </span>
-                                </div>
-
-                                <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
-                                    <Mail size={18} className="text-[#ff6f61]" />
-                                    <span className="text-sm font-medium text-slate-700">
-                                        support@gurunanakpharmacy.com
-                                    </span>
-                                </div>
-                            </div>
-
-                            <p className="mt-4 text-sm leading-7 text-slate-600">
-                                We are here to help you with your healthcare shopping journey.
-                                Reach out to us for support, order-related questions, or general
-                                assistance.
-                            </p>
                         </div>
                     </div>
                 </div>

@@ -148,7 +148,7 @@ const HealthResourceCenter = () => {
                                                     setDropdownOpen(false);
                                                 }}
                                                 className={`block w-full px-5 py-4 text-left text-base font-bold transition ${selectedFilter === option
-                                                        ? "bg-orange-50 text-[#ff6f61]"
+                                                        ? "bg-orange-50 text-[#87CEEB]"
                                                         : "text-slate-900 hover:bg-slate-50"
                                                     }`}
                                             >
@@ -187,7 +187,7 @@ const HealthResourceCenter = () => {
                                         key={item.id}
                                         className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                                     >
-                                        <div className="mb-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#ff6f61]">
+                                        <div className="mb-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#87CEEB]">
                                             {item.type === "disease"
                                                 ? "Disease"
                                                 : item.type === "medicine"

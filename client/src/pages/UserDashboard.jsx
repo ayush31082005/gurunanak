@@ -71,7 +71,7 @@ const statusTone = {
     delivered: "bg-emerald-100 text-emerald-700",
     cancelled: "bg-rose-100 text-rose-700",
     payment_pending: "bg-amber-100 text-amber-700",
-    open: "bg-[#ffe7e3] text-[#FF6F61]",
+    open: "bg-[#E6F7FD] text-[#87CEEB]",
     "in-progress": "bg-blue-100 text-blue-700",
     resolved: "bg-emerald-100 text-emerald-700",
     closed: "bg-slate-200 text-slate-700",
@@ -399,7 +399,7 @@ const UserDashboard = () => {
         {
             label: "Total Orders",
             value: orders.length,
-            bg: "from-[#FF6F61] to-[#FF6F61]",
+            bg: "from-[#87CEEB] to-[#87CEEB]",
         },
         {
             label: "Prescriptions",
@@ -444,7 +444,7 @@ const UserDashboard = () => {
         <div className="space-y-6">
             <div
                 ref={heroRef}
-                className="dashboard-panel-card relative overflow-hidden rounded-[34px] border border-white/70 bg-gradient-to-r from-slate-900 via-slate-800 to-[#FF6F61] px-6 py-7 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:px-8 sm:py-8"
+                className="dashboard-panel-card relative overflow-hidden rounded-[34px] border border-white/70 bg-gradient-to-r from-slate-900 via-slate-800 to-[#87CEEB] px-6 py-7 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:px-8 sm:py-8"
             >
                 <div className="absolute right-0 top-0 h-full w-[220px] bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.22),_transparent_62%)]" />
                 <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -512,7 +512,7 @@ const UserDashboard = () => {
                                         </p>
                                     </div>
                                     <span
-                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
                                             }`}
                                     >
                                         {order.status}
@@ -539,7 +539,7 @@ const UserDashboard = () => {
                                     <p className="text-sm text-slate-500">
                                         {order.items?.length || 0} items
                                     </p>
-                                    <p className="text-lg font-extrabold text-[#FF6F61]">
+                                    <p className="text-lg font-extrabold text-[#87CEEB]">
                                         Rs. {order.total ?? 0}
                                     </p>
                                 </div>
@@ -571,7 +571,7 @@ const UserDashboard = () => {
                                     <p className="mt-1 text-sm text-slate-500">Quantity: {item.quantity || 1}</p>
                                 </div>
                             </div>
-                            <p className="text-lg font-extrabold text-[#FF6F61]">₹{item.price || item.salePrice || 0}</p>
+                            <p className="text-lg font-extrabold text-[#87CEEB]">₹{item.price || item.salePrice || 0}</p>
                         </div>
                     ))}
                 </div>
@@ -642,11 +642,11 @@ const UserDashboard = () => {
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <p className="text-lg font-extrabold text-[#FF6F61]">Rs. {order.total ?? 0}</p>
+                                                <p className="text-lg font-extrabold text-[#87CEEB]">Rs. {order.total ?? 0}</p>
                                             </td>
                                             <td className="px-4 py-4">
                                                 <span
-                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                                    className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
                                                         }`}
                                                 >
                                                     {order.status}
@@ -687,7 +687,7 @@ const UserDashboard = () => {
                                     </div>
 
                                     <span
-                                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
                                             }`}
                                     >
                                         {order.status}
@@ -718,7 +718,7 @@ const UserDashboard = () => {
                                             <p className="mt-1 text-sm text-slate-500">Qty: {item.quantity}</p>
                                             {item.pack ? <p className="text-sm text-slate-500">{item.pack}</p> : null}
                                         </div>
-                                        <p className="text-base font-bold text-[#FF6F61]">₹{item.price}</p>
+                                        <p className="text-base font-bold text-[#87CEEB]">₹{item.price}</p>
                                     </div>
                                 ))}
 
@@ -793,7 +793,7 @@ const UserDashboard = () => {
                                         </td>
                                         <td className="px-4 py-4">
                                             <span
-                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[prescription.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                                className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusTone[prescription.status] || "bg-[#E6F7FD] text-[#87CEEB]"
                                                     }`}
                                             >
                                                 {prescription.status}
@@ -805,7 +805,7 @@ const UserDashboard = () => {
                                                     href={prescription.fileUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="inline-flex items-center gap-2 rounded-full bg-[#FF6F61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                                                    className="inline-flex items-center gap-2 rounded-full bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                                                 >
                                                     View File
                                                 </a>
@@ -836,7 +836,7 @@ const UserDashboard = () => {
                                 value={complainForm.subject}
                                 onChange={handleComplaintChange}
                                 placeholder="Enter complaint subject"
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#FF6F61]"
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
                                 required
                             />
                         </div>
@@ -849,7 +849,7 @@ const UserDashboard = () => {
                                 value={complainForm.orderId}
                                 onChange={handleComplaintChange}
                                 placeholder="Enter related order id"
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#FF6F61]"
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
                             />
                         </div>
 
@@ -859,7 +859,7 @@ const UserDashboard = () => {
                                 name="complaintType"
                                 value={complainForm.complaintType}
                                 onChange={handleComplaintChange}
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#FF6F61]"
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
                                 required
                             >
                                 <option value="">Select complaint type</option>
@@ -879,7 +879,7 @@ const UserDashboard = () => {
                                 onChange={handleComplaintChange}
                                 rows="6"
                                 placeholder="Write your complaint here..."
-                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#FF6F61]"
+                                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
                                 required
                             />
                         </div>
@@ -887,7 +887,7 @@ const UserDashboard = () => {
                         <div className="md:col-span-2">
                             <button
                                 type="submit"
-                                className="inline-flex rounded-full bg-[#FF6F61] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                                className="inline-flex rounded-full bg-[#87CEEB] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                             >
                                 Submit Complaint
                             </button>
@@ -917,7 +917,7 @@ const UserDashboard = () => {
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                     <h4 className="text-lg font-bold text-slate-800">{complaint.subject}</h4>
                                     <span
-                                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusTone[complaint.status] || "bg-[#ffe7e3] text-[#FF6F61]"
+                                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${statusTone[complaint.status] || "bg-[#E6F7FD] text-[#87CEEB]"
                                             }`}
                                     >
                                         {complaint.status}
@@ -1019,7 +1019,7 @@ const UserDashboard = () => {
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
-                    <div className="rounded-3xl bg-gradient-to-br from-[#ff6f61] to-[#f45d4f] px-4 py-5 text-white shadow-lg shadow-[#ff6f61]/20">
+                    <div className="rounded-3xl bg-gradient-to-br from-[#87CEEB] to-[#6EC6E8] px-4 py-5 text-white shadow-lg shadow-[#87CEEB]/20">
                         <p className="text-sm font-semibold text-white/80">Logged in as</p>
                         <h2 className="mt-2 text-xl font-bold">{displayName}</h2>
                         <p className="mt-1 break-words text-sm text-white/80">
@@ -1042,7 +1042,7 @@ const UserDashboard = () => {
                                     type="button"
                                     onClick={() => handleMenuItemClick(item.key)}
                                     className={`dashboard-menu-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium transition ${isActive
-                                        ? "bg-[#ff6f61] text-white shadow-lg shadow-[#ff6f61]/25"
+                                        ? "bg-[#87CEEB] text-white shadow-lg shadow-[#87CEEB]/25"
                                         : "text-slate-600 hover:bg-slate-100"
                                         }`}
                                 >
@@ -1057,7 +1057,7 @@ const UserDashboard = () => {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="dashboard-menu-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#ff6f61]"
+                            className="dashboard-menu-item flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#87CEEB]"
                         >
                             <LogOut size={18} />
                             Logout

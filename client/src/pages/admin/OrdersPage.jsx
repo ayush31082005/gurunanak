@@ -109,7 +109,7 @@ const OrdersPage = () => {
                     <button
                         type="button"
                         onClick={fetchOrders}
-                        className="rounded-xl bg-[#ff6f61] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#f56557]"
+                        className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
                     >
                         Refresh Orders
                     </button>
@@ -176,7 +176,7 @@ const OrdersPage = () => {
                                             </div>
                                         </td>
                                         <td className="py-4 pr-4">
-                                            <p className="font-semibold text-[#ff6f61]">
+                                            <p className="font-semibold text-[#87CEEB]">
                                                 {formatPrice(order.total)}
                                             </p>
                                             <p className="mt-1 text-slate-500">
@@ -199,7 +199,7 @@ const OrdersPage = () => {
                                                     handleStatusChange(order._id, event.target.value)
                                                 }
                                                 disabled={updatingOrderId === order._id}
-                                                className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-[#ff6f61] disabled:cursor-not-allowed disabled:opacity-60"
+                                                className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-[#87CEEB] disabled:cursor-not-allowed disabled:opacity-60"
                                             >
                                                 {adminStatusOptions.map((option) => (
                                                     <option key={option.value} value={option.value}>

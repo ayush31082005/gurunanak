@@ -291,7 +291,7 @@ const PrescriptionUploadCard = () => {
               review it and contact you shortly.
             </p>
             <Button
-              className="mt-6 bg-[#ff6f61] hover:bg-[#f45d4f]"
+              className="mt-6 bg-[#87CEEB] hover:bg-[#6EC6E8]"
               onClick={() => setShowSuccessPopup(false)}
               type="button"
             >
@@ -414,7 +414,7 @@ const PrescriptionUploadCard = () => {
               </div>
 
               <Button
-                className="shrink-0 !bg-[#ff6f61] px-3 py-1.5 text-[11px] hover:!bg-[#ff6f61]"
+                className="shrink-0 !bg-[#87CEEB] px-3 py-1.5 text-[11px] hover:!bg-[#87CEEB]"
                 onClick={handleChooseFile}
               >
                 Choose File
@@ -458,7 +458,7 @@ const PrescriptionUploadCard = () => {
 
         <div className="mt-3 flex justify-center">
           <Button
-            className="!bg-[#ff6f61] hover:!bg-[#ff6f61]"
+            className="!bg-[#87CEEB] hover:!bg-[#87CEEB]"
             onClick={handleSubmit}
             type="button"
           >
@@ -473,7 +473,7 @@ const PrescriptionUploadCard = () => {
             <div className="mt-4 space-y-2.5">
               {steps.map((step, index) => (
                 <div key={step} className="flex items-start gap-3">
-                  <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#ff6f61] text-small font-semibold text-white">
+                  <span className="inline-flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-[#87CEEB] text-small font-semibold text-white">
                     {index + 1}
                   </span>
                   <p className="text-body text-gray-700">{step}</p>

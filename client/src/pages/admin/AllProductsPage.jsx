@@ -181,7 +181,7 @@ const AllProductsPage = () => {
                             <ChevronLeft size={16} /> Back
                         </Link>
 
-                        <span className="rounded-full bg-[#fff1ef] px-3 py-1 text-xs font-semibold text-[#ff6f61]">
+                        <span className="rounded-full bg-[#EEF9FE] px-3 py-1 text-xs font-semibold text-[#87CEEB]">
                             {selectedCategoryName}
                         </span>
                     </div>
@@ -195,7 +195,7 @@ const AllProductsPage = () => {
                 <button
                     type="button"
                     onClick={() => setIsAddModalOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-[#ff6f61] px-5 py-3 text-sm font-semibold text-white"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white"
                 >
                     <Plus size={18} /> Add Product
                 </button>
@@ -288,7 +288,7 @@ const AllProductsPage = () => {
                                             <button
                                                 type="button"
                                                 onClick={() => handleView(product)}
-                                                className="rounded-xl bg-[#ff6f61] px-3 py-2 font-medium text-white"
+                                                className="rounded-xl bg-[#87CEEB] px-3 py-2 font-medium text-white"
                                             >
                                                 View
                                             </button>

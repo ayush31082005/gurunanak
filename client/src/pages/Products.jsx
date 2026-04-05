@@ -297,7 +297,7 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={openSortPopup}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#ff6f61] hover:text-[#ff6f61]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#87CEEB] hover:text-[#87CEEB]"
                   >
                     Sort
                     <ArrowUpDown size={16} />
@@ -306,7 +306,7 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={openFilterPopup}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#ff6f61] hover:text-[#ff6f61]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#87CEEB] hover:text-[#87CEEB]"
                   >
                     All filters
                     <SlidersHorizontal size={16} />

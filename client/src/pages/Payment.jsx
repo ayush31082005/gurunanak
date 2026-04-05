@@ -167,7 +167,7 @@ const Payment = () => {
                     email: data.customer.email,
                     contact: data.customer.contact,
                 },
-                theme: { color: "#ff6f61" },
+                theme: { color: "#87CEEB" },
                 handler: async (response) => {
                     try {
                         await API.post("/orders/verify-payment", {
@@ -225,7 +225,7 @@ const Payment = () => {
                         </p>
                         <Link
                             to="/checkout"
-                            className="mt-6 inline-flex rounded-xl bg-[#ff6f61] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#f45d4f]"
+                            className="mt-6 inline-flex rounded-xl bg-[#87CEEB] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
                         >
                             Go To Checkout
                         </Link>
@@ -280,7 +280,7 @@ const Payment = () => {
                                         checked={paymentMethod === "cod"}
                                         onChange={() => setPaymentMethod("cod")}
                                     />
-                                    <Truck className="text-[#ff6f61]" size={20} />
+                                    <Truck className="text-[#87CEEB]" size={20} />
                                     <div>
                                         <p className="font-semibold text-slate-800">
                                             Cash on Delivery
@@ -392,7 +392,7 @@ const Payment = () => {
                                 type="button"
                                 onClick={handlePlaceOrder}
                                 disabled={placingOrder}
-                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ff6f61] px-5 text-sm font-bold text-white transition hover:bg-[#f45d4f] disabled:cursor-not-allowed disabled:opacity-70"
+                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#87CEEB] px-5 text-sm font-bold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70"
                             >
                                 {placingOrder
                                     ? paymentMethod === "cod"
@@ -416,11 +416,11 @@ const Payment = () => {
                             </h3>
                             <div className="mt-4 space-y-3 text-sm text-slate-600">
                                 <div className="flex items-center gap-3">
-                                    <Phone size={16} className="text-[#ff6f61]" />
+                                    <Phone size={16} className="text-[#87CEEB]" />
                                     <span>+91 98765 43210</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Mail size={16} className="text-[#ff6f61]" />
+                                    <Mail size={16} className="text-[#87CEEB]" />
                                     <span>support@gurunanak.com</span>
                                 </div>
                             </div>
