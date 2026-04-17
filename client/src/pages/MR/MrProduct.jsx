@@ -1,21 +1,34 @@
-import { useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    LayoutDashboard,
-    Package,
-    ShoppingBag,
-    Wallet,
-    Menu,
-    X,
-    IndianRupee,
-    TrendingUp,
-    Clock3,
     CheckCircle2,
+    Clock3,
     Eye,
+    IndianRupee,
+    LayoutDashboard,
+    LogOut,
+    Menu,
+    Package,
     Pencil,
-    Trash2,
     Plus,
     RotateCcw,
+    ShoppingBag,
+    Trash2,
+    TrendingUp,
+    Wallet,
+    X,
 } from "lucide-react";
+import API from "../../api";
+import {
+    deleteProduct,
+    getMyProducts,
+} from "../../api/productApi";
+import AdminProductModal from "../../components/admin/AdminProductModal";
+import AdminProductViewModal from "../../components/admin/AdminProductViewModal";
+import StatusBadge from "../../components/admin/StatusBadge";
+import { featuredBrands, ayurvedaBrands } from "../../data/brands";
+import { adminProductPages } from "../../data/adminProductPages";
+import { normalizeProductForClient } from "../../utils/productTransforms";
 
 const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -23,42 +36,6 @@ const sidebarItems = [
     { id: "orders", label: "Orders", icon: ShoppingBag },
     { id: "returns", label: "Return Product", icon: RotateCcw },
     { id: "earnings", label: "Earning", icon: Wallet },
-];
-
-const initialProductsData = [
-    {
-        id: 1,
-        name: "Herbal Protein Powder",
-        category: "Nutrition",
-        price: 899,
-        stock: 34,
-        status: "Active",
-        image:
-            "https://images.unsplash.com/photo-1579722821273-0f6c1f3f8b2f?auto=format&fit=crop&w=800&q=80",
-        description: "High quality protein supplement for daily nutrition support.",
-    },
-    {
-        id: 2,
-        name: "Ayurvedic Immunity Booster",
-        category: "Wellness",
-        price: 499,
-        stock: 18,
-        status: "Active",
-        image:
-            "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=800&q=80",
-        description: "Ayurvedic formula that helps support immunity naturally.",
-    },
-    {
-        id: 3,
-        name: "Skin Care Combo Pack",
-        category: "Beauty",
-        price: 1299,
-        stock: 8,
-        status: "Low Stock",
-        image:
-            "https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?auto=format&fit=crop&w=800&q=80",
-        description: "Complete skincare combo pack for healthy and glowing skin.",
-    },
 ];
 
 const ordersData = [
@@ -126,6 +103,45 @@ const earningsHistory = [
         type: "Credit",
     },
 ];
+
+const mrBrandDropdownOptions = [
+    "Diabetes",
+    "Heart Care",
+    "Stomach Care",
+    "Liver Care",
+    "Bone & Muscle",
+    "Eye Care",
+    "Mental Wellness",
+    "Respiratory",
+    "Himalaya",
+    "Wellman",
+    "Biotique",
+    "Patanjali",
+    "Organic India",
+    "Dr. Morepen",
+    "Dabur",
+    "Baidyanath",
+    "Dhootapapeshwar",
+    "Himalaya Since 1930",
+    "Jiva Ayurveda",
+    "Kerala Ayurveda",
+    "Sri Sri Tattva",
+];
+
+const extractProducts = (responseData) => {
+    if (Array.isArray(responseData)) return responseData;
+    if (Array.isArray(responseData?.products)) return responseData.products;
+    if (Array.isArray(responseData?.data)) return responseData.data;
+    return [];
+};
+
+const extractCategories = (responseData) => {
+    if (Array.isArray(responseData)) return responseData;
+    if (Array.isArray(responseData?.categories)) return responseData.categories;
+    if (Array.isArray(responseData?.data)) return responseData.data;
+    return [];
+};
+
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => {
     return (
@@ -220,21 +236,22 @@ const DashboardHome = ({ totalProducts, totalReturns }) => {
                                 <div>
                                     <p className="font-semibold text-slate-900">{order.id}</p>
                                     <p className="text-sm text-slate-500">
-                                        {order.customer} • {order.product}
+                                        {order.customer} â€¢ {order.product}
                                     </p>
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-3">
                                     <span className="text-sm font-medium text-slate-700">
-                                        ₹{order.amount}
+                                        â‚¹{order.amount}
                                     </span>
                                     <span
-                                        className={`px-3 py-1 text-xs font-semibold ${order.status === "Delivered"
+                                        className={`px-3 py-1 text-xs font-semibold ${
+                                            order.status === "Delivered"
                                                 ? "bg-emerald-100 text-emerald-700"
                                                 : order.status === "Pending"
-                                                    ? "bg-amber-100 text-amber-700"
-                                                    : "bg-blue-100 text-blue-700"
-                                            }`}
+                                                  ? "bg-amber-100 text-amber-700"
+                                                  : "bg-blue-100 text-blue-700"
+                                        }`}
                                     >
                                         {order.status}
                                     </span>
@@ -253,28 +270,28 @@ const DashboardHome = ({ totalProducts, totalReturns }) => {
                         <div className="bg-indigo-50 p-4">
                             <p className="text-sm text-slate-600">This Month</p>
                             <h4 className="mt-1 text-2xl font-bold text-indigo-700">
-                                ₹8,450
+                                â‚¹8,450
                             </h4>
                         </div>
 
                         <div className="bg-emerald-50 p-4">
                             <p className="text-sm text-slate-600">Last Withdrawal</p>
                             <h4 className="mt-1 text-2xl font-bold text-emerald-700">
-                                ₹2,000
+                                â‚¹2,000
                             </h4>
                         </div>
 
                         <div className="bg-amber-50 p-4">
                             <p className="text-sm text-slate-600">Pending Settlement</p>
                             <h4 className="mt-1 text-2xl font-bold text-amber-700">
-                                ₹1,250
+                                â‚¹1,250
                             </h4>
                         </div>
 
                         <div className="bg-slate-100 p-4">
                             <p className="text-sm text-slate-600">Net Earnings</p>
                             <h4 className="mt-1 text-2xl font-bold text-slate-900">
-                                ₹{totalEarning}
+                                â‚¹{totalEarning}
                             </h4>
                         </div>
                     </div>
@@ -284,359 +301,47 @@ const DashboardHome = ({ totalProducts, totalReturns }) => {
     );
 };
 
-const ProductModal = ({
-    isOpen,
-    mode,
-    formData,
-    setFormData,
-    onClose,
-    onSave,
-    viewProduct,
+const ProductsSection = ({
+    brands,
+    categories,
+    error,
+    loading,
+    products,
+    onRefresh,
 }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6">
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto bg-white shadow-xl">
-                <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-                    <h3 className="text-lg font-bold text-slate-900">
-                        {mode === "add" && "Add Product"}
-                        {mode === "edit" && "Edit Product"}
-                        {mode === "view" && "View Product"}
-                    </h3>
-
-                    <button
-                        onClick={onClose}
-                        className="border border-slate-300 p-2 text-slate-700 hover:bg-slate-100"
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
-
-                {mode === "view" ? (
-                    <div className="p-5">
-                        <img
-                            src={viewProduct.image}
-                            alt={viewProduct.name}
-                            className="h-64 w-full object-cover"
-                        />
-
-                        <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div>
-                                <p className="text-xs font-semibold uppercase text-slate-500">
-                                    Product Name
-                                </p>
-                                <p className="mt-1 text-base font-semibold text-slate-900">
-                                    {viewProduct.name}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs font-semibold uppercase text-slate-500">
-                                    Category
-                                </p>
-                                <p className="mt-1 text-base text-slate-800">
-                                    {viewProduct.category}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs font-semibold uppercase text-slate-500">
-                                    Price
-                                </p>
-                                <p className="mt-1 text-base text-slate-800">
-                                    ₹{viewProduct.price}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs font-semibold uppercase text-slate-500">
-                                    Stock
-                                </p>
-                                <p className="mt-1 text-base text-slate-800">
-                                    {viewProduct.stock}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs font-semibold uppercase text-slate-500">
-                                    Status
-                                </p>
-                                <p className="mt-1 text-base text-slate-800">
-                                    {viewProduct.status}
-                                </p>
-                            </div>
-
-                            <div>
-                                <p className="text-xs font-semibold uppercase text-slate-500">
-                                    Image URL
-                                </p>
-                                <p className="mt-1 break-all text-sm text-slate-700">
-                                    {viewProduct.image}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="mt-4">
-                            <p className="text-xs font-semibold uppercase text-slate-500">
-                                Description
-                            </p>
-                            <p className="mt-1 text-sm leading-6 text-slate-700">
-                                {viewProduct.description}
-                            </p>
-                        </div>
-
-                        <div className="mt-6 flex justify-end">
-                            <button
-                                onClick={onClose}
-                                className="bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800"
-                            >
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="p-5">
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                            <div className="sm:col-span-2">
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Product Name
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter product name"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, name: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Category
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Enter category"
-                                    value={formData.category}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, category: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Status
-                                </label>
-                                <select
-                                    value={formData.status}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, status: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                >
-                                    <option value="Active">Active</option>
-                                    <option value="Low Stock">Low Stock</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Price
-                                </label>
-                                <input
-                                    type="number"
-                                    placeholder="Enter price"
-                                    value={formData.price}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, price: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Stock
-                                </label>
-                                <input
-                                    type="number"
-                                    placeholder="Enter stock"
-                                    value={formData.stock}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, stock: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                />
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Image URL
-                                </label>
-                                <input
-                                    type="text"
-                                    placeholder="Paste image url"
-                                    value={formData.image}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, image: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                />
-                            </div>
-
-                            <div className="sm:col-span-2">
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Description
-                                </label>
-                                <textarea
-                                    rows="4"
-                                    placeholder="Enter product description"
-                                    value={formData.description}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, description: e.target.value })
-                                    }
-                                    className="w-full border border-slate-300 px-4 py-3 outline-none focus:border-indigo-600"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="mt-6 flex flex-wrap justify-end gap-3">
-                            <button
-                                onClick={onClose}
-                                className="border border-slate-300 px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-                            >
-                                Cancel
-                            </button>
-
-                            <button
-                                onClick={onSave}
-                                className="bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
-                            >
-                                {mode === "add" ? "Add Product" : "Update Product"}
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-};
-
-const ProductsSection = ({ products, setProducts }) => {
-    const emptyForm = {
-        name: "",
-        category: "",
-        price: "",
-        stock: "",
-        status: "Active",
-        image: "",
-        description: "",
-    };
-
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [modalMode, setModalMode] = useState("add");
-    const [formData, setFormData] = useState(emptyForm);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
 
-    const openAddModal = () => {
-        setModalMode("add");
-        setFormData(emptyForm);
-        setSelectedProduct(null);
-        setIsModalOpen(true);
-    };
-
     const openEditModal = (product) => {
-        setModalMode("edit");
         setSelectedProduct(product);
-        setFormData({
-            name: product.name,
-            category: product.category,
-            price: product.price,
-            stock: product.stock,
-            status: product.status,
-            image: product.image,
-            description: product.description,
-        });
-        setIsModalOpen(true);
+        setIsEditModalOpen(true);
     };
 
     const openViewModal = (product) => {
-        setModalMode("view");
         setSelectedProduct(product);
-        setIsModalOpen(true);
+        setIsViewModalOpen(true);
     };
 
-    const closeModal = () => {
-        setIsModalOpen(false);
-        setSelectedProduct(null);
-        setFormData(emptyForm);
-    };
+    const handleDeleteProduct = async (productId, productName) => {
+        const confirmDelete = window.confirm(
+            `Are you sure you want to delete "${productName}"?`
+        );
 
-    const handleSaveProduct = () => {
-        if (
-            !formData.name ||
-            !formData.category ||
-            !formData.price ||
-            !formData.stock ||
-            !formData.image ||
-            !formData.description
-        ) {
-            alert("Please fill all fields");
+        if (!confirmDelete) {
             return;
         }
 
-        if (modalMode === "add") {
-            const newProduct = {
-                id: Date.now(),
-                name: formData.name,
-                category: formData.category,
-                price: Number(formData.price),
-                stock: Number(formData.stock),
-                status: formData.status,
-                image: formData.image,
-                description: formData.description,
-            };
-
-            setProducts([newProduct, ...products]);
-        }
-
-        if (modalMode === "edit" && selectedProduct) {
-            const updatedProducts = products.map((item) =>
-                item.id === selectedProduct.id
-                    ? {
-                        ...item,
-                        name: formData.name,
-                        category: formData.category,
-                        price: Number(formData.price),
-                        stock: Number(formData.stock),
-                        status: formData.status,
-                        image: formData.image,
-                        description: formData.description,
-                    }
-                    : item
+        try {
+            await deleteProduct(productId);
+            await onRefresh();
+        } catch (requestError) {
+            window.alert(
+                requestError?.response?.data?.message ||
+                    "Failed to delete product."
             );
-
-            setProducts(updatedProducts);
         }
-
-        closeModal();
-    };
-
-    const handleDeleteProduct = (productId) => {
-        const confirmDelete = window.confirm(
-            "Are you sure you want to delete this product?"
-        );
-
-        if (!confirmDelete) return;
-
-        const updatedProducts = products.filter((item) => item.id !== productId);
-        setProducts(updatedProducts);
     };
 
     return (
@@ -648,7 +353,8 @@ const ProductsSection = ({ products, setProducts }) => {
                 />
 
                 <button
-                    onClick={openAddModal}
+                    type="button"
+                    onClick={() => setIsAddModalOpen(true)}
                     className="inline-flex items-center justify-center gap-2 bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
                 >
                     <Plus size={18} />
@@ -656,92 +362,123 @@ const ProductsSection = ({ products, setProducts }) => {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {products.map((product) => (
-                    <div
-                        key={product.id}
-                        className="overflow-hidden border border-slate-200 bg-white shadow-sm"
-                    >
-                        <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-52 w-full object-cover"
-                        />
+            {loading ? (
+                <div className="border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+                    Loading products...
+                </div>
+            ) : error ? (
+                <div className="border border-rose-200 bg-rose-50 p-8 text-center text-sm text-rose-700 shadow-sm">
+                    {error}
+                </div>
+            ) : products.length === 0 ? (
+                <div className="border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+                    No products added yet.
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                    {products.map((product) => (
+                        <div
+                            key={product.id}
+                            className="overflow-hidden border border-slate-200 bg-white shadow-sm"
+                        >
+                            <img
+                                src={product.image}
+                                alt={product.name}
+                                className="h-52 w-full object-cover"
+                            />
 
-                        <div className="p-5">
-                            <div className="mb-3 flex items-center justify-between gap-2">
-                                <span className="bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                                    {product.category}
-                                </span>
+                            <div className="p-5">
+                                <div className="mb-3 flex items-center justify-between gap-2">
+                                    <span className="bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                                        {product.categoryName}
+                                    </span>
 
-                                <span
-                                    className={`px-3 py-1 text-xs font-semibold ${product.status === "Active"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : product.status === "Low Stock"
-                                                ? "bg-amber-100 text-amber-700"
-                                                : "bg-rose-100 text-rose-700"
-                                        }`}
-                                >
-                                    {product.status}
-                                </span>
-                            </div>
+                                    <StatusBadge text={product.approvalStatus} />
+                                </div>
 
-                            <h3 className="text-lg font-bold text-slate-900">
-                                {product.name}
-                            </h3>
+                                <h3 className="text-lg font-bold text-slate-900">
+                                    {product.name}
+                                </h3>
 
-                            <p className="mt-2 text-sm text-slate-500">
-                                {product.description}
-                            </p>
+                                <p className="mt-2 line-clamp-2 text-sm text-slate-500">
+                                    {product.description || "No description available."}
+                                </p>
 
-                            <p className="mt-2 text-sm text-slate-500">
-                                Stock: {product.stock} items
-                            </p>
+                                <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+                                    <span>Stock: {product.stock} items</span>
+                                    <StatusBadge text={product.status} />
+                                </div>
 
-                            <div className="mt-4 flex items-center justify-between">
-                                <span className="text-xl font-bold text-slate-900">
-                                    ₹{product.price}
-                                </span>
-                            </div>
+                                <div className="mt-4 flex items-center justify-between">
+                                    <span className="text-xl font-bold text-slate-900">
+                                        â‚¹{product.price}
+                                    </span>
+                                </div>
 
-                            <div className="mt-4 grid grid-cols-3 gap-2">
-                                <button
-                                    onClick={() => openViewModal(product)}
-                                    className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                                >
-                                    <Eye size={15} />
-                                    View
-                                </button>
+                                <div className="mt-4 grid grid-cols-3 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => openViewModal(product)}
+                                        className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                    >
+                                        <Eye size={15} />
+                                        View
+                                    </button>
 
-                                <button
-                                    onClick={() => openEditModal(product)}
-                                    className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-                                >
-                                    <Pencil size={15} />
-                                    Edit
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => openEditModal(product)}
+                                        className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                                    >
+                                        <Pencil size={15} />
+                                        Edit
+                                    </button>
 
-                                <button
-                                    onClick={() => handleDeleteProduct(product.id)}
-                                    className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
-                                >
-                                    <Trash2 size={15} />
-                                    Delete
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            handleDeleteProduct(product.id, product.name)
+                                        }
+                                        className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                                    >
+                                        <Trash2 size={15} />
+                                        Delete
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
 
-            <ProductModal
-                isOpen={isModalOpen}
-                mode={modalMode}
-                formData={formData}
-                setFormData={setFormData}
-                onClose={closeModal}
-                onSave={handleSaveProduct}
-                viewProduct={selectedProduct}
+            <AdminProductModal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                brands={brands}
+                categories={categories}
+                onCreated={onRefresh}
+            />
+
+            <AdminProductModal
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedProduct(null);
+                }}
+                brands={brands}
+                categories={categories}
+                onCreated={onRefresh}
+                mode="edit"
+                product={selectedProduct}
+            />
+
+            <AdminProductViewModal
+                isOpen={isViewModalOpen}
+                onClose={() => {
+                    setIsViewModalOpen(false);
+                    setSelectedProduct(null);
+                }}
+                product={selectedProduct}
             />
         </div>
     );
@@ -797,16 +534,17 @@ const OrdersSection = () => {
                                         {order.date}
                                     </td>
                                     <td className="px-5 py-4 text-sm font-medium text-slate-800">
-                                        ₹{order.amount}
+                                        â‚¹{order.amount}
                                     </td>
                                     <td className="px-5 py-4 text-sm">
                                         <span
-                                            className={`px-3 py-1 text-xs font-semibold ${order.status === "Delivered"
+                                            className={`px-3 py-1 text-xs font-semibold ${
+                                                order.status === "Delivered"
                                                     ? "bg-emerald-100 text-emerald-700"
                                                     : order.status === "Pending"
-                                                        ? "bg-amber-100 text-amber-700"
-                                                        : "bg-blue-100 text-blue-700"
-                                                }`}
+                                                      ? "bg-amber-100 text-amber-700"
+                                                      : "bg-blue-100 text-blue-700"
+                                            }`}
                                         >
                                             {order.status}
                                         </span>
@@ -878,7 +616,7 @@ const ReturnsSection = ({ returns }) => {
                                             {item.product}
                                         </td>
                                         <td className="px-5 py-4 text-sm font-medium text-slate-800">
-                                            ₹{item.amount}
+                                            â‚¹{item.amount}
                                         </td>
                                         <td className="px-5 py-4 text-sm text-slate-700">
                                             {item.reason}
@@ -888,12 +626,13 @@ const ReturnsSection = ({ returns }) => {
                                         </td>
                                         <td className="px-5 py-4 text-sm">
                                             <span
-                                                className={`px-3 py-1 text-xs font-semibold ${item.status === "Pending"
+                                                className={`px-3 py-1 text-xs font-semibold ${
+                                                    item.status === "Pending"
                                                         ? "bg-amber-100 text-amber-700"
                                                         : item.status === "Approved"
-                                                            ? "bg-emerald-100 text-emerald-700"
-                                                            : "bg-rose-100 text-rose-700"
-                                                    }`}
+                                                          ? "bg-emerald-100 text-emerald-700"
+                                                          : "bg-rose-100 text-rose-700"
+                                                }`}
                                             >
                                                 {item.status}
                                             </span>
@@ -939,19 +678,19 @@ const EarningsSection = () => {
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
                     title="Total Credit"
-                    value={`₹${totalCredit}`}
+                    value={`â‚¹${totalCredit}`}
                     subtitle="All credited income"
                     icon={IndianRupee}
                 />
                 <StatCard
                     title="Total Debit"
-                    value={`₹${totalDebit}`}
+                    value={`â‚¹${totalDebit}`}
                     subtitle="Withdrawals and deductions"
                     icon={Clock3}
                 />
                 <StatCard
                     title="Available Balance"
-                    value={`₹${balance}`}
+                    value={`â‚¹${balance}`}
                     subtitle="Current wallet balance"
                     icon={TrendingUp}
                 />
@@ -975,21 +714,23 @@ const EarningsSection = () => {
 
                             <div className="flex items-center gap-3">
                                 <span
-                                    className={`px-3 py-1 text-xs font-semibold ${item.type === "Credit"
+                                    className={`px-3 py-1 text-xs font-semibold ${
+                                        item.type === "Credit"
                                             ? "bg-emerald-100 text-emerald-700"
                                             : "bg-rose-100 text-rose-700"
-                                        }`}
+                                    }`}
                                 >
                                     {item.type}
                                 </span>
 
                                 <span
-                                    className={`text-lg font-bold ${item.type === "Credit"
+                                    className={`text-lg font-bold ${
+                                        item.type === "Credit"
                                             ? "text-emerald-700"
                                             : "text-rose-700"
-                                        }`}
+                                    }`}
                                 >
-                                    {item.type === "Credit" ? "+" : "-"}₹{item.amount}
+                                    {item.type === "Credit" ? "+" : "-"}â‚¹{item.amount}
                                 </span>
                             </div>
                         </div>
@@ -1001,9 +742,13 @@ const EarningsSection = () => {
 };
 
 const MrDashboard = () => {
+    const navigate = useNavigate();
     const [activeTab, setActiveTab] = useState("earnings");
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [products, setProducts] = useState(initialProductsData);
+    const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
+    const [productsLoading, setProductsLoading] = useState(true);
+    const [productsError, setProductsError] = useState("");
 
     const [returns] = useState([
         {
@@ -1018,10 +763,116 @@ const MrDashboard = () => {
         },
     ]);
 
+    const currentUser = useMemo(() => {
+        try {
+            return JSON.parse(localStorage.getItem("user") || "null");
+        } catch (error) {
+            return null;
+        }
+    }, []);
+
+    const userInitials = useMemo(() => {
+        const rawName =
+            currentUser?.name ||
+            currentUser?.email?.split("@")[0] ||
+            "MR";
+
+        return rawName
+            .split(" ")
+            .filter(Boolean)
+            .slice(0, 2)
+            .map((part) => part.charAt(0).toUpperCase())
+            .join("");
+    }, [currentUser]);
+
+    const normalizedProducts = useMemo(
+        () =>
+            products.map((product) => {
+                const normalizedProduct = normalizeProductForClient(product);
+
+                return {
+                    ...normalizedProduct,
+                    categoryName: normalizedProduct.category || "Uncategorized",
+                };
+            }),
+        [products]
+    );
+
+    const allowedMrCategoryNames = useMemo(
+        () => new Set(adminProductPages.map((page) => page.label.trim().toLowerCase())),
+        []
+    );
+
+    const mrCategories = useMemo(
+        () =>
+            categories.filter((category) =>
+                allowedMrCategoryNames.has(category?.name?.trim()?.toLowerCase())
+            ),
+        [allowedMrCategoryNames, categories]
+    );
+
+    const brandOptions = useMemo(() => {
+        const knownBrands = [
+            ...mrBrandDropdownOptions,
+            ...featuredBrands.map((brand) => brand.name),
+            ...ayurvedaBrands.map((brand) => brand.name),
+            ...products.map((product) => product.brand).filter(Boolean),
+        ];
+
+        return [...new Set(knownBrands.filter(Boolean))].sort((firstBrand, secondBrand) =>
+            String(firstBrand).localeCompare(String(secondBrand))
+        );
+    }, [products]);
+
+    const loadMrProducts = async () => {
+        try {
+            setProductsLoading(true);
+            setProductsError("");
+
+            const [productsResponse, categoriesResponse] = await Promise.all([
+                getMyProducts(),
+                API.get("/categories"),
+            ]);
+
+            setProducts(extractProducts(productsResponse.data));
+            setCategories(extractCategories(categoriesResponse.data));
+        } catch (requestError) {
+            setProducts([]);
+            setCategories([]);
+            setProductsError(
+                requestError?.response?.data?.message ||
+                    requestError?.message ||
+                    "Failed to load your products."
+            );
+        } finally {
+            setProductsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadMrProducts();
+    }, []);
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setSidebarOpen(false);
+        navigate("/login", { replace: true });
+    };
+
     const renderContent = () => {
         switch (activeTab) {
             case "products":
-                return <ProductsSection products={products} setProducts={setProducts} />;
+                return (
+                    <ProductsSection
+                        brands={brandOptions}
+                        categories={mrCategories}
+                        error={productsError}
+                        loading={productsLoading}
+                        products={normalizedProducts}
+                        onRefresh={loadMrProducts}
+                    />
+                );
 
             case "orders":
                 return <OrdersSection />;
@@ -1035,7 +886,7 @@ const MrDashboard = () => {
             default:
                 return (
                     <DashboardHome
-                        totalProducts={products.length}
+                        totalProducts={normalizedProducts.length}
                         totalReturns={returns.length}
                     />
                 );
@@ -1053,8 +904,9 @@ const MrDashboard = () => {
                 )}
 
                 <aside
-                    className={`fixed left-0 top-0 z-50 h-screen w-72 transform border-r border-slate-200 bg-white p-5 shadow-lg transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                        }`}
+                    className={`fixed left-0 top-0 z-50 h-screen w-72 transform border-r border-slate-200 bg-white p-5 shadow-lg transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${
+                        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    }`}
                 >
                     <div className="flex items-center justify-between">
                         <div>
@@ -1084,10 +936,11 @@ const MrDashboard = () => {
                                         setActiveTab(item.id);
                                         setSidebarOpen(false);
                                     }}
-                                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${isActive
+                                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${
+                                        isActive
                                             ? "bg-indigo-600 text-white shadow-md"
                                             : "text-slate-700 hover:bg-slate-100"
-                                        }`}
+                                    }`}
                                 >
                                     <Icon size={20} />
                                     {item.label}
@@ -1096,9 +949,20 @@ const MrDashboard = () => {
                         })}
                     </nav>
 
+                    <div className="mt-6 border-t border-slate-200 pt-4">
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-rose-600"
+                        >
+                            <LogOut size={20} />
+                            Logout
+                        </button>
+                    </div>
+
                     <div className="mt-10 bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white">
                         <p className="text-sm text-indigo-100">Current Balance</p>
-                        <h3 className="mt-2 text-3xl font-bold">₹3,500</h3>
+                        <h3 className="mt-2 text-3xl font-bold">â‚¹3,500</h3>
                         <p className="mt-2 text-sm text-indigo-100">
                             Keep growing your orders and earnings.
                         </p>
@@ -1129,13 +993,13 @@ const MrDashboard = () => {
                             <div className="flex items-center gap-3">
                                 <div className="hidden text-right sm:block">
                                     <p className="text-sm font-semibold text-slate-900">
-                                        Akash Gupta
+                                        {currentUser?.name || currentUser?.email || "MR User"}
                                     </p>
                                     <p className="text-xs text-slate-500">MR User</p>
                                 </div>
 
                                 <div className="flex h-11 w-11 items-center justify-center bg-indigo-600 text-sm font-bold text-white">
-                                    AG
+                                    {userInitials || "MR"}
                                 </div>
                             </div>
                         </div>
@@ -1149,3 +1013,4 @@ const MrDashboard = () => {
 };
 
 export default MrDashboard;
+

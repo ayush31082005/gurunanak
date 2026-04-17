@@ -15,6 +15,11 @@ const MR_PENDING_STATUS = "pending";
 const MR_APPROVED_STATUS = "approved";
 const MR_REJECTED_STATUS = "rejected";
 const NON_MR_STATUS = "not_applicable";
+const MR_REQUEST_STATUSES = [
+    MR_PENDING_STATUS,
+    MR_APPROVED_STATUS,
+    MR_REJECTED_STATUS,
+];
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDirectory = path.join(__dirname, "..", "uploads");
@@ -149,6 +154,19 @@ const getPendingMrRequestPayload = (user) => ({
     isVerified: user.isVerified,
     createdAt: user.createdAt,
 });
+
+const applyMrApprovalState = (user, status) => {
+    user.mrApprovalStatus = status;
+
+    if (status === MR_APPROVED_STATUS) {
+        user.isVerified = true;
+        user.mrApprovedAt = user.mrApprovedAt || new Date();
+        return;
+    }
+
+    user.isVerified = false;
+    user.mrApprovedAt = null;
+};
 
 export const sendRegisterOtp = async (req, res) => {
     try {
@@ -837,16 +855,49 @@ export const createAdminUser = async (req, res) => {
 
 export const getPendingMrRequests = async (req, res) => {
     try {
-        const mrRequests = await User.find({
-            role: "mr",
-            mrApprovalStatus: MR_PENDING_STATUS,
-        })
-            .sort({ createdAt: -1 })
-            .lean();
+        const requestedStatus = normalizeText(req.query.status).toLowerCase();
+        const normalizedStatus =
+            requestedStatus === "all"
+                ? "all"
+                : MR_REQUEST_STATUSES.includes(requestedStatus)
+                  ? requestedStatus
+                  : MR_PENDING_STATUS;
+
+        const query = { role: "mr" };
+
+        if (normalizedStatus !== "all") {
+            query.mrApprovalStatus = normalizedStatus;
+        }
+
+        const [mrRequests, totalRequests, pendingCount, approvedCount, rejectedCount] =
+            await Promise.all([
+                User.find(query).sort({ createdAt: -1 }).lean(),
+                User.countDocuments({ role: "mr" }),
+                User.countDocuments({
+                    role: "mr",
+                    mrApprovalStatus: MR_PENDING_STATUS,
+                }),
+                User.countDocuments({
+                    role: "mr",
+                    mrApprovalStatus: MR_APPROVED_STATUS,
+                }),
+                User.countDocuments({
+                    role: "mr",
+                    mrApprovalStatus: MR_REJECTED_STATUS,
+                }),
+            ]);
 
         return res.status(200).json({
             success: true,
-            totalRequests: mrRequests.length,
+            totalRequests,
+            filteredRequests: mrRequests.length,
+            activeStatus: normalizedStatus,
+            stats: {
+                all: totalRequests,
+                pending: pendingCount,
+                approved: approvedCount,
+                rejected: rejectedCount,
+            },
             mrRequests: mrRequests.map(getPendingMrRequestPayload),
         });
     } catch (error) {
@@ -872,9 +923,7 @@ export const approveMrRequest = async (req, res) => {
             });
         }
 
-        user.mrApprovalStatus = MR_APPROVED_STATUS;
-        user.isVerified = true;
-        user.mrApprovedAt = new Date();
+        applyMrApprovalState(user, MR_APPROVED_STATUS);
         await user.save();
 
         return res.status(200).json({
@@ -905,9 +954,7 @@ export const rejectMrRequest = async (req, res) => {
             });
         }
 
-        user.mrApprovalStatus = MR_REJECTED_STATUS;
-        user.isVerified = false;
-        user.mrApprovedAt = null;
+        applyMrApprovalState(user, MR_REJECTED_STATUS);
         await user.save();
 
         return res.status(200).json({
@@ -919,6 +966,173 @@ export const rejectMrRequest = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to reject MR request",
+            error: error.message,
+        });
+    }
+};
+
+export const updateMrRequest = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            _id: req.params.id,
+            role: "mr",
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "MR request not found",
+            });
+        }
+
+        const nextName = normalizeText(req.body.name);
+        const nextEmail = normalizeEmail(req.body.email);
+        const nextPhone = normalizeText(req.body.phone);
+        const nextCity = normalizeText(req.body.city);
+        const nextState = normalizeText(req.body.state);
+        const nextMedicalStoreName = normalizeText(req.body.medicalStoreName);
+        const nextGstNumber = normalizeUppercaseIdentifier(req.body.gstNumber);
+        const nextPanNumber = normalizeUppercaseIdentifier(req.body.panNumber);
+        const nextDrugLicenseNumber = normalizeLicenseNumber(req.body.drugLicenseNumber);
+
+        if (
+            !nextName ||
+            !nextEmail ||
+            !nextPhone ||
+            !nextCity ||
+            !nextState ||
+            !nextMedicalStoreName ||
+            !nextDrugLicenseNumber
+        ) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Name, email, phone, city, state, medical store name and drug license number are required",
+            });
+        }
+
+        if (!isValidEmail(nextEmail)) {
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address",
+            });
+        }
+
+        const [existingEmailUser, existingGstUser, existingPanUser, existingLicenseUser] =
+            await Promise.all([
+                User.findOne({
+                    email: nextEmail,
+                    _id: { $ne: user._id },
+                }),
+                nextGstNumber
+                    ? User.findOne({
+                          role: "mr",
+                          gstNumber: nextGstNumber,
+                          _id: { $ne: user._id },
+                      })
+                    : null,
+                nextPanNumber
+                    ? User.findOne({
+                          role: "mr",
+                          panNumber: nextPanNumber,
+                          _id: { $ne: user._id },
+                      })
+                    : null,
+                User.findOne({
+                    role: "mr",
+                    drugLicenseNumber: nextDrugLicenseNumber,
+                    _id: { $ne: user._id },
+                }),
+            ]);
+
+        if (existingEmailUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This email is already registered",
+            });
+        }
+
+        if (existingGstUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This GST number is already registered",
+            });
+        }
+
+        if (existingPanUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This PAN number is already registered",
+            });
+        }
+
+        if (existingLicenseUser) {
+            return res.status(400).json({
+                success: false,
+                message: "This drug license number is already registered",
+            });
+        }
+
+        user.name = nextName;
+        user.email = nextEmail;
+        user.phone = nextPhone;
+        user.city = nextCity;
+        user.state = nextState;
+        user.medicalStoreName = nextMedicalStoreName;
+        user.gstNumber = nextGstNumber;
+        user.panNumber = nextPanNumber;
+        user.drugLicenseNumber = nextDrugLicenseNumber;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "MR request updated successfully",
+            user: formatUserResponse(user),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to update MR request",
+            error: error.message,
+        });
+    }
+};
+
+export const deleteMrRequest = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            _id: req.params.id,
+            role: "mr",
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "MR request not found",
+            });
+        }
+
+        await Promise.all([
+            deleteUploadedFiles([
+                user.gstCertificateUrl,
+                user.drugLicenseDocumentUrl,
+            ]),
+            Product.deleteMany({
+                createdBy: user._id,
+                createdByRole: "mr",
+            }),
+        ]);
+
+        await User.deleteOne({ _id: user._id });
+
+        return res.status(200).json({
+            success: true,
+            message: "MR request deleted successfully",
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to delete MR request",
             error: error.message,
         });
     }

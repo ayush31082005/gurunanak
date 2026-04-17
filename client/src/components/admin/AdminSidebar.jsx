@@ -7,6 +7,7 @@ import {
     Users,
     FileText,
     BriefcaseMedical,
+    ClipboardCheck,
     LogOut,
     X,
 } from "lucide-react";
@@ -17,6 +18,7 @@ const menuItems = [
     { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
     { label: "Customers", path: "/admin/customers", icon: Users },
     { label: "MR Requests", path: "/admin/mr-requests", icon: BriefcaseMedical },
+    { label: "MR Product Requests", path: "/admin/mr-products", icon: ClipboardCheck },
     { label: "Prescriptions", path: "/admin/prescriptions", icon: FileText },
 ];
 

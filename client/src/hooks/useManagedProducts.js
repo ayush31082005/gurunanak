@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import API from "../api";
+import { getPublicProducts } from "../api/productApi";
 import { normalizeProductForClient } from "../utils/productTransforms";
 
 let remoteProductsCache = null;
@@ -39,7 +39,7 @@ const useManagedProducts = ({
 
         const loadProducts = async () => {
             try {
-                const response = await API.get("/products");
+                const response = await getPublicProducts();
                 if (!isMounted) return;
 
                 const normalizedRemoteProducts = extractProducts(response.data).map(

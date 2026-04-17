@@ -2,6 +2,12 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, Plus, Trash2 } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import API from "../../api";
+import {
+    approveProduct,
+    deleteProduct,
+    getAdminProducts,
+    rejectProduct,
+} from "../../api/productApi";
 import AdminProductModal from "../../components/admin/AdminProductModal";
 import AdminProductViewModal from "../../components/admin/AdminProductViewModal";
 import StatusBadge from "../../components/admin/StatusBadge";
@@ -36,14 +42,6 @@ const adminBrandDropdownOptions = [
     "Sri Sri Tattva",
 ];
 
-const getStockStatus = (stock) => {
-    const safeStock = Number(stock) || 0;
-
-    if (safeStock <= 0) return "Out of Stock";
-    if (safeStock <= 10) return "Low Stock";
-    return "In Stock";
-};
-
 const extractProducts = (responseData) => {
     if (Array.isArray(responseData)) return responseData;
     if (Array.isArray(responseData?.products)) return responseData.products;
@@ -58,7 +56,21 @@ const extractCategories = (responseData) => {
     return [];
 };
 
-const AllProductsPage = () => {
+const ownershipFilters = [
+    { id: "all", label: "All Products" },
+    { id: "mr", label: "MR Products" },
+    { id: "pending-mr", label: "Pending MR" },
+    { id: "approved-mr", label: "Approved MR" },
+    { id: "rejected-mr", label: "Rejected MR" },
+];
+
+const AllProductsPage = ({
+    defaultOwnershipFilter = "all",
+    filterOptions = ownershipFilters,
+    hideAddButton = false,
+    pageTitle = "All Products",
+    pageDescription = "Moderate product ownership and approval from one place.",
+}) => {
     const { groupSlug } = useParams();
     const [searchParams] = useSearchParams();
     const productsPerPage = 10;
@@ -74,6 +86,8 @@ const AllProductsPage = () => {
     const [categories, setCategories] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState("");
+    const [ownershipFilter, setOwnershipFilter] = useState(defaultOwnershipFilter);
+    const [actionState, setActionState] = useState({});
 
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -113,7 +127,9 @@ const AllProductsPage = () => {
         if (!selectedGroupName) return "";
 
         const matchedCategory = adminCategories.find(
-            (category) => category?.name?.trim()?.toLowerCase() === selectedGroupName.trim().toLowerCase()
+            (category) =>
+                category?.name?.trim()?.toLowerCase() ===
+                selectedGroupName.trim().toLowerCase()
         );
 
         return matchedCategory?._id || "";
@@ -125,12 +141,38 @@ const AllProductsPage = () => {
             setError("");
 
             const productParams = {};
+
             if (selectedCategoryId) {
                 productParams.category = selectedCategoryId;
+            } else if (selectedGroupName) {
+                productParams.category = selectedGroupName;
+            }
+
+            if (searchQuery) {
+                productParams.search = searchQuery;
+            }
+
+            if (ownershipFilter === "mr") {
+                productParams.createdByRole = "mr";
+            }
+
+            if (ownershipFilter === "pending-mr") {
+                productParams.createdByRole = "mr";
+                productParams.approvalStatus = "pending";
+            }
+
+            if (ownershipFilter === "approved-mr") {
+                productParams.createdByRole = "mr";
+                productParams.approvalStatus = "approved";
+            }
+
+            if (ownershipFilter === "rejected-mr") {
+                productParams.createdByRole = "mr";
+                productParams.approvalStatus = "rejected";
             }
 
             const [productsResponse, categoriesResponse] = await Promise.all([
-                API.get("/products", { params: productParams }),
+                getAdminProducts(productParams),
                 API.get("/categories"),
             ]);
 
@@ -139,9 +181,9 @@ const AllProductsPage = () => {
         } catch (requestError) {
             setError(
                 requestError?.response?.data?.message ||
-                requestError?.response?.data?.error ||
-                requestError?.message ||
-                "Failed to load products."
+                    requestError?.response?.data?.error ||
+                    requestError?.message ||
+                    "Failed to load products."
             );
             setProducts([]);
             setCategories([]);
@@ -152,64 +194,31 @@ const AllProductsPage = () => {
 
     useEffect(() => {
         loadProducts();
-    }, [selectedCategoryId, selectedGroupName]);
+    }, [ownershipFilter, searchQuery, selectedCategoryId, selectedGroupName]);
+
+    useEffect(() => {
+        setOwnershipFilter(defaultOwnershipFilter);
+    }, [defaultOwnershipFilter]);
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchQuery, selectedCategoryId, selectedGroupName]);
+    }, [ownershipFilter, searchQuery, selectedCategoryId, selectedGroupName]);
 
-    const normalizedProducts = useMemo(() => {
-        let mappedProducts = products.map((product) => {
-            const normalizedProduct = normalizeProductForClient(product);
+    const normalizedProducts = useMemo(
+        () =>
+            products.map((product) => {
+                const normalizedProduct = normalizeProductForClient(product);
 
-            return {
-                ...normalizedProduct,
-                category: normalizedProduct.categoryId,
-                categoryName: normalizedProduct.category || "Uncategorized",
-                status: normalizedProduct.status || getStockStatus(normalizedProduct.stock),
-            };
-        });
+                return {
+                    ...normalizedProduct,
+                    category: normalizedProduct.categoryId,
+                    categoryName: normalizedProduct.category || "Uncategorized",
+                };
+            }),
+        [products]
+    );
 
-        if (selectedCategoryId) {
-            mappedProducts = mappedProducts.filter(
-                (product) => String(product.category) === String(selectedCategoryId)
-            );
-        } else if (selectedGroupName) {
-            mappedProducts = mappedProducts.filter(
-                (product) =>
-                    product.categoryName.trim().toLowerCase() ===
-                    selectedGroupName.trim().toLowerCase()
-            );
-        }
-
-        return mappedProducts;
-    }, [products, categories, selectedCategoryId, selectedGroupName]);
-
-    const filteredProducts = useMemo(() => {
-        if (!searchQuery) {
-            return normalizedProducts;
-        }
-
-        return normalizedProducts.filter((product) => {
-            const searchableText = [
-                product.name,
-                product.brand,
-                product.categoryName,
-                product.description,
-                product.qty,
-                product.status,
-                product.price,
-                product.stock,
-            ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-
-            return searchableText.includes(searchQuery);
-        });
-    }, [normalizedProducts, searchQuery]);
-
-    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+    const totalPages = Math.ceil(normalizedProducts.length / productsPerPage);
 
     useEffect(() => {
         if (totalPages === 0) {
@@ -224,8 +233,8 @@ const AllProductsPage = () => {
 
     const paginatedProducts = useMemo(() => {
         const startIndex = (currentPage - 1) * productsPerPage;
-        return filteredProducts.slice(startIndex, startIndex + productsPerPage);
-    }, [currentPage, filteredProducts]);
+        return normalizedProducts.slice(startIndex, startIndex + productsPerPage);
+    }, [currentPage, normalizedProducts]);
 
     const paginationRange = useMemo(
         () => Array.from({ length: totalPages }, (_, index) => index + 1),
@@ -233,8 +242,26 @@ const AllProductsPage = () => {
     );
 
     const startProductNumber =
-        filteredProducts.length === 0 ? 0 : (currentPage - 1) * productsPerPage + 1;
-    const endProductNumber = Math.min(currentPage * productsPerPage, filteredProducts.length);
+        normalizedProducts.length === 0 ? 0 : (currentPage - 1) * productsPerPage + 1;
+    const endProductNumber = Math.min(currentPage * productsPerPage, normalizedProducts.length);
+
+    const stats = useMemo(
+        () => ({
+            total: products.length,
+            mrProducts: products.filter((product) => product.createdByRole === "mr").length,
+            pendingMrProducts: products.filter(
+                (product) =>
+                    product.createdByRole === "mr" &&
+                    product.approvalStatus === "pending"
+            ).length,
+            approvedMrProducts: products.filter(
+                (product) =>
+                    product.createdByRole === "mr" &&
+                    product.approvalStatus === "approved"
+            ).length,
+        }),
+        [products]
+    );
 
     const handleView = (product) => {
         setSelectedProduct(product);
@@ -254,21 +281,104 @@ const AllProductsPage = () => {
         if (!shouldDelete) return;
 
         try {
-            await API.delete(`/products/${product.id}`);
+            await deleteProduct(product.id);
             await loadProducts();
         } catch (requestError) {
             setError(
                 requestError?.response?.data?.message ||
-                requestError?.response?.data?.error ||
-                requestError?.message ||
-                "Failed to delete product."
+                    requestError?.response?.data?.error ||
+                    requestError?.message ||
+                    "Failed to delete product."
             );
         }
     };
 
+    const handleApprovalAction = async (productId, action) => {
+        try {
+            setActionState((prev) => ({ ...prev, [productId]: action }));
+            setError("");
+
+            if (action === "approve") {
+                await approveProduct(productId);
+            } else {
+                await rejectProduct(productId);
+            }
+
+            await loadProducts();
+        } catch (requestError) {
+            setError(
+                requestError?.response?.data?.message ||
+                    requestError?.message ||
+                    `Failed to ${action} product.`
+            );
+        } finally {
+            setActionState((prev) => {
+                const nextState = { ...prev };
+                delete nextState[productId];
+                return nextState;
+            });
+        }
+    };
+
+    const renderApprovalCell = (product) => {
+        if (product.createdByRole !== "mr") {
+            return <span className="text-sm font-medium text-slate-400">Direct</span>;
+        }
+
+        return <StatusBadge text={product.approvalStatus} />;
+    };
+
     return (
         <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Total Products
+                    </p>
+                    <h3 className="mt-3 text-3xl font-bold text-slate-900">{stats.total}</h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                        Full catalog visible to the admin team.
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        MR Products
+                    </p>
+                    <h3 className="mt-3 text-3xl font-bold text-slate-900">
+                        {stats.mrProducts}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                        Products created by approved MR accounts.
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Pending MR Products
+                    </p>
+                    <h3 className="mt-3 text-3xl font-bold text-slate-900">
+                        {stats.pendingMrProducts}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                        Products currently waiting for admin moderation.
+                    </p>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-400">
+                        Approved MR Products
+                    </p>
+                    <h3 className="mt-3 text-3xl font-bold text-slate-900">
+                        {stats.approvedMrProducts}
+                    </h3>
+                    <p className="mt-2 text-sm text-slate-500">
+                        MR products already approved by the admin team.
+                    </p>
+                </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                     <div className="flex flex-wrap items-center gap-3">
                         <Link
@@ -283,19 +393,38 @@ const AllProductsPage = () => {
                         </span>
                     </div>
 
-                    <h2 className="mt-4 text-2xl font-bold text-slate-900">All Products</h2>
+                    <h2 className="mt-4 text-2xl font-bold text-slate-900">{pageTitle}</h2>
                     <p className="mt-1 text-sm text-slate-500">
-                        Live product list fetched from your backend.
+                        {pageDescription}
                     </p>
                 </div>
 
-                <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="inline-flex items-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white"
-                >
-                    <Plus size={18} /> Add Product
-                </button>
+                {hideAddButton ? null : (
+                    <button
+                        type="button"
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="inline-flex items-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white"
+                    >
+                        <Plus size={18} /> Add Product
+                    </button>
+                )}
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+                {filterOptions.map((filter) => (
+                    <button
+                        key={filter.id}
+                        type="button"
+                        onClick={() => setOwnershipFilter(filter.id)}
+                        className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
+                            ownershipFilter === filter.id
+                                ? "bg-[#87CEEB] text-white"
+                                : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                        }`}
+                    >
+                        {filter.label}
+                    </button>
+                ))}
             </div>
 
             {isLoading ? (
@@ -313,120 +442,186 @@ const AllProductsPage = () => {
                             <tr className="border-b border-slate-200 text-left text-sm text-slate-500">
                                 <th className="pb-3 font-semibold">Product</th>
                                 <th className="pb-3 font-semibold">Category</th>
+                                <th className="pb-3 font-semibold">Owner</th>
                                 <th className="pb-3 font-semibold">Price</th>
                                 <th className="pb-3 font-semibold">Stock</th>
-                                <th className="pb-3 font-semibold">Status</th>
+                                <th className="pb-3 font-semibold">Approval</th>
                                 <th className="pb-3 font-semibold">Action</th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            {paginatedProducts.map((product) => (
-                                <tr key={product.id} className="border-b border-slate-100 text-sm">
-                                    <td className="py-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
-                                                {product.image ? (
-                                                    <img
-                                                        src={product.image}
-                                                        alt={product.name}
-                                                        className="h-full w-full object-cover"
-                                                    />
-                                                ) : (
-                                                    <span className="text-xs font-semibold text-slate-400">
-                                                        N/A
-                                                    </span>
-                                                )}
+                            {paginatedProducts.map((product) => {
+                                const pendingAction = actionState[product.id];
+                                const showModerationActions =
+                                    product.createdByRole === "mr" &&
+                                    product.approvalStatus === "pending";
+
+                                return (
+                                    <tr
+                                        key={product.id}
+                                        className="border-b border-slate-100 text-sm"
+                                    >
+                                        <td className="py-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
+                                                    {product.image ? (
+                                                        <img
+                                                            src={product.image}
+                                                            alt={product.name}
+                                                            className="h-full w-full object-cover"
+                                                        />
+                                                    ) : (
+                                                        <span className="text-xs font-semibold text-slate-400">
+                                                            N/A
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div>
+                                                    <p className="font-semibold text-slate-900">
+                                                        {product.name}
+                                                    </p>
+                                                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">
+                                                        {product.qty ||
+                                                            product.description ||
+                                                            "No description"}
+                                                    </p>
+                                                </div>
                                             </div>
+                                        </td>
 
-                                            <div>
-                                                <p className="font-semibold text-slate-900">{product.name}</p>
-                                                <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                                                    {product.qty || product.description || "No description"}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </td>
+                                        <td className="py-4 text-slate-600">
+                                            {product.categoryName}
+                                        </td>
 
-                                    <td className="py-4 text-slate-600">{product.categoryName}</td>
-
-                                    <td className="py-4 text-slate-600">
-                                        <div>
-                                            <p className="font-semibold text-slate-900">
-                                                Rs {product.price}
+                                        <td className="py-4 text-slate-600">
+                                            <p className="font-medium text-slate-900">
+                                                {product.createdBy?.name ||
+                                                    product.createdBy?.email ||
+                                                    "N/A"}
                                             </p>
-                                            {product.oldPrice ? (
-                                                <p className="text-xs text-slate-400 line-through">
-                                                    Rs {product.oldPrice}
+                                            <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
+                                                {product.createdByRole || "admin"}
+                                            </p>
+                                        </td>
+
+                                        <td className="py-4 text-slate-600">
+                                            <div>
+                                                <p className="font-semibold text-slate-900">
+                                                    Rs {product.price}
                                                 </p>
-                                            ) : null}
-                                            {product.discount ? (
-                                                <p className="text-xs font-semibold text-emerald-600">
-                                                    {product.discount}% off
-                                                </p>
-                                            ) : null}
-                                        </div>
-                                    </td>
+                                                {product.oldPrice ? (
+                                                    <p className="text-xs text-slate-400 line-through">
+                                                        Rs {product.oldPrice}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                        </td>
 
-                                    <td className="py-4 text-slate-600">{product.stock}</td>
+                                        <td className="py-4">
+                                            <div className="space-y-2">
+                                                <p className="text-slate-600">{product.stock}</p>
+                                                <StatusBadge text={product.status} />
+                                            </div>
+                                        </td>
 
-                                    <td className="py-4">
-                                        <StatusBadge text={product.status} />
-                                    </td>
+                                        <td className="py-4">
+                                            {renderApprovalCell(product)}
+                                        </td>
 
-                                    <td className="py-4">
-                                        <div className="flex gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleEdit(product)}
-                                                className="rounded-xl bg-slate-100 px-3 py-2 font-medium text-slate-700"
-                                            >
-                                                Edit
-                                            </button>
+                                        <td className="py-4">
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEdit(product)}
+                                                    className="rounded-xl bg-slate-100 px-3 py-2 font-medium text-slate-700"
+                                                >
+                                                    Edit
+                                                </button>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => handleView(product)}
-                                                className="rounded-xl bg-[#87CEEB] px-3 py-2 font-medium text-white"
-                                            >
-                                                View
-                                            </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleView(product)}
+                                                    className="rounded-xl bg-[#87CEEB] px-3 py-2 font-medium text-white"
+                                                >
+                                                    View
+                                                </button>
 
-                                            <button
-                                                type="button"
-                                                onClick={() => handleDelete(product)}
-                                                className="inline-flex items-center gap-1 rounded-xl bg-rose-100 px-3 py-2 font-medium text-rose-700"
-                                            >
-                                                <Trash2 size={14} />
-                                                Delete
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                                                {showModerationActions ? (
+                                                    <>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleApprovalAction(
+                                                                    product.id,
+                                                                    "approve"
+                                                                )
+                                                            }
+                                                            disabled={!!pendingAction}
+                                                            className="rounded-xl bg-emerald-500 px-3 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                                        >
+                                                            {pendingAction === "approve"
+                                                                ? "Approving..."
+                                                                : "Approve"}
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                handleApprovalAction(
+                                                                    product.id,
+                                                                    "reject"
+                                                                )
+                                                            }
+                                                            disabled={!!pendingAction}
+                                                            className="rounded-xl bg-amber-500 px-3 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
+                                                        >
+                                                            {pendingAction === "reject"
+                                                                ? "Rejecting..."
+                                                                : "Reject"}
+                                                        </button>
+                                                    </>
+                                                ) : null}
+
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDelete(product)}
+                                                    className="inline-flex items-center gap-1 rounded-xl bg-rose-100 px-3 py-2 font-medium text-rose-700"
+                                                >
+                                                    <Trash2 size={14} />
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
 
-                    {filteredProducts.length === 0 ? (
+                    {normalizedProducts.length === 0 ? (
                         <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
                             <p className="text-sm font-semibold text-slate-700">
-                                No products found{searchQuery ? " for this search." : ` in ${selectedCategoryName} yet.`}
+                                No products found for the selected filter.
                             </p>
                         </div>
                     ) : null}
 
-                    {filteredProducts.length > 0 ? (
+                    {normalizedProducts.length > 0 ? (
                         <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
                             <p className="text-sm text-slate-500">
                                 Showing {startProductNumber}-{endProductNumber} of{" "}
-                                {filteredProducts.length} products
+                                {normalizedProducts.length} products
                             </p>
 
                             {totalPages > 1 ? (
                                 <div className="flex flex-wrap items-center gap-2">
                                     <button
                                         type="button"
-                                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                        onClick={() =>
+                                            setCurrentPage((page) => Math.max(page - 1, 1))
+                                        }
                                         disabled={currentPage === 1}
                                         className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
@@ -451,7 +646,9 @@ const AllProductsPage = () => {
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setCurrentPage((page) => Math.min(page + 1, totalPages))
+                                            setCurrentPage((page) =>
+                                                Math.min(page + 1, totalPages)
+                                            )
                                         }
                                         disabled={currentPage === totalPages}
                                         className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"

@@ -7,6 +7,8 @@ const AdminProductViewModal = ({ isOpen, onClose, product }) => {
         return null;
     }
 
+    const isMrProduct = product.createdByRole === "mr";
+
     return (
         <>
             <div className="fixed inset-0 z-[100] bg-black/40" onClick={onClose} />
@@ -88,6 +90,45 @@ const AdminProductViewModal = ({ isOpen, onClose, product }) => {
                                 </p>
                                 <p className="mt-2 truncate text-sm font-semibold text-slate-900">
                                     {product.id}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                            <div className="rounded-2xl bg-slate-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                    Approval
+                                </p>
+                                {isMrProduct ? (
+                                    <p className="mt-2">
+                                        <StatusBadge
+                                            text={product.approvalStatus || "pending"}
+                                        />
+                                    </p>
+                                ) : (
+                                    <p className="mt-2 text-sm font-semibold text-slate-500">
+                                        Direct Admin Product
+                                    </p>
+                                )}
+                            </div>
+
+                            <div className="rounded-2xl bg-slate-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                    Created By Role
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-slate-900">
+                                    {product.createdByRole || "admin"}
+                                </p>
+                            </div>
+
+                            <div className="rounded-2xl bg-slate-50 p-4">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+                                    Owner
+                                </p>
+                                <p className="mt-2 text-sm font-semibold text-slate-900">
+                                    {product.createdBy?.name ||
+                                        product.createdBy?.email ||
+                                        "N/A"}
                                 </p>
                             </div>
                         </div>

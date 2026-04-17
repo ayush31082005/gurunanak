@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { LoaderCircle, Plus, Upload, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import API from "../../api";
+import { createProduct, updateProduct } from "../../api/productApi";
 
 const ALL_PRODUCTS_OPTION = "__all_products__";
 
@@ -182,17 +183,9 @@ const AdminProductModal = ({
             }
 
             if (mode === "edit" && product?._id) {
-                await API.put(`/products/${product._id}`, payload, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                });
+                await updateProduct(product._id, payload);
             } else {
-                await API.post("/products", payload, {
-                    headers: {
-                        "Content-Type": "multipart/form-data",
-                    },
-                });
+                await createProduct(payload);
             }
 
             onCreated?.();

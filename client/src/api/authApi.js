@@ -20,10 +20,21 @@ export const sendLoginOtp = (payload) => API.post("/auth/login/send-otp", payloa
 
 export const verifyLoginOtp = (payload) => API.post("/auth/login/verify-otp", payload);
 
-export const getPendingMrRequests = () => API.get("/auth/admin/mr-requests");
+export const getPendingMrRequests = (status = "all") =>
+    API.get("/admin/mr-requests", {
+        params: {
+            status,
+        },
+    });
 
 export const approveMrRequest = (id) =>
-    API.patch(`/auth/admin/mr-requests/${id}/approve`);
+    API.patch(`/admin/mr-requests/${id}/approve`);
 
 export const rejectMrRequest = (id) =>
-    API.patch(`/auth/admin/mr-requests/${id}/reject`);
+    API.patch(`/admin/mr-requests/${id}/reject`);
+
+export const updateMrRequest = (id, payload) =>
+    API.patch(`/admin/mr-requests/${id}`, payload);
+
+export const deleteMrRequest = (id) =>
+    API.delete(`/admin/mr-requests/${id}`);

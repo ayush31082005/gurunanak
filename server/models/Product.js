@@ -60,6 +60,21 @@ const productSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+        createdByRole: {
+            type: String,
+            enum: ["admin", "mr"],
+            required: true,
+        },
+        approvalStatus: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "approved",
+        },
     },
     { timestamps: true }
 );

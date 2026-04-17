@@ -8,9 +8,11 @@ import {
     verifyLoginOtp,
     getMyProfile,
     createAdminUser,
+    deleteMrRequest,
     getPendingMrRequests,
     approveMrRequest,
     rejectMrRequest,
+    updateMrRequest,
     getAdminCustomers,
     getAdminDashboard,
 } from "../controller/authController.js";
@@ -39,7 +41,9 @@ router.get("/me", isAuth, getMyProfile);
 router.get("/admin/dashboard", isAuth, requireAdmin, getAdminDashboard);
 router.get("/admin/customers", isAuth, requireAdmin, getAdminCustomers);
 router.get("/admin/mr-requests", isAuth, requireAdmin, getPendingMrRequests);
+router.patch("/admin/mr-requests/:id", isAuth, requireAdmin, updateMrRequest);
 router.patch("/admin/mr-requests/:id/approve", isAuth, requireAdmin, approveMrRequest);
 router.patch("/admin/mr-requests/:id/reject", isAuth, requireAdmin, rejectMrRequest);
+router.delete("/admin/mr-requests/:id", isAuth, requireAdmin, deleteMrRequest);
 
 export default router;

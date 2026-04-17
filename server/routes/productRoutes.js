@@ -4,17 +4,20 @@ import {
     createProduct,
     deleteProduct,
     getProducts,
+    getMyProducts,
     getSingleProduct,
     updateProduct,
 } from "../controller/productController.js";
+import { protect, requireAdminOrMr, requireMr } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", upload.single("image"), createProduct);
-router.post("/add", upload.single("image"), createProduct);
 router.get("/", getProducts);
+router.get("/mine", protect, requireMr, getMyProducts);
 router.get("/:id", getSingleProduct);
-router.put("/:id", upload.single("image"), updateProduct);
-router.delete("/:id", deleteProduct);
+router.post("/", protect, requireAdminOrMr, upload.single("image"), createProduct);
+router.post("/add", protect, requireAdminOrMr, upload.single("image"), createProduct);
+router.put("/:id", protect, requireAdminOrMr, upload.single("image"), updateProduct);
+router.delete("/:id", protect, requireAdminOrMr, deleteProduct);
 
 export default router;

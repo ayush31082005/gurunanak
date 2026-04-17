@@ -10,6 +10,7 @@ import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import complaintRoutes from "./routes/complaintRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 
 
@@ -67,6 +68,7 @@ app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.use("/api/complaints", complaintRoutes);
 

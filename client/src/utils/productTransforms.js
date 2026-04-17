@@ -98,7 +98,10 @@ export const normalizeProductForClient = (product = {}) => {
         ratingCount,
         reviews: ratingCount,
         stock: Number(product.stock) || 0,
-        status: deriveStatus(product.stock),
+        status: product.status || deriveStatus(product.stock),
+        approvalStatus: product.approvalStatus || "approved",
+        createdByRole: product.createdByRole || "",
+        createdBy: product.createdBy || null,
         delivery: product.delivery || "Delivery in 30 mins",
     };
 };

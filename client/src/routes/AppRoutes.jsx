@@ -34,6 +34,7 @@ import CustomersPage from "../pages/admin/CustomersPage";
 import PrescriptionsPage from "../pages/admin/PrescriptionsPage";
 import UserDashboard from "../pages/UserDashboard";
 import MrRequestsPage from "../pages/admin/MrRequestsPage";
+import MrProductRequestsPage from "../pages/admin/MrProductRequestsPage";
 import PrivacyPolicy from "../pages/footer/PrivacyPolicy";
 import ShippingPolicy from "../pages/footer/ShippingPolicy";
 import ReturnPolicy from "../pages/footer/ReturnPolicy";
@@ -104,6 +105,7 @@ const AppRoutes = () => {
           {/* <Route path="inventory" element={<InventoryPage />} /> */}
           <Route path="customers" element={<CustomersPage />} />
           <Route path="mr-requests" element={<MrRequestsPage />} />
+          <Route path="mr-products" element={<MrProductRequestsPage />} />
           <Route path="prescriptions" element={<PrescriptionsPage />} />
           <Route path="user-dashboard" element={<UserDashboard />} />
         </Route>
