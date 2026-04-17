@@ -17,7 +17,7 @@ const AdminProductViewModal = ({ isOpen, onClose, product }) => {
                         <div>
                             <h3 className="text-xl font-bold text-slate-900">Product Details</h3>
                             <p className="mt-1 text-sm text-slate-500">
-                                Product ka full preview yahan dikhega.
+                                A complete preview of the product is shown here.
                             </p>
                         </div>
 
@@ -56,7 +56,7 @@ const AdminProductViewModal = ({ isOpen, onClose, product }) => {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div className="rounded-2xl bg-slate-50 p-4">
                                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                                    Price
+                                    Final Price
                                 </p>
                                 <p className="mt-2 text-lg font-bold text-slate-900">
                                     Rs {product.price}

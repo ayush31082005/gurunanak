@@ -114,9 +114,10 @@ const fitnessProducts = [
 ];
 
 const FitnessHealth = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: fitnessProducts,
         allowedCategories: ["Fitness & Health", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -132,6 +133,7 @@ const FitnessHealth = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search fitness products..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

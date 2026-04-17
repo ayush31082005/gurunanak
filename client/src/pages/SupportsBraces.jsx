@@ -71,9 +71,10 @@ const supportsProducts = [
 ];
 
 const SupportsBraces = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: supportsProducts,
         allowedCategories: ["Supports & Braces", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -89,6 +90,7 @@ const SupportsBraces = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search support products..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

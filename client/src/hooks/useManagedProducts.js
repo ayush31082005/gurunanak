@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import API from "../api";
 import { normalizeProductForClient } from "../utils/productTransforms";
 
+let remoteProductsCache = null;
+
 const extractProducts = (responseData) => {
     if (Array.isArray(responseData)) return responseData;
     if (Array.isArray(responseData?.products)) return responseData.products;
@@ -23,10 +25,14 @@ const filterByAllowedCategories = (products, allowedCategories = []) => {
     );
 };
 
-const useManagedProducts = ({ fallbackProducts = [], allowedCategories = [] } = {}) => {
-    const [remoteProducts, setRemoteProducts] = useState([]);
+const useManagedProducts = ({
+    fallbackProducts = [],
+    allowedCategories = [],
+    returnMeta = false,
+} = {}) => {
+    const [remoteProducts, setRemoteProducts] = useState(() => remoteProductsCache || []);
     const [hasError, setHasError] = useState(false);
-    const [isLoaded, setIsLoaded] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(() => Boolean(remoteProductsCache));
 
     useEffect(() => {
         let isMounted = true;
@@ -36,14 +42,17 @@ const useManagedProducts = ({ fallbackProducts = [], allowedCategories = [] } = 
                 const response = await API.get("/products");
                 if (!isMounted) return;
 
-                setRemoteProducts(
-                    extractProducts(response.data).map(normalizeProductForClient)
+                const normalizedRemoteProducts = extractProducts(response.data).map(
+                    normalizeProductForClient
                 );
+
+                remoteProductsCache = normalizedRemoteProducts;
+                setRemoteProducts(normalizedRemoteProducts);
                 setHasError(false);
             } catch (_error) {
                 if (!isMounted) return;
                 setHasError(true);
-                setRemoteProducts([]);
+                setRemoteProducts(remoteProductsCache || []);
             } finally {
                 if (isMounted) {
                     setIsLoaded(true);
@@ -58,7 +67,7 @@ const useManagedProducts = ({ fallbackProducts = [], allowedCategories = [] } = 
         };
     }, []);
 
-    return useMemo(() => {
+    const products = useMemo(() => {
         const normalizedFallbackProducts = fallbackProducts.map(normalizeProductForClient);
         const filteredRemoteProducts = filterByAllowedCategories(remoteProducts, allowedCategories);
         const filteredFallbackProducts = filterByAllowedCategories(
@@ -66,12 +75,26 @@ const useManagedProducts = ({ fallbackProducts = [], allowedCategories = [] } = 
             allowedCategories
         );
 
-        if (hasError || !isLoaded || filteredRemoteProducts.length === 0) {
+        if (hasError) {
             return filteredFallbackProducts;
+        }
+
+        if (!isLoaded) {
+            return filteredRemoteProducts;
         }
 
         return filteredRemoteProducts;
     }, [allowedCategories, fallbackProducts, hasError, isLoaded, remoteProducts]);
+
+    if (returnMeta) {
+        return {
+            products,
+            isLoaded,
+            hasError,
+        };
+    }
+
+    return products;
 };
 
 export default useManagedProducts;

@@ -126,9 +126,10 @@ const petCareProducts = [
 ];
 
 const PateCare = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: petCareProducts,
         allowedCategories: ["Pet Care", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -144,6 +145,7 @@ const PateCare = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search pet care products..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

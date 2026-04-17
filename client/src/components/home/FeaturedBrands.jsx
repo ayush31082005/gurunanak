@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { featuredBrands } from "../../data/brands";
 import SectionHeader from "../common/SectionHeader";
 
 const FeaturedBrands = () => {
   const trackRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
+  const navigate = useNavigate();
 
   const items = [...featuredBrands, ...featuredBrands];
 
@@ -61,8 +63,12 @@ const FeaturedBrands = () => {
             className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
           >
             {items.map((brand, index) => (
-              <div
+              <button
                 key={`${brand.id}-${index}`}
+                type="button"
+                onClick={() =>
+                  navigate(`/products?${new URLSearchParams({ brand: brand.name }).toString()}`)
+                }
                 className="group flex min-w-[108px] flex-shrink-0 flex-col items-center sm:min-w-[126px] md:min-w-[140px]"
               >
                 {/* Card */}
@@ -80,7 +86,7 @@ const FeaturedBrands = () => {
                 <p className="mt-2 max-w-[92px] text-center text-xs font-semibold text-slate-800 sm:max-w-[108px] sm:text-[13px] md:text-sm">
                   {brand.name}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </div>

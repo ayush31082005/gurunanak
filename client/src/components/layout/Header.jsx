@@ -114,6 +114,38 @@ const Header = () => {
   }, [location.pathname, location.search]);
 
   useEffect(() => {
+    if (location.pathname !== "/products") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      const params = new URLSearchParams(location.search);
+      const trimmedQuery = searchQuery.trim();
+      const currentSearch = params.get("search") || "";
+
+      if (trimmedQuery === currentSearch) {
+        return;
+      }
+
+      if (trimmedQuery) {
+        params.set("search", trimmedQuery);
+      } else {
+        params.delete("search");
+      }
+
+      navigate(
+        {
+          pathname: "/products",
+          search: params.toString() ? `?${params.toString()}` : "",
+        },
+        { replace: true }
+      );
+    }, 250);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [location.pathname, location.search, navigate, searchQuery]);
+
+  useEffect(() => {
     const updateAuthState = () => {
       const token = localStorage.getItem("token");
       const user = localStorage.getItem("user");

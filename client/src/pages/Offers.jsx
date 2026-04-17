@@ -10,9 +10,15 @@ import { proceedToCheckoutWithAuth } from "../utils/checkout";
 const Offers = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const managedProducts = useManagedProducts({
+  const {
+    products: managedProducts,
+    isLoaded,
+    hasError,
+  } = useManagedProducts({
     fallbackProducts: allProducts,
+    returnMeta: true,
   });
+  const isProductsLoading = !isLoaded && !hasError;
 
   const offerProducts = useMemo(() => {
     if (!managedProducts.length) {
@@ -49,6 +55,7 @@ const Offers = () => {
             products={offerProducts}
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
+            isLoading={isProductsLoading}
           />
         </div>
       </section>

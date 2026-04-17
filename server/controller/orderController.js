@@ -1,9 +1,32 @@
 import crypto from "crypto";
+import mongoose from "mongoose";
 import Order from "../models/Order.js";
+import Product from "../models/Product.js";
 import sendEmail from "../utils/sendEmail.js";
 import { sendOrderNotification } from "../utils/sendOrderNotification.js";
 
 const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
+
+const stockReservedStatuses = new Set([
+    "pending",
+    "placed",
+    "shipped",
+    "delivered",
+]);
+
+const deriveProductStatus = (stock) => {
+    const safeStock = Number(stock) || 0;
+
+    if (safeStock <= 0) return "Out of Stock";
+    if (safeStock <= 10) return "Low Stock";
+    return "In Stock";
+};
+
+const createInventoryError = (message) => {
+    const error = new Error(message);
+    error.code = "INVENTORY_ERROR";
+    return error;
+};
 
 const normalizeItems = (items = []) =>
     items
@@ -63,6 +86,104 @@ const getPricing = (normalizedItems, pricing = {}) => {
         subtotal,
         discount,
     };
+};
+
+const getTrackedOrderItems = (items = []) => {
+    const quantityByProductId = new Map();
+
+    items.forEach((item) => {
+        if (!mongoose.Types.ObjectId.isValid(item.productId)) {
+            return;
+        }
+
+        const productId = String(item.productId);
+        const quantity = Number(item.quantity) || 0;
+
+        if (quantity <= 0) {
+            return;
+        }
+
+        quantityByProductId.set(
+            productId,
+            (quantityByProductId.get(productId) || 0) + quantity
+        );
+    });
+
+    return quantityByProductId;
+};
+
+const adjustInventoryForItems = async (items = [], action = "decrement") => {
+    const quantityByProductId = getTrackedOrderItems(items);
+
+    if (quantityByProductId.size === 0) {
+        return;
+    }
+
+    const stockMultiplier = action === "increment" ? 1 : -1;
+    const appliedUpdates = [];
+
+    try {
+        for (const [productId, quantity] of quantityByProductId.entries()) {
+            const query =
+                action === "decrement"
+                    ? { _id: productId, stock: { $gte: quantity } }
+                    : { _id: productId };
+
+            const updatedProduct = await Product.findOneAndUpdate(
+                query,
+                { $inc: { stock: stockMultiplier * quantity } },
+                { new: true }
+            );
+
+            if (!updatedProduct) {
+                const currentProduct = await Product.findById(productId);
+
+                if (!currentProduct) {
+                    throw createInventoryError("One of the ordered products no longer exists");
+                }
+
+                if (action === "decrement") {
+                    throw createInventoryError(
+                        `Only ${currentProduct.stock} units are available for ${currentProduct.name}`
+                    );
+                }
+
+                throw createInventoryError(`Failed to update stock for ${currentProduct.name}`);
+            }
+
+            const nextStatus = deriveProductStatus(updatedProduct.stock);
+
+            if (updatedProduct.status !== nextStatus) {
+                updatedProduct.status = nextStatus;
+                await updatedProduct.save();
+            }
+
+            appliedUpdates.push({ productId, quantity });
+        }
+    } catch (error) {
+        if (action === "decrement" && appliedUpdates.length > 0) {
+            await Promise.all(
+                appliedUpdates.map(async ({ productId, quantity }) => {
+                    const revertedProduct = await Product.findByIdAndUpdate(
+                        productId,
+                        { $inc: { stock: quantity } },
+                        { new: true }
+                    );
+
+                    if (revertedProduct) {
+                        const nextStatus = deriveProductStatus(revertedProduct.stock);
+
+                        if (revertedProduct.status !== nextStatus) {
+                            revertedProduct.status = nextStatus;
+                            await revertedProduct.save();
+                        }
+                    }
+                })
+            );
+        }
+
+        throw error;
+    }
 };
 
 const hasPreviousConfirmedOrder = async (userId) => {
@@ -161,6 +282,9 @@ const createRazorpayApiOrder = async (amount, receipt) => {
 };
 
 export const createOrder = async (req, res) => {
+    let normalizedItems = [];
+    let stockReduced = false;
+
     try {
         const {
             items,
@@ -176,7 +300,9 @@ export const createOrder = async (req, res) => {
             });
         }
 
-        const { error, normalizedItems } = validateOrderPayload({ items, shippingInfo });
+        const validationResult = validateOrderPayload({ items, shippingInfo });
+        const { error } = validationResult;
+        normalizedItems = validationResult.normalizedItems || [];
 
         if (error) {
             return res.status(400).json({
@@ -194,6 +320,9 @@ export const createOrder = async (req, res) => {
             email: normalizeEmail(req.user.email),
         };
 
+        await adjustInventoryForItems(normalizedItems, "decrement");
+        stockReduced = true;
+
         const order = await Order.create({
             user: req.user._id,
             items: normalizedItems,
@@ -206,6 +335,7 @@ export const createOrder = async (req, res) => {
             discount,
             total,
             status: "pending",
+            stockReduced: true,
             tracking: [
                 {
                     status: "pending",
@@ -232,6 +362,20 @@ export const createOrder = async (req, res) => {
         });
     } catch (error) {
         console.error("Create order error:", error);
+
+        if (stockReduced) {
+            await adjustInventoryForItems(normalizedItems, "increment").catch((rollbackError) => {
+                console.error("Create order stock rollback failed:", rollbackError);
+            });
+        }
+
+        if (error.code === "INVENTORY_ERROR") {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+
         return res.status(500).json({
             success: false,
             message: "Failed to place order",
@@ -287,6 +431,7 @@ export const createRazorpayOrder = async (req, res) => {
             total,
             razorpayOrderId: razorpayOrder.id,
             status: "payment_pending",
+            stockReduced: false,
             tracking: [
                 {
                     status: "payment_pending",
@@ -319,6 +464,9 @@ export const createRazorpayOrder = async (req, res) => {
 };
 
 export const verifyRazorpayPayment = async (req, res) => {
+    let inventoryReducedInRequest = false;
+    let order = null;
+
     try {
         const {
             razorpay_order_id,
@@ -346,7 +494,7 @@ export const verifyRazorpayPayment = async (req, res) => {
             });
         }
 
-        const order = await Order.findOne({
+        order = await Order.findOne({
             _id: orderId,
             user: req.user._id,
             razorpayOrderId: razorpay_order_id,
@@ -357,6 +505,12 @@ export const verifyRazorpayPayment = async (req, res) => {
                 success: false,
                 message: "Order not found for payment verification",
             });
+        }
+
+        if (!order.stockReduced) {
+            await adjustInventoryForItems(order.items, "decrement");
+            order.stockReduced = true;
+            inventoryReducedInRequest = true;
         }
 
         order.razorpayPaymentId = razorpay_payment_id;
@@ -386,6 +540,21 @@ export const verifyRazorpayPayment = async (req, res) => {
         });
     } catch (error) {
         console.error("Verify payment error:", error);
+
+        if (inventoryReducedInRequest && order?.stockReduced) {
+            await adjustInventoryForItems(order.items, "increment").catch((rollbackError) => {
+                console.error("Verify payment stock rollback failed:", rollbackError);
+            });
+            order.stockReduced = false;
+        }
+
+        if (error.code === "INVENTORY_ERROR") {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+
         return res.status(500).json({
             success: false,
             message: "Failed to verify payment",
@@ -443,9 +612,12 @@ export const getMySingleOrder = async (req, res) => {
 };
 
 export const cancelMyOrder = async (req, res) => {
+    let stockRestored = false;
+    let order = null;
+
     try {
         const userEmail = normalizeEmail(req.user.email);
-        const order = await Order.findOne({
+        order = await Order.findOne({
             _id: req.params.id,
             "shippingInfo.email": userEmail,
         });
@@ -464,6 +636,12 @@ export const cancelMyOrder = async (req, res) => {
             });
         }
 
+        if (order.stockReduced) {
+            await adjustInventoryForItems(order.items, "increment");
+            order.stockReduced = false;
+            stockRestored = true;
+        }
+
         order.status = "cancelled";
         order.tracking.push({
             status: "cancelled",
@@ -480,6 +658,14 @@ export const cancelMyOrder = async (req, res) => {
         });
     } catch (error) {
         console.error("Cancel my order error:", error);
+
+        if (stockRestored && order) {
+            await adjustInventoryForItems(order.items, "decrement").catch((rollbackError) => {
+                console.error("Cancel order stock rollback failed:", rollbackError);
+            });
+            order.stockReduced = true;
+        }
+
         return res.status(500).json({
             success: false,
             message: "Failed to cancel order",
@@ -508,6 +694,9 @@ export const getAllOrders = async (req, res) => {
 };
 
 export const updateOrderStatus = async (req, res) => {
+    let order = null;
+    let inventoryAction = null;
+
     try {
         const nextStatus = String(req.body.status || "").trim().toLowerCase();
 
@@ -518,13 +707,27 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
-        const order = await Order.findById(req.params.id);
+        order = await Order.findById(req.params.id);
 
         if (!order) {
             return res.status(404).json({
                 success: false,
                 message: "Order not found",
             });
+        }
+
+        const shouldReserveStock = stockReservedStatuses.has(nextStatus);
+
+        if (shouldReserveStock && !order.stockReduced) {
+            await adjustInventoryForItems(order.items, "decrement");
+            order.stockReduced = true;
+            inventoryAction = "decrement";
+        }
+
+        if (!shouldReserveStock && order.stockReduced) {
+            await adjustInventoryForItems(order.items, "increment");
+            order.stockReduced = false;
+            inventoryAction = "increment";
         }
 
         order.status = nextStatus;
@@ -543,6 +746,28 @@ export const updateOrderStatus = async (req, res) => {
         });
     } catch (error) {
         console.error("Update order status error:", error);
+
+        if (order && inventoryAction === "decrement") {
+            await adjustInventoryForItems(order.items, "increment").catch((rollbackError) => {
+                console.error("Update order status stock rollback failed:", rollbackError);
+            });
+            order.stockReduced = false;
+        }
+
+        if (order && inventoryAction === "increment") {
+            await adjustInventoryForItems(order.items, "decrement").catch((rollbackError) => {
+                console.error("Update order status stock rollback failed:", rollbackError);
+            });
+            order.stockReduced = true;
+        }
+
+        if (error.code === "INVENTORY_ERROR") {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
+
         return res.status(500).json({
             success: false,
             message: "Failed to update order status",

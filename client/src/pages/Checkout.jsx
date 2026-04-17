@@ -458,7 +458,7 @@ const Checkout = () => {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        {/* <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <div className="mb-4 flex items-center gap-3">
                                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
                                     <Tag size={20} />
@@ -489,7 +489,7 @@ const Checkout = () => {
                                     Apply
                                 </button>
                             </div>
-                        </div>
+                        </div> */}
 
                         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <h2 className="text-lg font-bold text-slate-900">Order Summary</h2>
@@ -562,7 +562,7 @@ const Checkout = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        {/* <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <h3 className="text-base font-bold text-slate-900">Need Help?</h3>
                             <div className="mt-4 space-y-3 text-sm text-slate-600">
                                 <div className="flex items-center gap-3">
@@ -574,7 +574,7 @@ const Checkout = () => {
                                     <span>support@gurunanak.com</span>
                                 </div>
                             </div>
-                        </div>
+                        </div> */}
                     </div>
                 </div>
             </div>

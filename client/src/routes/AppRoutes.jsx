@@ -39,6 +39,8 @@ import ReturnPolicy from "../pages/footer/ReturnPolicy";
 import About from "../pages/footer/About";
 import TermsConditions from "../pages/footer/TermsConditions";
 
+import MrDashboard from "../pages/MR/MrProduct";
+
 
 const AppRoutes = () => {
   return (
@@ -83,6 +85,7 @@ const AppRoutes = () => {
       </Route>
 
       <Route path="/user-dashboard" element={<UserDashboard />} />
+      <Route path="/mr-dashboard" element={<MrDashboard />} />
 
       <Route path="/admin" element={<ProtectedAdminRoute />}>
         <Route element={<AdminLayout />}>

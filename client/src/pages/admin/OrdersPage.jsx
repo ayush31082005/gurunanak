@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../../api";
 import StatusBadge from "../../components/admin/StatusBadge";
 
@@ -14,10 +15,13 @@ const adminStatusOptions = [
 const formatPrice = (value) => `Rs ${Number(value || 0).toLocaleString("en-IN")}`;
 
 const OrdersPage = () => {
+    const ordersPerPage = 10;
+    const [searchParams] = useSearchParams();
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [updatingOrderId, setUpdatingOrderId] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchOrders = async () => {
         try {
@@ -38,6 +42,8 @@ const OrdersPage = () => {
         fetchOrders();
     }, []);
 
+    const searchQuery = (searchParams.get("search") || "").trim().toLowerCase();
+
     const stats = useMemo(() => {
         return {
             total: orders.length,
@@ -48,6 +54,69 @@ const OrdersPage = () => {
             delivered: orders.filter((order) => order.status === "delivered").length,
         };
     }, [orders]);
+
+    const filteredOrders = useMemo(() => {
+        if (!searchQuery) {
+            return orders;
+        }
+
+        return orders.filter((order) => {
+            const itemNames = (order.items || [])
+                .map((item) => `${item.name || ""} ${item.pack || ""} ${item.quantity || ""}`)
+                .join(" ");
+
+            const searchableText = [
+                order._id,
+                order.status,
+                order.paymentMethod,
+                order.shippingInfo?.fullName,
+                order.shippingInfo?.email,
+                order.shippingInfo?.phone,
+                order.shippingInfo?.address,
+                order.shippingInfo?.city,
+                order.shippingInfo?.state,
+                order.shippingInfo?.pincode,
+                itemNames,
+                order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "",
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+            return searchableText.includes(searchQuery);
+        });
+    }, [orders, searchQuery]);
+
+    const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (totalPages === 0) {
+            setCurrentPage(1);
+            return;
+        }
+
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedOrders = useMemo(() => {
+        const startIndex = (currentPage - 1) * ordersPerPage;
+        return filteredOrders.slice(startIndex, startIndex + ordersPerPage);
+    }, [currentPage, filteredOrders]);
+
+    const paginationRange = useMemo(
+        () => Array.from({ length: totalPages }, (_, index) => index + 1),
+        [totalPages]
+    );
+
+    const startOrderNumber =
+        filteredOrders.length === 0 ? 0 : (currentPage - 1) * ordersPerPage + 1;
+    const endOrderNumber = Math.min(currentPage * ordersPerPage, filteredOrders.length);
 
     const handleStatusChange = async (orderId, status) => {
         try {
@@ -123,9 +192,9 @@ const OrdersPage = () => {
                     <div className="mt-6 rounded-2xl bg-rose-50 p-8 text-center text-rose-600">
                         {errorMessage}
                     </div>
-                ) : orders.length === 0 ? (
+                ) : filteredOrders.length === 0 ? (
                     <div className="mt-6 rounded-2xl bg-slate-50 p-8 text-center text-slate-500">
-                        No orders found.
+                        No orders found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
                     <div className="mt-6 overflow-x-auto">
@@ -143,7 +212,7 @@ const OrdersPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {orders.map((order) => (
+                                {paginatedOrders.map((order) => (
                                     <tr key={order._id} className="border-b border-slate-100 align-top text-sm">
                                         <td className="py-4 pr-4">
                                             <p className="font-semibold text-slate-900">{order._id}</p>
@@ -224,6 +293,51 @@ const OrdersPage = () => {
                                 ))}
                             </tbody>
                         </table>
+
+                        <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
+                            <p className="text-sm text-slate-500">
+                                Showing {startOrderNumber}-{endOrderNumber} of {filteredOrders.length} orders
+                            </p>
+
+                            {totalPages > 1 ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Prev
+                                    </button>
+
+                                    {paginationRange.map((pageNumber) => (
+                                        <button
+                                            key={pageNumber}
+                                            type="button"
+                                            onClick={() => setCurrentPage(pageNumber)}
+                                            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                                                currentPage === pageNumber
+                                                    ? "bg-[#87CEEB] text-white"
+                                                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            {pageNumber}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentPage((page) => Math.min(page + 1, totalPages))
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 )}
             </div>

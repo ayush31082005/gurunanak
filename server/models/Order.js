@@ -98,6 +98,11 @@ const orderSchema = new mongoose.Schema(
             default: "pending",
         },
 
+        stockReduced: {
+            type: Boolean,
+            default: false,
+        },
+
         tracking: [
             {
                 status: String,

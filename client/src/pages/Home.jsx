@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import HeroBanner from "../components/home/HeroBanner";
+import QuickPharmacyServices from "../components/home/QuickPharmacyServices";
 import HealthConcerns from "../components/home/HealthConcerns";
 import FeaturedBrands from "../components/home/FeaturedBrands";
 import PersonalCare from "../components/home/PersonalCare";
@@ -17,23 +18,58 @@ import {
 import useManagedProducts from "../hooks/useManagedProducts";
 import { proceedToCheckoutWithAuth } from "../utils/checkout";
 
-const skincareCategories = new Set([
-  "Acne Care",
-  "Bath & Body",
-  "Body Care",
-  "Face Care",
-  "Face Wash",
-  "Skin Care",
-  "Skin Supplements",
-  "Skincare",
-]);
+const skincareKeywords = [
+  "acne care",
+  "bath body",
+  "body care",
+  "face care",
+  "face wash",
+  "skin care",
+  "skin supplements",
+  "skincare",
+];
+
+const normalizeText = (value = "") =>
+  String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const isSkincareProduct = (product = {}) => {
+  const haystack = [
+    product.category,
+    product.name,
+    product.description,
+    product.brand,
+  ]
+    .map(normalizeText)
+    .join(" ");
+  const compactHaystack = haystack.replace(/\s+/g, "");
+
+  return skincareKeywords.some((keyword) => {
+    const normalizedKeyword = normalizeText(keyword);
+    const compactKeyword = normalizedKeyword.replace(/\s+/g, "");
+
+    return (
+      haystack.includes(normalizedKeyword) ||
+      compactHaystack.includes(compactKeyword)
+    );
+  });
+};
 
 const Home = () => {
   const navigate = useNavigate();
   const { addToCart } = useCart();
-  const managedProducts = useManagedProducts({
+  const {
+    products: managedProducts,
+    isLoaded,
+    hasError,
+  } = useManagedProducts({
     fallbackProducts: allProducts,
+    returnMeta: true,
   });
+  const isProductsLoading = !isLoaded && !hasError;
 
   const featuredSectionProducts = useMemo(() => {
     if (managedProducts.length) {
@@ -78,13 +114,9 @@ const Home = () => {
       return skincareProducts;
     }
 
-    const skincareMatches = managedProducts.filter((product) =>
-      skincareCategories.has(product.category)
-    );
+    const skincareMatches = managedProducts.filter(isSkincareProduct);
 
-    return skincareMatches.length
-      ? skincareMatches.slice(0, 8)
-      : managedProducts.slice(0, 8);
+    return skincareMatches.slice(0, 8);
   }, [managedProducts]);
 
   const handleAddToCart = (product) => {
@@ -99,6 +131,7 @@ const Home = () => {
   return (
     <>
       <HeroBanner />
+      <QuickPharmacyServices />
       <HealthConcerns />
       <FeaturedBrands />
 
@@ -108,6 +141,7 @@ const Home = () => {
         highlightIndex={1}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
+        isLoading={isProductsLoading}
       />
 
       {/* <PersonalCare /> */}
@@ -118,6 +152,7 @@ const Home = () => {
         highlightIndex={1}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
+        isLoading={isProductsLoading}
       />
 
       <AyurvedaBrands />
@@ -127,14 +162,18 @@ const Home = () => {
         products={dealsSectionProducts}
         onAddToCart={handleAddToCart}
         onBuyNow={handleBuyNow}
+        isLoading={isProductsLoading}
       />
 
-      <ProductSection
-        title="Skincare Picks Just for You"
-        products={skincareSectionProducts}
-        onAddToCart={handleAddToCart}
-        onBuyNow={handleBuyNow}
-      />
+      {isProductsLoading || skincareSectionProducts.length ? (
+        <ProductSection
+          title="Skincare Picks Just for You"
+          products={skincareSectionProducts}
+          onAddToCart={handleAddToCart}
+          onBuyNow={handleBuyNow}
+          isLoading={isProductsLoading}
+        />
+      ) : null}
     </>
   );
 };

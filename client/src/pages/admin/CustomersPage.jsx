@@ -1,12 +1,16 @@
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../../api";
 
 const CustomersPage = () => {
+    const customersPerPage = 10;
+    const [searchParams] = useSearchParams();
     const [customers, setCustomers] = useState([]);
     const [totalUsers, setTotalUsers] = useState(0);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchCustomers = async () => {
         try {
@@ -30,12 +34,67 @@ const CustomersPage = () => {
         fetchCustomers();
     }, []);
 
+    const searchQuery = (searchParams.get("search") || "").trim().toLowerCase();
+
     const stats = useMemo(() => {
         return {
             verified: customers.filter((customer) => customer.isVerified).length,
             ordered: customers.filter((customer) => Number(customer.orders) > 0).length,
         };
     }, [customers]);
+
+    const filteredCustomers = useMemo(() => {
+        if (!searchQuery) {
+            return customers;
+        }
+
+        return customers.filter((customer) => {
+            const searchableText = [
+                customer.name,
+                customer.email,
+                customer.phone,
+                customer.city,
+                customer.orders,
+                customer.joined ? new Date(customer.joined).toLocaleDateString() : "",
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+            return searchableText.includes(searchQuery);
+        });
+    }, [customers, searchQuery]);
+
+    const totalPages = Math.ceil(filteredCustomers.length / customersPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (totalPages === 0) {
+            setCurrentPage(1);
+            return;
+        }
+
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedCustomers = useMemo(() => {
+        const startIndex = (currentPage - 1) * customersPerPage;
+        return filteredCustomers.slice(startIndex, startIndex + customersPerPage);
+    }, [currentPage, filteredCustomers]);
+
+    const paginationRange = useMemo(
+        () => Array.from({ length: totalPages }, (_, index) => index + 1),
+        [totalPages]
+    );
+
+    const startCustomerNumber =
+        filteredCustomers.length === 0 ? 0 : (currentPage - 1) * customersPerPage + 1;
+    const endCustomerNumber = Math.min(currentPage * customersPerPage, filteredCustomers.length);
 
     return (
         <div className="space-y-6">
@@ -46,7 +105,7 @@ const CustomersPage = () => {
                     </p>
                     <h2 className="mt-3 text-4xl font-bold text-slate-900">{totalUsers}</h2>
                     <p className="mt-2 text-sm text-slate-500">
-                        Admin yahan se total registered users dekh sakta hai.
+                        View the total number of registered users.
                     </p>
                 </div>
 
@@ -56,7 +115,7 @@ const CustomersPage = () => {
                     </p>
                     <h3 className="mt-3 text-4xl font-bold text-slate-900">{stats.verified}</h3>
                     <p className="mt-2 text-sm text-slate-500">
-                        Login ya register complete kar chuke users.
+                        Users who have completed login or registration.
                     </p>
                 </div>
 
@@ -66,7 +125,7 @@ const CustomersPage = () => {
                     </p>
                     <h3 className="mt-3 text-4xl font-bold text-slate-900">{stats.ordered}</h3>
                     <p className="mt-2 text-sm text-slate-500">
-                        Jinhone kam se kam ek order place kiya hai.
+                        Users who have placed at least one order.
                     </p>
                 </div>
             </div>
@@ -97,9 +156,9 @@ const CustomersPage = () => {
                     <div className="mt-6 rounded-2xl bg-rose-50 p-8 text-center text-rose-600">
                         {errorMessage}
                     </div>
-                ) : customers.length === 0 ? (
+                ) : filteredCustomers.length === 0 ? (
                     <div className="mt-6 rounded-2xl bg-slate-50 p-8 text-center text-slate-500">
-                        No customers found.
+                        No customers found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
                     <div className="mt-6 overflow-x-auto">
@@ -115,7 +174,7 @@ const CustomersPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {customers.map((customer) => (
+                                {paginatedCustomers.map((customer) => (
                                     <tr key={customer._id} className="border-b border-slate-100 text-sm">
                                         <td className="py-4 font-semibold text-slate-900">
                                             {customer.name}
@@ -133,6 +192,51 @@ const CustomersPage = () => {
                                 ))}
                             </tbody>
                         </table>
+
+                        <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
+                            <p className="text-sm text-slate-500">
+                                Showing {startCustomerNumber}-{endCustomerNumber} of {filteredCustomers.length} customers
+                            </p>
+
+                            {totalPages > 1 ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Prev
+                                    </button>
+
+                                    {paginationRange.map((pageNumber) => (
+                                        <button
+                                            key={pageNumber}
+                                            type="button"
+                                            onClick={() => setCurrentPage(pageNumber)}
+                                            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                                                currentPage === pageNumber
+                                                    ? "bg-[#87CEEB] text-white"
+                                                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            {pageNumber}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentPage((page) => Math.min(page + 1, totalPages))
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 )}
             </div>

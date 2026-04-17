@@ -1,12 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { LoaderCircle, Plus, Upload, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import API from "../../api";
+
+const ALL_PRODUCTS_OPTION = "__all_products__";
 
 const initialFormState = {
     name: "",
+    brand: "",
     qty: "",
     price: "",
-    oldPrice: "",
     discount: "",
     rating: "",
     ratingCount: "",
@@ -20,14 +23,27 @@ const AdminProductModal = ({
     isOpen,
     onClose,
     categories,
+    brands = [],
     onCreated,
     defaultCategoryId = "",
     mode = "create",
     product = null,
 }) => {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState(initialFormState);
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const originalPrice = Number(formData.price) || 0;
+    const discountPercentage = Math.min(Math.max(Number(formData.discount) || 0, 0), 100);
+    const finalPrice = useMemo(() => {
+        if (!originalPrice) {
+            return 0;
+        }
+
+        const discountedPrice = originalPrice - (originalPrice * discountPercentage) / 100;
+        return Math.max(Math.round(discountedPrice), 0);
+    }, [discountPercentage, originalPrice]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -35,12 +51,20 @@ const AdminProductModal = ({
         }
 
         if (mode === "edit" && product) {
+            const productDiscount = Number(product.discount) || 0;
+            const originalProductPrice =
+                Number(product.oldPrice) > Number(product.price)
+                    ? Number(product.oldPrice)
+                    : productDiscount > 0 && Number(product.price) > 0
+                      ? Math.round(Number(product.price) / (1 - productDiscount / 100))
+                    : Number(product.price) || 0;
+
             setFormData({
                 name: product.name || "",
+                brand: product.brand || "",
                 qty: product.qty || "",
-                price: product.price?.toString() || "",
-                oldPrice: product.oldPrice?.toString() || "",
-                discount: product.discount?.toString() || "",
+                price: originalProductPrice ? originalProductPrice.toString() : "",
+                discount: productDiscount ? productDiscount.toString() : "",
                 rating: product.rating?.toString() || "",
                 ratingCount: product.ratingCount?.toString() || "",
                 stock: product.stock?.toString() || "",
@@ -71,6 +95,8 @@ const AdminProductModal = ({
         return null;
     }
 
+    const showBrandField = formData.category === ALL_PRODUCTS_OPTION;
+
     const handleChange = (event) => {
         const { name, value, files } = event.target;
 
@@ -84,14 +110,26 @@ const AdminProductModal = ({
 
         setFormData((prev) => ({
             ...prev,
-            [name]: value,
+            [name]:
+                name === "discount"
+                    ? value === ""
+                        ? ""
+                        : String(Math.min(Math.max(Number(value) || 0, 0), 100))
+                    : value,
         }));
     };
 
     const handleSubmit = async (event) => {
         event.preventDefault();
 
-        if (!formData.name.trim() || !formData.price || !formData.stock || !formData.category) {
+        const isAllProductsSelection = formData.category === ALL_PRODUCTS_OPTION;
+
+        if (
+            !formData.name.trim() ||
+            !formData.price ||
+            !formData.stock ||
+            !formData.category
+        ) {
             setError("Name, price, stock, and category are required.");
             return;
         }
@@ -100,17 +138,44 @@ const AdminProductModal = ({
             setIsSubmitting(true);
             setError("");
 
+            let resolvedCategoryId = formData.category;
+
+            if (isAllProductsSelection) {
+                const trimmedCategoryName = formData.name.trim();
+
+                try {
+                    const { data } = await API.post("/categories", {
+                        name: trimmedCategoryName,
+                    });
+
+                    resolvedCategoryId = data?.category?._id || "";
+                } catch (requestError) {
+                    const existingCategory = categories.find(
+                        (category) =>
+                            String(category?.name || "").trim().toLowerCase() ===
+                            trimmedCategoryName.toLowerCase()
+                    );
+
+                    if (existingCategory?._id) {
+                        resolvedCategoryId = existingCategory._id;
+                    } else {
+                        throw requestError;
+                    }
+                }
+            }
+
             const payload = new FormData();
             payload.append("name", formData.name.trim());
+            payload.append("brand", formData.brand.trim());
             payload.append("qty", formData.qty.trim());
-            payload.append("price", formData.price);
-            payload.append("oldPrice", formData.oldPrice);
-            payload.append("discount", formData.discount);
+            payload.append("price", finalPrice.toString());
+            payload.append("oldPrice", discountPercentage > 0 ? formData.price : "");
+            payload.append("discount", discountPercentage.toString());
             payload.append("rating", formData.rating);
             payload.append("ratingCount", formData.ratingCount);
             payload.append("stock", formData.stock);
             payload.append("description", formData.description.trim());
-            payload.append("category", formData.category);
+            payload.append("category", resolvedCategoryId);
 
             if (formData.image) {
                 payload.append("image", formData.image);
@@ -132,6 +197,10 @@ const AdminProductModal = ({
 
             onCreated?.();
             onClose();
+
+            if (isAllProductsSelection && mode !== "edit") {
+                navigate("/products");
+            }
         } catch (requestError) {
             setError(
                 requestError?.response?.data?.message ||
@@ -157,8 +226,8 @@ const AdminProductModal = ({
                             </h3>
                             <p className="mt-1 text-sm text-slate-500">
                                 {mode === "edit"
-                                    ? "Product details update karo."
-                                    : "Naya product admin panel se create karo."}
+                                    ? "Update product details."
+                                    : "Create a new product from the admin panel."}
                             </p>
                         </div>
 
@@ -217,8 +286,30 @@ const AdminProductModal = ({
                                             {category.name}
                                         </option>
                                     ))}
+                                    <option value={ALL_PRODUCTS_OPTION}>All Products</option>
                                 </select>
                             </div>
+
+                            {showBrandField ? (
+                                <div>
+                                    <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                        Brand
+                                    </label>
+                                    <select
+                                        name="brand"
+                                        value={formData.brand}
+                                        onChange={handleChange}
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                    >
+                                        <option value="">Select brand</option>
+                                        {brands.map((brand) => (
+                                            <option key={brand} value={brand}>
+                                                {brand}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            ) : null}
 
                             <div>
                                 <label className="mb-2 block text-sm font-semibold text-slate-700">
@@ -233,20 +324,37 @@ const AdminProductModal = ({
                                     className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter price"
                                 />
+                                <p className="mt-2 text-xs text-slate-500">
+                                    Enter original price before discount.
+                                </p>
                             </div>
 
                             <div>
                                 <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Old Price
+                                    Discount (%)
                                 </label>
                                 <input
                                     type="number"
                                     min="0"
-                                    name="oldPrice"
-                                    value={formData.oldPrice}
+                                    max="100"
+                                    name="discount"
+                                    value={formData.discount}
                                     onChange={handleChange}
                                     className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
-                                    placeholder="Enter old price"
+                                    placeholder="Enter discount percentage"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                    Final Price
+                                </label>
+                                <input
+                                    type="text"
+                                    readOnly
+                                    value={finalPrice ? `Rs ${finalPrice}` : ""}
+                                    className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 text-sm font-semibold text-slate-700 outline-none"
+                                    placeholder="Auto calculated"
                                 />
                             </div>
 
@@ -262,21 +370,6 @@ const AdminProductModal = ({
                                     onChange={handleChange}
                                     className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
                                     placeholder="Enter stock"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                    Discount
-                                </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    name="discount"
-                                    value={formData.discount}
-                                    onChange={handleChange}
-                                    className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
-                                    placeholder="Enter discount %"
                                 />
                             </div>
 

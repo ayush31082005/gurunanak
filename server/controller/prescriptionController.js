@@ -163,6 +163,90 @@ export const getMyPrescriptions = async (req, res) => {
     }
 };
 
+export const reorderPrescription = async (req, res) => {
+    try {
+        const userEmail = normalizeEmail(req.user.email);
+        const existingPrescription = await PrescriptionRequest.findOne({
+            _id: req.params.id,
+            email: userEmail,
+        });
+
+        if (!existingPrescription) {
+            return res.status(404).json({
+                success: false,
+                message: "Prescription not found.",
+            });
+        }
+
+        const fileResponse = await fetch(existingPrescription.fileUrl);
+
+        if (!fileResponse.ok) {
+            return res.status(400).json({
+                success: false,
+                message: "Unable to reuse this prescription file right now.",
+            });
+        }
+
+        const fileArrayBuffer = await fileResponse.arrayBuffer();
+        const fileBuffer = Buffer.from(fileArrayBuffer);
+
+        if (!fileBuffer.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Prescription file is empty or unavailable.",
+            });
+        }
+
+        if (fileBuffer.length > MAX_FILE_SIZE) {
+            return res.status(400).json({
+                success: false,
+                message: "Prescription file size must be 5MB or less.",
+            });
+        }
+
+        const cloudinaryUpload = await uploadPrescriptionToCloudinary({
+            fileBuffer,
+            fileName: existingPrescription.fileName,
+            fileType: existingPrescription.fileType,
+        });
+
+        const reorderedPrescription = await PrescriptionRequest.create({
+            user: req.user._id,
+            name: existingPrescription.name,
+            email: userEmail,
+            mobile: existingPrescription.mobile,
+            address: existingPrescription.address,
+            fileName: existingPrescription.fileName,
+            fileType: existingPrescription.fileType,
+            fileSize: fileBuffer.length,
+            fileUrl: cloudinaryUpload.secure_url,
+            cloudinaryPublicId: cloudinaryUpload.public_id,
+            status: "submitted",
+        });
+
+        try {
+            await sendPrescriptionNotification(reorderedPrescription);
+            reorderedPrescription.notificationSent = true;
+            await reorderedPrescription.save();
+        } catch (notificationError) {
+            console.error("Prescription reorder notification failed:", notificationError.message);
+        }
+
+        return res.status(201).json({
+            success: true,
+            message: "Prescription reordered successfully.",
+            prescription: reorderedPrescription,
+        });
+    } catch (error) {
+        console.error("Prescription reorder failed:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Failed to reorder prescription.",
+        });
+    }
+};
+
 export const getAdminPrescriptions = async (req, res) => {
     try {
         const prescriptions = await PrescriptionRequest.find({})

@@ -1,42 +1,27 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ayurvedaBrands } from "../../data/brands";
 import SectionHeader from "../common/SectionHeader";
 
 const AyurvedaBrands = () => {
   const trackRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const mediaQuery = window.matchMedia("(max-width: 639px)");
-    const updateView = () => setIsMobileView(mediaQuery.matches);
-
-    updateView();
-    mediaQuery.addEventListener("change", updateView);
-
-    return () => mediaQuery.removeEventListener("change", updateView);
-  }, []);
-
-  useEffect(() => {
-    if (!isMobileView) return undefined;
-
     const container = trackRef.current;
     if (!container) return undefined;
 
     let frame;
+    let position = 0;
     const speed = 0.35;
-    const maxScroll = container.scrollWidth - container.clientWidth;
-    const loopPoint = maxScroll / 2;
-    let position = loopPoint;
-
-    container.scrollLeft = position;
 
     const animate = () => {
       if (!isPaused) {
-        position -= speed;
+        position += speed;
 
-        if (position <= 0) {
-          position = loopPoint;
+        if (position >= container.scrollWidth / 2) {
+          position = 0;
         }
 
         container.scrollLeft = position;
@@ -47,9 +32,9 @@ const AyurvedaBrands = () => {
 
     frame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(frame);
-  }, [isMobileView, isPaused]);
+  }, [isPaused]);
 
-  const items = isMobileView ? [...ayurvedaBrands, ...ayurvedaBrands] : ayurvedaBrands;
+  const items = [...ayurvedaBrands, ...ayurvedaBrands];
 
   return (
     <section className="bg-white py-2 sm:py-3 lg:py-4">
@@ -63,20 +48,20 @@ const AyurvedaBrands = () => {
           onTouchStart={() => setIsPaused(true)}
           onTouchEnd={() => setIsPaused(false)}
         >
-          {isMobileView ? (
-            <>
-              <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-8 bg-gradient-to-r from-white to-transparent" />
-              <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-8 bg-gradient-to-l from-white to-transparent" />
-            </>
-          ) : null}
+          <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-8 bg-gradient-to-r from-white to-transparent sm:w-12" />
+          <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-8 bg-gradient-to-l from-white to-transparent sm:w-12" />
 
           <div
             ref={trackRef}
             className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
           >
             {items.map((brand, index) => (
-              <div
+              <button
                 key={`${brand.id}-${index}`}
+                type="button"
+                onClick={() =>
+                  navigate(`/products?${new URLSearchParams({ brand: brand.name }).toString()}`)
+                }
                 className="flex h-28 w-32 flex-shrink-0 flex-col items-center justify-center gap-2 p-1.5 text-center cursor-pointer transition-all duration-500 ease-out hover:-translate-y-0.5"
               >
                 <div className={`flex h-16 w-16 items-center justify-center overflow-hidden rounded-full ${brand.bg} shadow-sm`}>
@@ -94,7 +79,7 @@ const AyurvedaBrands = () => {
                 <span className="line-clamp-2 text-xs font-semibold leading-tight text-textMain">
                   {brand.name}
                 </span>
-              </div>
+              </button>
             ))}
           </div>
         </div>

@@ -156,9 +156,10 @@ const homeopathyProducts = [
 ];
 
 const Homeopathy = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: homeopathyProducts,
         allowedCategories: ["Homeopathy", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -174,6 +175,7 @@ const Homeopathy = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search homeopathy products..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

@@ -296,9 +296,10 @@ const hairCareProducts = [
 ];
 
 const HairCare = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: hairCareProducts,
         allowedCategories: ["Hair Care", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -310,11 +311,15 @@ const HairCare = () => {
             headingDescription="Explore hair care products by category, brand and need."
             heroEyebrow="Beauty Essentials"
             heroDescription="Discover shampoos, oils, serums and repair treatments with a salon-style banner tailored to your hair routine."
-            heroImage="https://images.unsplash.com/photo-1522337660859-02fbefca4702?auto=format&fit=crop&w=1600&q=80"
+            heroImage="./product/hair-care.png"
+            heroImageFit="cover"
+            heroImagePosition="right center"
+            heroHeightClass="h-[110px] sm:h-[135px] lg:h-[150px]"
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search hair care products..."
             hideBrokenImages
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

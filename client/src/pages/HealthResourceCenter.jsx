@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { X } from "lucide-react";
 import CategoryHeroBanner from "../components/common/CategoryHeroBanner";
 
 const filterOptions = [
@@ -15,6 +16,12 @@ const diseaseData = [
         type: "disease",
         category: "All Diseases",
         description: "Know symptoms, causes, prevention, and treatment for diabetes.",
+        relatedTitle: "Related to Diabetes",
+        relatedPoints: [
+            "Common symptoms include increased thirst, frequent urination, weakness, and blurred vision.",
+            "Helpful care tips include regular sugar monitoring, a balanced diet, walking daily, and taking medicines on time.",
+            "Consult a doctor if sugar levels remain very high, dizziness increases, or wound healing becomes slow.",
+        ],
     },
     {
         id: 2,
@@ -22,6 +29,12 @@ const diseaseData = [
         type: "disease",
         category: "All Diseases",
         description: "Understand hypertension and how to manage it effectively.",
+        relatedTitle: "Related to High Blood Pressure",
+        relatedPoints: [
+            "Risk signs may include headache, chest discomfort, anxiety, and dizziness.",
+            "Daily care should focus on a low-salt diet, stress control, regular blood pressure checks, and timely medication.",
+            "Seek immediate medical help if blood pressure rises suddenly with chest pain or shortness of breath.",
+        ],
     },
     {
         id: 3,
@@ -29,6 +42,12 @@ const diseaseData = [
         type: "disease",
         category: "All Diseases",
         description: "Basic information about common fever and home care guidance.",
+        relatedTitle: "Related to Fever",
+        relatedPoints: [
+            "Common causes include viral infections, seasonal illness, or body inflammation.",
+            "Home care usually includes hydration, rest, light meals, and regular temperature monitoring.",
+            "See a doctor if fever lasts more than two to three days, breathing issues appear, or body pain becomes severe.",
+        ],
     },
 ];
 
@@ -39,6 +58,12 @@ const medicineData = [
         type: "medicine",
         category: "All Medicines",
         description: "Used for fever and mild to moderate pain relief.",
+        relatedTitle: "Related to Paracetamol",
+        relatedPoints: [
+            "It is commonly used for fever reduction and mild to moderate pain relief.",
+            "Always take the dose according to medical advice or the product label, and avoid overuse.",
+            "People with liver concerns should use it only after proper medical guidance.",
+        ],
     },
     {
         id: 5,
@@ -46,6 +71,12 @@ const medicineData = [
         type: "medicine",
         category: "All Medicines",
         description: "Antibiotic medicine used in bacterial infections.",
+        relatedTitle: "Related to Azithromycin",
+        relatedPoints: [
+            "This antibiotic is used for bacterial infections and is not suitable for every cold or cough.",
+            "It is important to complete the full course and not stop midway.",
+            "Avoid using antibiotics without a valid prescription.",
+        ],
     },
     {
         id: 6,
@@ -53,6 +84,12 @@ const medicineData = [
         type: "medicine",
         category: "All Medicines",
         description: "Common medicine used for allergy relief.",
+        relatedTitle: "Related to Cetirizine",
+        relatedPoints: [
+            "It is commonly used to relieve allergy symptoms such as sneezing, itching, and runny nose.",
+            "Some people may feel sleepy after taking it, so monitor how your body responds.",
+            "If symptoms keep returning, identifying the allergy trigger can be very helpful.",
+        ],
     },
 ];
 
@@ -63,6 +100,12 @@ const therapeuticClassData = [
         type: "class",
         category: "Medicines by Therapeutic Class",
         description: "Pain relief medicines including non-opioid options.",
+        relatedTitle: "Related to Analgesics",
+        relatedPoints: [
+            "This is a class of pain-relief medicines used for headache, body pain, and injury-related discomfort.",
+            "Not every painkiller is safe for every patient, especially in people with kidney or stomach issues.",
+            "For long-term pain, medical consultation is better than repeated self-medication.",
+        ],
     },
     {
         id: 8,
@@ -70,6 +113,12 @@ const therapeuticClassData = [
         type: "class",
         category: "Medicines by Therapeutic Class",
         description: "Medicines used for treating bacterial infections.",
+        relatedTitle: "Related to Antibiotics",
+        relatedPoints: [
+            "These medicines treat bacterial infections and are not directly useful for viral flu or the common cold.",
+            "Using the wrong antibiotic or leaving a course incomplete can increase antibiotic resistance.",
+            "The safest approach is to use antibiotics only with a prescription.",
+        ],
     },
     {
         id: 9,
@@ -77,6 +126,12 @@ const therapeuticClassData = [
         type: "class",
         category: "Medicines by Therapeutic Class",
         description: "Used for allergy, sneezing, itching, and cold symptoms.",
+        relatedTitle: "Related to Antihistamines",
+        relatedPoints: [
+            "They are used to manage allergy symptoms such as sneezing, itching, and watery eyes.",
+            "Some antihistamines may cause drowsiness, so timing and daily routine matter.",
+            "If allergies keep recurring, identifying the cause can help with long-term relief.",
+        ],
     },
 ];
 
@@ -86,6 +141,7 @@ const HealthResourceCenter = () => {
     const [searchParams] = useSearchParams();
     const [selectedFilter, setSelectedFilter] = useState("All Diseases");
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [selectedResource, setSelectedResource] = useState(null);
 
     useEffect(() => {
         const filterFromQuery = searchParams.get("filter");
@@ -97,6 +153,17 @@ const HealthResourceCenter = () => {
 
         setSelectedFilter("All Diseases");
     }, [searchParams]);
+
+    useEffect(() => {
+        const handleEsc = (event) => {
+            if (event.key === "Escape") {
+                setSelectedResource(null);
+            }
+        };
+
+        window.addEventListener("keydown", handleEsc);
+        return () => window.removeEventListener("keydown", handleEsc);
+    }, []);
 
     const filteredData = useMemo(() => {
         return allResources.filter((item) => {
@@ -205,6 +272,7 @@ const HealthResourceCenter = () => {
 
                                         <button
                                             type="button"
+                                            onClick={() => setSelectedResource(item)}
                                             className="mt-5 inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
                                         >
                                             Read More
@@ -216,6 +284,63 @@ const HealthResourceCenter = () => {
                     </div>
                 </div>
             </div>
+
+            {selectedResource ? (
+                <>
+                    <div
+                        className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-[2px]"
+                        onClick={() => setSelectedResource(null)}
+                    />
+
+                    <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                        <div className="w-full max-w-[560px] rounded-[28px] bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.22)] sm:p-7">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <span className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#87CEEB]">
+                                        {selectedResource.type === "disease"
+                                            ? "Disease"
+                                            : selectedResource.type === "medicine"
+                                                ? "Medicine"
+                                                : "Therapeutic Class"}
+                                    </span>
+                                    <h3 className="mt-3 text-2xl font-bold text-slate-900">
+                                        {selectedResource.title}
+                                    </h3>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedResource(null)}
+                                    className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition hover:bg-slate-200"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+
+                            <p className="mt-4 text-sm leading-7 text-slate-600">
+                                {selectedResource.description}
+                            </p>
+
+                            <div className="mt-6 rounded-3xl bg-slate-50 p-5">
+                                <h4 className="text-base font-bold text-slate-900">
+                                    {selectedResource.relatedTitle || `Related to ${selectedResource.title}`}
+                                </h4>
+
+                                <div className="mt-4 space-y-3">
+                                    {(selectedResource.relatedPoints || []).map((point) => (
+                                        <div
+                                            key={point}
+                                            className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-600"
+                                        >
+                                            {point}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            ) : null}
         </section>
     );
 };

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { healthConcerns } from "../../data/brands";
 import SectionHeader from "../common/SectionHeader";
 
 const HealthConcerns = () => {
   const trackRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
+  const navigate = useNavigate();
 
   const items = [...healthConcerns, ...healthConcerns];
 
@@ -57,8 +59,12 @@ const HealthConcerns = () => {
             className="flex gap-4 overflow-x-auto pb-1 scrollbar-hide"
           >
             {items.map((item, index) => (
-              <div
+              <button
                 key={`${item.id}-${index}`}
+                type="button"
+                onClick={() =>
+                  navigate(`/products?${new URLSearchParams({ concern: item.label }).toString()}`)
+                }
                 className="group flex min-w-[104px] flex-shrink-0 flex-col items-center sm:min-w-[120px] md:min-w-[132px]"
               >
                 <div
@@ -77,7 +83,7 @@ const HealthConcerns = () => {
                 <p className="mt-2 max-w-[92px] text-center text-xs font-semibold leading-4 text-slate-800 sm:max-w-[108px] sm:text-[13px] md:text-sm">
                   {item.label}
                 </p>
-              </div>
+              </button>
             ))}
           </div>
         </div>

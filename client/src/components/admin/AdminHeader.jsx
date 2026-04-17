@@ -1,7 +1,30 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Menu, Search } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 
 const AdminHeader = ({ title, setMobileOpen }) => {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const [searchValue, setSearchValue] = useState(searchParams.get("search") || "");
+
+    useEffect(() => {
+        setSearchValue(searchParams.get("search") || "");
+    }, [searchParams]);
+
+    const handleSearchChange = (event) => {
+        const nextValue = event.target.value;
+        const nextSearchParams = new URLSearchParams(searchParams);
+
+        setSearchValue(nextValue);
+
+        if (nextValue.trim()) {
+            nextSearchParams.set("search", nextValue);
+        } else {
+            nextSearchParams.delete("search");
+        }
+
+        setSearchParams(nextSearchParams);
+    };
+
     return (
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-xl">
             <div className="flex flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
@@ -30,6 +53,8 @@ const AdminHeader = ({ title, setMobileOpen }) => {
                         <input
                             type="text"
                             placeholder="Search anything..."
+                            value={searchValue}
+                            onChange={handleSearchChange}
                             className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-[#87CEEB] sm:w-72"
                         />
                     </div>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../../api";
 import StatusBadge from "../../components/admin/StatusBadge";
 
@@ -10,11 +11,14 @@ const prescriptionStatusOptions = [
 ];
 
 const PrescriptionsPage = () => {
+    const prescriptionsPerPage = 10;
+    const [searchParams] = useSearchParams();
     const [prescriptions, setPrescriptions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [errorMessage, setErrorMessage] = useState("");
     const [updatingPrescriptionId, setUpdatingPrescriptionId] = useState("");
     const [deletingPrescriptionId, setDeletingPrescriptionId] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
 
     const fetchPrescriptions = async () => {
         try {
@@ -35,6 +39,8 @@ const PrescriptionsPage = () => {
         fetchPrescriptions();
     }, []);
 
+    const searchQuery = (searchParams.get("search") || "").trim().toLowerCase();
+
     const stats = useMemo(() => {
         return {
             total: prescriptions.length,
@@ -43,6 +49,64 @@ const PrescriptionsPage = () => {
             rejected: prescriptions.filter((item) => item.status === "rejected").length,
         };
     }, [prescriptions]);
+
+    const filteredPrescriptions = useMemo(() => {
+        if (!searchQuery) {
+            return prescriptions;
+        }
+
+        return prescriptions.filter((item) => {
+            const searchableText = [
+                item.name,
+                item.email,
+                item.mobile,
+                item.fileName,
+                item.fileType,
+                item.address,
+                item.status,
+                item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "",
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+
+            return searchableText.includes(searchQuery);
+        });
+    }, [prescriptions, searchQuery]);
+
+    const totalPages = Math.ceil(filteredPrescriptions.length / prescriptionsPerPage);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchQuery]);
+
+    useEffect(() => {
+        if (totalPages === 0) {
+            setCurrentPage(1);
+            return;
+        }
+
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedPrescriptions = useMemo(() => {
+        const startIndex = (currentPage - 1) * prescriptionsPerPage;
+        return filteredPrescriptions.slice(startIndex, startIndex + prescriptionsPerPage);
+    }, [currentPage, filteredPrescriptions]);
+
+    const paginationRange = useMemo(
+        () => Array.from({ length: totalPages }, (_, index) => index + 1),
+        [totalPages]
+    );
+
+    const startPrescriptionNumber =
+        filteredPrescriptions.length === 0 ? 0 : (currentPage - 1) * prescriptionsPerPage + 1;
+    const endPrescriptionNumber = Math.min(
+        currentPage * prescriptionsPerPage,
+        filteredPrescriptions.length
+    );
 
     const handleStatusChange = async (prescriptionId, status) => {
         try {
@@ -139,9 +203,9 @@ const PrescriptionsPage = () => {
                     <div className="mt-6 rounded-2xl bg-rose-50 p-8 text-center text-rose-600">
                         {errorMessage}
                     </div>
-                ) : prescriptions.length === 0 ? (
+                ) : filteredPrescriptions.length === 0 ? (
                     <div className="mt-6 rounded-2xl bg-slate-50 p-8 text-center text-slate-500">
-                        No prescriptions found.
+                        No prescriptions found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
                     <div className="mt-6 overflow-x-auto">
@@ -158,7 +222,7 @@ const PrescriptionsPage = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {prescriptions.map((item) => (
+                                {paginatedPrescriptions.map((item) => (
                                     <tr key={item._id} className="border-b border-slate-100 align-top text-sm">
                                         <td className="py-4 pr-4">
                                             <p className="font-semibold text-slate-900">{item.name}</p>
@@ -222,6 +286,52 @@ const PrescriptionsPage = () => {
                                 ))}
                             </tbody>
                         </table>
+
+                        <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
+                            <p className="text-sm text-slate-500">
+                                Showing {startPrescriptionNumber}-{endPrescriptionNumber} of{" "}
+                                {filteredPrescriptions.length} prescriptions
+                            </p>
+
+                            {totalPages > 1 ? (
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setCurrentPage((page) => Math.max(page - 1, 1))}
+                                        disabled={currentPage === 1}
+                                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Prev
+                                    </button>
+
+                                    {paginationRange.map((pageNumber) => (
+                                        <button
+                                            key={pageNumber}
+                                            type="button"
+                                            onClick={() => setCurrentPage(pageNumber)}
+                                            className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                                                currentPage === pageNumber
+                                                    ? "bg-[#87CEEB] text-white"
+                                                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                            }`}
+                                        >
+                                            {pageNumber}
+                                        </button>
+                                    ))}
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setCurrentPage((page) => Math.min(page + 1, totalPages))
+                                        }
+                                        disabled={currentPage === totalPages}
+                                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        Next
+                                    </button>
+                                </div>
+                            ) : null}
+                        </div>
                     </div>
                 )}
             </div>

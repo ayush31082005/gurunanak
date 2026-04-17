@@ -93,9 +93,10 @@ const immunityProducts = [
 ];
 
 const ImmunityBoosters = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: immunityProducts,
         allowedCategories: ["Immunity Boosters", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -111,6 +112,7 @@ const ImmunityBoosters = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search immunity products..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

@@ -7,13 +7,21 @@ import { allProducts } from "../data/products";
 import useManagedProducts from "../hooks/useManagedProducts";
 import { proceedToCheckoutWithAuth } from "../utils/checkout";
 
+const normalizeText = (value = "") =>
+  String(value)
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
 const ProductDetails = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const { addToCart } = useCart();
 
-  const managedProducts = useManagedProducts({
+  const { products: managedProducts, isLoaded } = useManagedProducts({
     fallbackProducts: allProducts,
+    returnMeta: true,
   });
 
   const product = useMemo(
@@ -31,21 +39,42 @@ const ProductDetails = () => {
   const relatedProducts = useMemo(() => {
     if (!product) return [];
 
-    const sameCategoryProducts = managedProducts.filter(
-      (item) => item.id !== product.id && item.category === product.category
+    const currentCategory = normalizeText(product.category);
+    const currentBrand = normalizeText(product.brand);
+    const currentNameWords = new Set(
+      normalizeText(product.name)
+        .split(" ")
+        .filter((word) => word.length > 2)
     );
 
-    if (sameCategoryProducts.length >= 4) {
-      return sameCategoryProducts.slice(0, 4);
-    }
-
-    const fallbackProducts = managedProducts.filter((item) => item.id !== product.id);
-
-    return [...sameCategoryProducts, ...fallbackProducts]
+    return managedProducts
       .filter(
-        (item, index, array) =>
-          array.findIndex((currentItem) => currentItem.id === item.id) === index
+        (item) =>
+          item.id !== product.id &&
+          normalizeText(item.category) === currentCategory
       )
+      .map((item) => {
+        const itemBrand = normalizeText(item.brand);
+        const itemNameWords = normalizeText(item.name)
+          .split(" ")
+          .filter((word) => word.length > 2);
+        const sharedWordCount = itemNameWords.filter((word) =>
+          currentNameWords.has(word)
+        ).length;
+
+        return {
+          ...item,
+          relevanceScore:
+            (itemBrand && itemBrand === currentBrand ? 3 : 0) + sharedWordCount,
+        };
+      })
+      .sort((a, b) => {
+        if (b.relevanceScore !== a.relevanceScore) {
+          return b.relevanceScore - a.relevanceScore;
+        }
+
+        return (b.rating ?? 0) - (a.rating ?? 0);
+      })
       .slice(0, 4);
   }, [managedProducts, product]);
 
@@ -62,6 +91,22 @@ const ProductDetails = () => {
     proceedToCheckoutWithAuth(navigate, product);
   };
 
+  if (!isLoaded && !product) {
+    return (
+      <section className="bg-[#f6f7fb] py-10">
+        <div className="container-padded">
+          <div className="rounded-[28px] border border-slate-200 bg-white p-10 shadow-sm">
+            <div className="animate-pulse space-y-5">
+              <div className="h-8 w-52 rounded-xl bg-slate-200" />
+              <div className="h-6 w-72 rounded-xl bg-slate-100" />
+              <div className="h-[320px] rounded-[24px] bg-slate-100" />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!product) {
     return (
       <>
@@ -69,7 +114,7 @@ const ProductDetails = () => {
           <div className="container-padded">
             <div className="rounded-[28px] border border-dashed border-slate-300 bg-white p-10 text-center shadow-sm">
               <p className="text-base text-slate-500">
-                Yeh product abhi available nahi mila.
+                This product is not available right now.
               </p>
               <Link
                 to="/products"
@@ -86,9 +131,9 @@ const ProductDetails = () => {
 
   const description =
     product.description ||
-    `${product.name} ek trusted healthcare product hai jo ${(
+    `${product.name} is a trusted healthcare product designed to support ${(
       product.category || "wellness"
-    ).toLowerCase()} needs ke liye suitable hai.`;
+    ).toLowerCase()} needs.`;
 
   return (
     <>
@@ -220,7 +265,7 @@ const ProductDetails = () => {
               <div className="mb-5">
                 <h2 className="text-2xl font-bold text-slate-900">Related Products</h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Isi category ke aur products jo tum dekh sakte ho.
+                  More products you may like from this category.
                 </p>
               </div>
 

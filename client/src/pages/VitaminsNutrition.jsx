@@ -261,9 +261,10 @@ const vitaminsProducts = [
 ];
 
 const VitaminsNutrition = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: vitaminsProducts,
         allowedCategories: ["Vitamins & Nutrition", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -279,6 +280,7 @@ const VitaminsNutrition = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search vitamins & nutrition..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };

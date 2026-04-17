@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
     Search,
     Star,
@@ -11,6 +11,67 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCart } from "../../context/CartContext";
 import { proceedToCheckoutWithAuth } from "../../utils/checkout";
 
+const normalizeValue = (value = "") =>
+    String(value)
+        .trim()
+        .toLowerCase();
+
+const filterStopWords = new Set(["all", "and", "by", "product", "products"]);
+
+const getSingularKeyword = (keyword = "") => {
+    if (keyword.length > 3 && keyword.endsWith("ies")) {
+        return `${keyword.slice(0, -3)}y`;
+    }
+
+    if (keyword.length > 3 && keyword.endsWith("s")) {
+        return keyword.slice(0, -1);
+    }
+
+    return keyword;
+};
+
+const getFilterGroups = (filterLabel = "") =>
+    normalizeValue(filterLabel)
+        .split(/\s*(?:&|and|\/|,)\s*/g)
+        .map((group) =>
+            group
+                .split(/\s+/)
+                .map((keyword) => keyword.replace(/[^a-z0-9]/g, ""))
+                .filter((keyword) => keyword && !filterStopWords.has(keyword))
+                .map((keyword) => {
+                    const singularKeyword = getSingularKeyword(keyword);
+                    return singularKeyword !== keyword
+                        ? [keyword, singularKeyword]
+                        : [keyword];
+                })
+        )
+        .filter((group) => group.length > 0);
+
+const matchesSelectedFilter = (item, selectedFilter, allLabel) => {
+    if (selectedFilter === allLabel) {
+        return true;
+    }
+
+    const itemCategory = normalizeValue(item.category);
+    const normalizedFilter = normalizeValue(selectedFilter);
+
+    if (itemCategory === normalizedFilter) {
+        return true;
+    }
+
+    const searchableText = normalizeValue(
+        `${item.name || ""} ${item.brand || ""} ${item.description || ""} ${item.category || ""}`
+    );
+
+    const filterGroups = getFilterGroups(selectedFilter);
+
+    return filterGroups.some((group) =>
+        group.every((keywordAlternatives) =>
+            keywordAlternatives.some((keyword) => searchableText.includes(keyword))
+        )
+    );
+};
+
 const CategoryProductPage = ({
     pageTitle,
     allLabel,
@@ -20,11 +81,16 @@ const CategoryProductPage = ({
     heroEyebrow,
     heroDescription,
     heroImage,
+    heroImageFit = "cover",
+    heroImagePosition = "center",
+    heroHeightClass = "h-[90px] sm:h-[110px] lg:h-[120px]",
     filterOptions,
     products,
     searchPlaceholder,
     hideBrokenImages = false,
+    isLoading = false,
 }) => {
+    const productsPerPage = 10;
     const navigate = useNavigate();
     const { addToCart } = useCart();
     const [searchParams] = useSearchParams();
@@ -40,6 +106,10 @@ const CategoryProductPage = ({
     const [isFilterOpen, setIsFilterOpen] = useState(false);
     const [isSortOpen, setIsSortOpen] = useState(false);
     const [sortBy, setSortBy] = useState("relevance");
+    const [currentPage, setCurrentPage] = useState(1);
+    const [shouldScrollSidebar, setShouldScrollSidebar] = useState(false);
+    const sidebarListRef = useRef(null);
+    const contentAreaRef = useRef(null);
 
     useEffect(() => {
         const filterFromUrl = searchParams.get("filter");
@@ -82,7 +152,7 @@ const CategoryProductPage = ({
 
     const filteredProducts = useMemo(() => {
         let result = products.filter((item) => {
-            const matchesFilter = selectedFilter === allLabel || item.category === selectedFilter;
+            const matchesFilter = matchesSelectedFilter(item, selectedFilter, allLabel);
             const query = searchTerm.toLowerCase();
             const itemName = item.name?.toLowerCase() || "";
             const itemBrand = item.brand?.toLowerCase() || "";
@@ -125,6 +195,78 @@ const CategoryProductPage = ({
         selectedBrands,
         sortBy,
     ]);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [selectedFilter, selectedBrands, sortBy, failedImageIds]);
+
+    const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+
+    useEffect(() => {
+        const updateSidebarScrollState = () => {
+            if (typeof window === "undefined" || window.innerWidth < 1024) {
+                setShouldScrollSidebar(false);
+                return;
+            }
+
+            const sidebarList = sidebarListRef.current;
+            const contentArea = contentAreaRef.current;
+
+            if (!sidebarList || !contentArea) {
+                setShouldScrollSidebar(false);
+                return;
+            }
+
+            setShouldScrollSidebar(sidebarList.scrollHeight > contentArea.offsetHeight);
+        };
+
+        updateSidebarScrollState();
+
+        const resizeObserver =
+            typeof ResizeObserver !== "undefined"
+                ? new ResizeObserver(() => updateSidebarScrollState())
+                : null;
+
+        if (resizeObserver && sidebarListRef.current && contentAreaRef.current) {
+            resizeObserver.observe(sidebarListRef.current);
+            resizeObserver.observe(contentAreaRef.current);
+        }
+
+        window.addEventListener("resize", updateSidebarScrollState);
+
+        return () => {
+            resizeObserver?.disconnect();
+            window.removeEventListener("resize", updateSidebarScrollState);
+        };
+    }, [filteredProducts.length, isLoading, selectedFilter, selectedBrands.length, totalPages]);
+
+    useEffect(() => {
+        if (totalPages === 0) {
+            setCurrentPage(1);
+            return;
+        }
+
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
+    const paginatedProducts = useMemo(() => {
+        const startIndex = (currentPage - 1) * productsPerPage;
+        return filteredProducts.slice(startIndex, startIndex + productsPerPage);
+    }, [currentPage, filteredProducts]);
+
+    const paginationRange = useMemo(
+        () => Array.from({ length: totalPages }, (_, index) => index + 1),
+        [totalPages]
+    );
+
+    const startProductNumber =
+        filteredProducts.length === 0 ? 0 : (currentPage - 1) * productsPerPage + 1;
+    const endProductNumber = Math.min(
+        currentPage * productsPerPage,
+        filteredProducts.length
+    );
 
     const handleAddToCart = (product) => {
         addToCart({
@@ -222,11 +364,19 @@ const CategoryProductPage = ({
     return (
         <section className="min-h-screen bg-[#f6f6f6] pb-8 pt-4 sm:pt-5">
             <div className="w-full px-0 sm:px-0 lg:px-0">
-                <div className="flex items-start gap-5">
-                    <aside className="hidden self-start lg:block lg:w-[118px] lg:shrink-0">
-                        <div className="lg:sticky lg:top-[118px] lg:pr-1">
-                            <div className="lg:max-h-[calc(100vh-230px)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide">
-                                <div className="space-y-3">
+                <div className="flex items-stretch gap-5">
+                    <aside className="hidden lg:block lg:w-[118px] lg:shrink-0 lg:self-stretch">
+                        <div className="h-full min-h-full border-r border-slate-200 bg-[#f1f3f5] pr-1">
+                            <div
+                                className={`h-full px-0 py-1 ${shouldScrollSidebar ? "lg:sticky lg:top-[118px]" : ""}`}
+                            >
+                                <div
+                                    ref={sidebarListRef}
+                                    className={`space-y-3 ${shouldScrollSidebar
+                                        ? "lg:max-h-[calc(100vh-230px)] lg:overflow-y-auto lg:overscroll-contain scrollbar-hide"
+                                        : ""
+                                        }`}
+                                >
                                     {visibleFilterCards.map((option, index) => {
                                         const isActive = selectedFilter === option.label;
                                         const isAllCard = index === 0;
@@ -267,7 +417,10 @@ const CategoryProductPage = ({
                         </div>
                     </aside>
 
-                    <div className="min-w-0 flex-1 pl-2 pr-3 sm:pl-3 sm:pr-4 lg:pl-4 lg:pr-5">
+                    <div
+                        ref={contentAreaRef}
+                        className="min-w-0 flex-1 self-start pl-2 pr-3 sm:pl-3 sm:pr-4 lg:pl-4 lg:pr-5"
+                    >
                         <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                             <div>
                                 <h1 className="text-[22px] font-bold leading-tight text-[#111827] sm:text-[28px]">
@@ -300,26 +453,44 @@ const CategoryProductPage = ({
                             <img
                                 src={heroImage}
                                 alt={pageTitle}
-                                className="h-[90px] w-full object-cover sm:h-[110px] lg:h-[120px]"
+                                className={`w-full ${heroHeightClass} ${heroImageFit === "contain" ? "object-contain" : "object-cover"}`}
+                                style={{ objectPosition: heroImagePosition }}
                             />
                         </div>
 
                         <div className="mb-2 flex justify-end">
                             <span className="inline-flex h-9 items-center justify-center rounded-2xl bg-white px-3.5 text-sm font-semibold text-slate-600">
-                                {filteredProducts.length} products
+                                {isLoading ? "Loading..." : `${filteredProducts.length} products`}
                             </span>
                         </div>
 
-                        {filteredProducts.length === 0 ? (
+                        {isLoading ? (
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                                {Array.from({ length: 10 }).map((_, index) => (
+                                    <article
+                                        key={`category-skeleton-${index}`}
+                                        className="rounded-[16px] border border-[#e5e7eb] bg-white p-3"
+                                    >
+                                        <div className="animate-pulse space-y-3">
+                                            <div className="h-[170px] rounded-[12px] bg-slate-100" />
+                                            <div className="h-5 w-3/4 rounded bg-slate-200" />
+                                            <div className="h-4 w-1/2 rounded bg-slate-100" />
+                                            <div className="h-4 w-2/3 rounded bg-slate-100" />
+                                            <div className="h-10 rounded-xl bg-slate-100" />
+                                        </div>
+                                    </article>
+                                ))}
+                            </div>
+                        ) : filteredProducts.length === 0 ? (
                             <div className="rounded-[24px] border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
                                 <h3 className="text-lg font-bold text-slate-800">No products found</h3>
                                 <p className="mt-2 text-sm text-slate-500">
-                                    Search change karo ya doosra filter select karo.
+                                    Try changing your search or selecting a different filter.
                                 </p>
                             </div>
                         ) : (
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                                {filteredProducts.map((item) => {
+                                {paginatedProducts.map((item) => {
                                     const discount = item.originalPrice
                                         ? Math.round(
                                             ((item.originalPrice - item.price) / item.originalPrice) * 100
@@ -433,6 +604,58 @@ const CategoryProductPage = ({
                                 })}
                             </div>
                         )}
+
+                        {!isLoading && filteredProducts.length > 0 ? (
+                            <div className="mt-6 flex flex-col gap-4 rounded-[16px] border border-[#e5e7eb] bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                                <p className="text-sm text-slate-500">
+                                    Showing {startProductNumber}-{endProductNumber} of{" "}
+                                    {filteredProducts.length} products
+                                </p>
+
+                                {totalPages > 1 ? (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCurrentPage((page) => Math.max(page - 1, 1))
+                                            }
+                                            disabled={currentPage === 1}
+                                            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Prev
+                                        </button>
+
+                                        {paginationRange.map((pageNumber) => (
+                                            <button
+                                                key={pageNumber}
+                                                type="button"
+                                                onClick={() => setCurrentPage(pageNumber)}
+                                                className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
+                                                    currentPage === pageNumber
+                                                        ? "bg-[#87CEEB] text-white"
+                                                        : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                                }`}
+                                            >
+                                                {pageNumber}
+                                            </button>
+                                        ))}
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setCurrentPage((page) =>
+                                                    Math.min(page + 1, totalPages)
+                                                )
+                                            }
+                                            disabled={currentPage === totalPages}
+                                            className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            Next
+                                        </button>
+                                    </div>
+                                ) : null}
+                            </div>
+                        ) : null}
                     </div>
                 </div>
             </div>

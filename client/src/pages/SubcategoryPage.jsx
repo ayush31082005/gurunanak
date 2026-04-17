@@ -36,10 +36,16 @@ const SubcategoryPage = () => {
   }
 
   const { category, link } = result;
-  const managedProducts = useManagedProducts({
+  const {
+    products: managedProducts,
+    isLoaded,
+    hasError,
+  } = useManagedProducts({
     fallbackProducts: allProducts,
     allowedCategories: [link.label, category.label],
+    returnMeta: true,
   });
+  const isProductsLoading = !isLoaded && !hasError;
 
   const subcategoryProducts = managedProducts.filter(
     (product) => product.category === link.label
@@ -71,9 +77,9 @@ const SubcategoryPage = () => {
           <div className="rounded-card border border-gray-200 bg-white p-7 shadow-card">
             <h2 className="mb-3 text-h2 text-textMain">About this page</h2>
             <p className="text-body-lg text-gray-600">
-              Admin ke dwara add kiye gaye matching products yahan live dikhte hain. Agar exact
-              subcategory product abhi nahi hai, to {category.label.toLowerCase()} ke related
-              products show honge.
+              Matching products added by the admin appear here automatically. If an exact
+              subcategory product is not available yet, related products from{" "}
+              {category.label.toLowerCase()} will be shown instead.
             </p>
 
             <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -89,7 +95,7 @@ const SubcategoryPage = () => {
             <h3 className="text-h3 text-textMain">Quick links</h3>
             <div className="mt-4 space-y-3">
               <Link to={`/shop/${category.slug}`} className="block font-medium text-primary">
-                ← Back to {category.label}
+                &larr; Back to {category.label}
               </Link>
               <Link to="/products" className="block font-medium text-primary">
                 Browse all products
@@ -106,6 +112,7 @@ const SubcategoryPage = () => {
             products={displayProducts}
             onAddToCart={handleAddToCart}
             onBuyNow={handleBuyNow}
+            isLoading={isProductsLoading}
           />
         </div>
       </section>

@@ -114,9 +114,10 @@ const sexualWellnessProducts = [
 ];
 
 const SexualWellness = () => {
-    const managedProducts = useManagedProducts({
+    const { products: managedProducts, isLoaded, hasError } = useManagedProducts({
         fallbackProducts: sexualWellnessProducts,
         allowedCategories: ["Sexual Wellness", ...filterOptions.slice(1)],
+        returnMeta: true,
     });
 
     return (
@@ -132,6 +133,7 @@ const SexualWellness = () => {
             filterOptions={filterOptions}
             products={managedProducts}
             searchPlaceholder="Search sexual wellness products..."
+            isLoading={!isLoaded && !hasError}
         />
     );
 };
