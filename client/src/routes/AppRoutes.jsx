@@ -33,6 +33,7 @@ import OrdersPage from "../pages/admin/OrdersPage";
 import CustomersPage from "../pages/admin/CustomersPage";
 import PrescriptionsPage from "../pages/admin/PrescriptionsPage";
 import UserDashboard from "../pages/UserDashboard";
+import MrRequestsPage from "../pages/admin/MrRequestsPage";
 import PrivacyPolicy from "../pages/footer/PrivacyPolicy";
 import ShippingPolicy from "../pages/footer/ShippingPolicy";
 import ReturnPolicy from "../pages/footer/ReturnPolicy";
@@ -40,6 +41,7 @@ import About from "../pages/footer/About";
 import TermsConditions from "../pages/footer/TermsConditions";
 
 import MrDashboard from "../pages/MR/MrProduct";
+import ProtectedRoleRoute from "../components/common/ProtectedRoleRoute";
 
 
 const AppRoutes = () => {
@@ -84,8 +86,13 @@ const AppRoutes = () => {
 
       </Route>
 
-      <Route path="/user-dashboard" element={<UserDashboard />} />
-      <Route path="/mr-dashboard" element={<MrDashboard />} />
+      <Route element={<ProtectedRoleRoute allowedRoles={["user"]} />}>
+        <Route path="/user-dashboard" element={<UserDashboard />} />
+      </Route>
+
+      <Route element={<ProtectedRoleRoute allowedRoles={["mr"]} />}>
+        <Route path="/mr-dashboard" element={<MrDashboard />} />
+      </Route>
 
       <Route path="/admin" element={<ProtectedAdminRoute />}>
         <Route element={<AdminLayout />}>
@@ -96,6 +103,7 @@ const AppRoutes = () => {
           <Route path="orders" element={<OrdersPage />} />
           {/* <Route path="inventory" element={<InventoryPage />} /> */}
           <Route path="customers" element={<CustomersPage />} />
+          <Route path="mr-requests" element={<MrRequestsPage />} />
           <Route path="prescriptions" element={<PrescriptionsPage />} />
           <Route path="user-dashboard" element={<UserDashboard />} />
         </Route>

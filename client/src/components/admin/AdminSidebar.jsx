@@ -6,6 +6,7 @@ import {
     ShoppingCart,
     Users,
     FileText,
+    BriefcaseMedical,
     LogOut,
     X,
 } from "lucide-react";
@@ -15,6 +16,7 @@ const menuItems = [
     { label: "Products", path: "/admin/products", icon: Pill },
     { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
     { label: "Customers", path: "/admin/customers", icon: Users },
+    { label: "MR Requests", path: "/admin/mr-requests", icon: BriefcaseMedical },
     { label: "Prescriptions", path: "/admin/prescriptions", icon: FileText },
 ];
 

@@ -10,6 +10,7 @@ const titleMap = {
     "/admin/orders": "Orders",
     "/admin/inventory": "Inventory",
     "/admin/customers": "Customers",
+    "/admin/mr-requests": "MR Requests",
     "/admin/prescriptions": "Prescriptions",
 };
 

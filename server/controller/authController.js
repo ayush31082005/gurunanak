@@ -3,17 +3,100 @@ import Otp from "../models/Otp.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
 import PrescriptionRequest from "../models/PrescriptionRequest.js";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import generateOtp from "../utils/generateOtp.js";
 import generateToken from "../utils/generateToken.js";
 import sendEmailOtp from "../utils/sendEmailOtp.js";
 import { sendAccountNotificationEmail } from "../utils/sendEmailOtp.js";
 
-const isValidEmail = (email) => {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const MR_PENDING_STATUS = "pending";
+const MR_APPROVED_STATUS = "approved";
+const MR_REJECTED_STATUS = "rejected";
+const NON_MR_STATUS = "not_applicable";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadsDirectory = path.join(__dirname, "..", "uploads");
+
+const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const normalizeEmail = (email = "") => email.toLowerCase().trim();
+
+const normalizeText = (value = "") => String(value).trim();
+
+const normalizeLicenseNumber = (value = "") =>
+    normalizeText(value).replace(/\s+/g, "").toUpperCase();
+
+const normalizeUppercaseIdentifier = (value = "") =>
+    normalizeText(value).replace(/\s+/g, "").toUpperCase();
+
+const buildUploadedFilePath = (file) => (file ? `/uploads/${file.filename}` : "");
+const buildUploadedFileName = (file) => (file ? file.originalname || file.filename : "");
+
+const resolveUploadedFilePath = (fileUrl = "") => {
+    const fileName = String(fileUrl || "")
+        .replace(/^\/?uploads\//, "")
+        .trim();
+
+    if (!fileName) {
+        return "";
+    }
+
+    return path.join(uploadsDirectory, fileName);
 };
 
-const formatDisplayName = (email = "") => {
-    const localPart = email.split("@")[0] || "";
+const deleteUploadedFiles = async (fileUrls = []) => {
+    await Promise.all(
+        fileUrls
+            .filter(Boolean)
+            .map(async (fileUrl) => {
+                const absolutePath = resolveUploadedFilePath(fileUrl);
+
+                if (!absolutePath) {
+                    return;
+                }
+
+                try {
+                    await fs.promises.unlink(absolutePath);
+                } catch (error) {
+                    if (error.code !== "ENOENT") {
+                        console.error(`Failed to delete upload ${absolutePath}:`, error.message);
+                    }
+                }
+            })
+    );
+};
+
+const cleanupMrOtpRecords = async (otpRecords = []) => {
+    if (!otpRecords.length) {
+        return;
+    }
+
+    await Promise.all(
+        otpRecords.map((otpRecord) =>
+            deleteUploadedFiles([
+                otpRecord?.mrRegistrationData?.gstCertificateUrl,
+                otpRecord?.mrRegistrationData?.drugLicenseDocumentUrl,
+            ])
+        )
+    );
+
+    await Otp.deleteMany({
+        _id: {
+            $in: otpRecords.map((otpRecord) => otpRecord._id),
+        },
+    });
+};
+
+const formatDisplayName = (user = {}) => {
+    const rawName = normalizeText(user.name || "");
+
+    if (rawName) {
+        return rawName;
+    }
+
+    const localPart = user.email?.split("@")[0] || "";
 
     if (!localPart) {
         return "User";
@@ -26,16 +109,57 @@ const formatDisplayName = (email = "") => {
 
 const formatUserResponse = (user) => ({
     _id: user._id,
-    name: formatDisplayName(user.email),
+    name: formatDisplayName(user),
     email: user.email,
+    phone: user.phone || "",
+    city: user.city || "",
+    state: user.state || "",
+    medicalStoreName: user.medicalStoreName || "",
+    gstNumber: user.gstNumber || "",
+    panNumber: user.panNumber || "",
+    drugLicenseNumber: user.drugLicenseNumber || "",
+    gstCertificateUrl: user.gstCertificateUrl || "",
+    drugLicenseDocumentUrl: user.drugLicenseDocumentUrl || "",
     isHealthCareExpert: user.isHealthCareExpert,
     isVerified: user.isVerified,
     role: user.role,
+    mrApprovalStatus: user.mrApprovalStatus || NON_MR_STATUS,
+    mrApprovedAt: user.mrApprovedAt || null,
+    createdAt: user.createdAt,
+    updatedAt: user.updatedAt,
+});
+
+const ensureApprovedMrAccount = (user) =>
+    user.role === "mr" && user.mrApprovalStatus !== MR_APPROVED_STATUS;
+
+const getPendingMrRequestPayload = (user) => ({
+    _id: user._id,
+    name: formatDisplayName(user),
+    email: user.email,
+    phone: user.phone || "",
+    city: user.city || "",
+    state: user.state || "",
+    medicalStoreName: user.medicalStoreName || "",
+    gstNumber: user.gstNumber || "",
+    panNumber: user.panNumber || "",
+    drugLicenseNumber: user.drugLicenseNumber || "",
+    gstCertificateUrl: user.gstCertificateUrl || "",
+    drugLicenseDocumentUrl: user.drugLicenseDocumentUrl || "",
+    mrApprovalStatus: user.mrApprovalStatus,
+    isVerified: user.isVerified,
+    createdAt: user.createdAt,
 });
 
 export const sendRegisterOtp = async (req, res) => {
     try {
-        const { email, isHealthCareExpert } = req.body;
+        const { email, role = "user", isHealthCareExpert = false } = req.body;
+
+        if (String(role).trim().toLowerCase() !== "user") {
+            return res.status(400).json({
+                success: false,
+                message: "Use the MR registration form to create an MR account",
+            });
+        }
 
         if (!email) {
             return res.status(400).json({
@@ -51,7 +175,7 @@ export const sendRegisterOtp = async (req, res) => {
             });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
+        const normalizedEmail = normalizeEmail(email);
         const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (existingUser) {
@@ -91,7 +215,14 @@ export const sendRegisterOtp = async (req, res) => {
 
 export const verifyRegisterOtp = async (req, res) => {
     try {
-        const { email, otp } = req.body;
+        const { email, otp, role = "user" } = req.body;
+
+        if (String(role).trim().toLowerCase() !== "user") {
+            return res.status(400).json({
+                success: false,
+                message: "Use the MR registration form to create an MR account",
+            });
+        }
 
         if (!email || !otp) {
             return res.status(400).json({
@@ -100,9 +231,9 @@ export const verifyRegisterOtp = async (req, res) => {
             });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
-
+        const normalizedEmail = normalizeEmail(email);
         const existingUser = await User.findOne({ email: normalizedEmail });
+
         if (existingUser) {
             return res.status(400).json({
                 success: false,
@@ -141,6 +272,8 @@ export const verifyRegisterOtp = async (req, res) => {
             email: normalizedEmail,
             isHealthCareExpert: otpDoc.isHealthCareExpert,
             isVerified: true,
+            role: "user",
+            mrApprovalStatus: NON_MR_STATUS,
         });
 
         await Otp.deleteMany({ email: normalizedEmail, purpose: "register" });
@@ -158,6 +291,317 @@ export const verifyRegisterOtp = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Registration failed",
+            error: error.message,
+        });
+    }
+};
+
+export const sendMrRegisterOtp = async (req, res) => {
+    try {
+        const requiredFields = [
+            "name",
+            "email",
+            "phone",
+            "city",
+            "state",
+            "medicalStoreName",
+            "gstNumber",
+            "panNumber",
+            "drugLicenseNumber",
+        ];
+
+        const missingField = requiredFields.find(
+            (field) => !normalizeText(req.body[field])
+        );
+
+        if (missingField) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(req.files?.gstCertificate?.[0]),
+                buildUploadedFilePath(req.files?.drugLicenseDocument?.[0]),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: `${missingField} is required`,
+            });
+        }
+
+        const gstCertificateFile = req.files?.gstCertificate?.[0];
+        const drugLicenseFile = req.files?.drugLicenseDocument?.[0];
+
+        if (!gstCertificateFile || !drugLicenseFile) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(gstCertificateFile),
+                buildUploadedFilePath(drugLicenseFile),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: "GST certificate and license document are required",
+            });
+        }
+
+        const normalizedEmail = normalizeEmail(req.body.email);
+
+        if (!isValidEmail(normalizedEmail)) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(gstCertificateFile),
+                buildUploadedFilePath(drugLicenseFile),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: "Please enter a valid email address",
+            });
+        }
+
+        const normalizedGstNumber = normalizeUppercaseIdentifier(req.body.gstNumber);
+        const normalizedPanNumber = normalizeUppercaseIdentifier(req.body.panNumber);
+        const normalizedLicenseNumber = normalizeLicenseNumber(
+            req.body.drugLicenseNumber
+        );
+
+        const [existingEmailUser, existingGstUser, existingPanUser, existingLicenseUser] =
+            await Promise.all([
+            User.findOne({ email: normalizedEmail }),
+            User.findOne({
+                gstNumber: normalizedGstNumber,
+                role: "mr",
+            }),
+            User.findOne({
+                panNumber: normalizedPanNumber,
+                role: "mr",
+            }),
+            User.findOne({
+                drugLicenseNumber: normalizedLicenseNumber,
+                role: "mr",
+            }),
+            ]);
+
+        if (existingEmailUser) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(gstCertificateFile),
+                buildUploadedFilePath(drugLicenseFile),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: "This email is already registered. Please login.",
+            });
+        }
+
+        if (existingGstUser) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(gstCertificateFile),
+                buildUploadedFilePath(drugLicenseFile),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: "This GST number is already registered",
+            });
+        }
+
+        if (existingPanUser) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(gstCertificateFile),
+                buildUploadedFilePath(drugLicenseFile),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: "This PAN number is already registered",
+            });
+        }
+
+        if (existingLicenseUser) {
+            await deleteUploadedFiles([
+                buildUploadedFilePath(gstCertificateFile),
+                buildUploadedFilePath(drugLicenseFile),
+            ]);
+
+            return res.status(400).json({
+                success: false,
+                message: "This drug license number is already registered",
+            });
+        }
+
+        const existingMrOtpRecords = await Otp.find({
+            email: normalizedEmail,
+            purpose: "mr_register",
+        });
+
+        await cleanupMrOtpRecords(existingMrOtpRecords);
+
+        const otp = generateOtp();
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+        await Otp.create({
+            email: normalizedEmail,
+            otp,
+            purpose: "mr_register",
+            role: "mr",
+            isHealthCareExpert: true,
+            expiresAt,
+            mrRegistrationData: {
+                name: normalizeText(req.body.name),
+                phone: normalizeText(req.body.phone),
+                city: normalizeText(req.body.city),
+                state: normalizeText(req.body.state),
+                medicalStoreName: normalizeText(req.body.medicalStoreName),
+                gstNumber: normalizedGstNumber,
+                panNumber: normalizedPanNumber,
+                drugLicenseNumber: normalizedLicenseNumber,
+                gstCertificateUrl: buildUploadedFilePath(gstCertificateFile),
+                gstCertificateName: buildUploadedFileName(gstCertificateFile),
+                drugLicenseDocumentUrl: buildUploadedFilePath(drugLicenseFile),
+                drugLicenseDocumentName: buildUploadedFileName(drugLicenseFile),
+            },
+        });
+
+        await sendEmailOtp(normalizedEmail, otp, "mr_register");
+
+        return res.status(200).json({
+            success: true,
+            message: "MR registration OTP sent to your email",
+        });
+    } catch (error) {
+        await deleteUploadedFiles([
+            buildUploadedFilePath(req.files?.gstCertificate?.[0]),
+            buildUploadedFilePath(req.files?.drugLicenseDocument?.[0]),
+        ]);
+
+        if (req.body?.email) {
+            await Otp.deleteMany({
+                email: normalizeEmail(req.body.email),
+                purpose: "mr_register",
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: "Failed to send MR registration OTP",
+            error: error.message,
+        });
+    }
+};
+
+export const verifyMrRegisterOtp = async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        if (!email || !otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Email and OTP are required",
+            });
+        }
+
+        const normalizedEmail = normalizeEmail(email);
+        const existingUser = await User.findOne({ email: normalizedEmail });
+
+        if (existingUser) {
+            const existingMrOtpRecords = await Otp.find({
+                email: normalizedEmail,
+                purpose: "mr_register",
+            });
+            await cleanupMrOtpRecords(existingMrOtpRecords);
+
+            return res.status(400).json({
+                success: false,
+                message: "This email is already registered. Please login.",
+            });
+        }
+
+        const otpDoc = await Otp.findOne({
+            email: normalizedEmail,
+            purpose: "mr_register",
+        });
+
+        if (!otpDoc) {
+            return res.status(400).json({
+                success: false,
+                message: "MR register OTP not found. Please submit the form again.",
+            });
+        }
+
+        if (otpDoc.expiresAt < new Date()) {
+            await cleanupMrOtpRecords([otpDoc]);
+
+            return res.status(400).json({
+                success: false,
+                message: "OTP expired. Please submit the form again.",
+            });
+        }
+
+        if (otpDoc.otp !== otp) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid OTP",
+            });
+        }
+
+        const mrRegistrationData = otpDoc.mrRegistrationData || {};
+
+        const [existingGstUser, existingPanUser, existingLicenseUser] =
+            await Promise.all([
+                User.findOne({
+                    gstNumber: mrRegistrationData.gstNumber,
+                    role: "mr",
+                }),
+                User.findOne({
+                    panNumber: mrRegistrationData.panNumber,
+                    role: "mr",
+                }),
+                User.findOne({
+                    drugLicenseNumber: mrRegistrationData.drugLicenseNumber,
+                    role: "mr",
+                }),
+            ]);
+
+        if (existingGstUser || existingPanUser || existingLicenseUser) {
+            await cleanupMrOtpRecords([otpDoc]);
+
+            return res.status(400).json({
+                success: false,
+                message:
+                    "A matching GST, PAN, or drug license number is already registered",
+            });
+        }
+
+        const user = await User.create({
+            name: mrRegistrationData.name,
+            email: normalizedEmail,
+            phone: mrRegistrationData.phone,
+            city: mrRegistrationData.city,
+            state: mrRegistrationData.state,
+            medicalStoreName: mrRegistrationData.medicalStoreName,
+            gstNumber: mrRegistrationData.gstNumber,
+            panNumber: mrRegistrationData.panNumber,
+            drugLicenseNumber: mrRegistrationData.drugLicenseNumber,
+            gstCertificateUrl: mrRegistrationData.gstCertificateUrl,
+            drugLicenseDocumentUrl: mrRegistrationData.drugLicenseDocumentUrl,
+            isHealthCareExpert: true,
+            mrApprovalStatus: MR_PENDING_STATUS,
+            isVerified: false,
+            role: "mr",
+        });
+
+        await Otp.deleteMany({
+            email: normalizedEmail,
+            purpose: "mr_register",
+        });
+
+        return res.status(201).json({
+            success: true,
+            message:
+                "MR registration submitted successfully. Please wait for admin approval.",
+            user: formatUserResponse(user),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to verify MR registration OTP",
             error: error.message,
         });
     }
@@ -181,13 +625,20 @@ export const sendLoginOtp = async (req, res) => {
             });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
+        const normalizedEmail = normalizeEmail(email);
         const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (!existingUser) {
             return res.status(404).json({
                 success: false,
                 message: "This email is not registered. Please register first.",
+            });
+        }
+
+        if (ensureApprovedMrAccount(existingUser)) {
+            return res.status(403).json({
+                success: false,
+                message: "Your account is not approved",
             });
         }
 
@@ -229,13 +680,21 @@ export const verifyLoginOtp = async (req, res) => {
             });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
+        const normalizedEmail = normalizeEmail(email);
         const user = await User.findOne({ email: normalizedEmail });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: "This email is not registered. Please register first.",
+            });
+        }
+
+        if (ensureApprovedMrAccount(user)) {
+            await Otp.deleteMany({ email: normalizedEmail, purpose: "login" });
+            return res.status(403).json({
+                success: false,
+                message: "Your account is not approved",
             });
         }
 
@@ -293,7 +752,7 @@ export const getMyProfile = async (req, res) => {
     try {
         return res.status(200).json({
             success: true,
-            user: req.user,
+            user: formatUserResponse(req.user),
         });
     } catch (error) {
         return res.status(500).json({
@@ -341,7 +800,7 @@ export const createAdminUser = async (req, res) => {
             });
         }
 
-        const normalizedEmail = email.toLowerCase().trim();
+        const normalizedEmail = normalizeEmail(email);
         const existingUser = await User.findOne({ email: normalizedEmail });
 
         if (existingUser) {
@@ -356,6 +815,7 @@ export const createAdminUser = async (req, res) => {
             isHealthCareExpert: !!isHealthCareExpert,
             isVerified: true,
             role: "admin",
+            mrApprovalStatus: NON_MR_STATUS,
         });
 
         const token = generateToken(user._id);
@@ -370,6 +830,95 @@ export const createAdminUser = async (req, res) => {
         return res.status(500).json({
             success: false,
             message: "Failed to create admin user",
+            error: error.message,
+        });
+    }
+};
+
+export const getPendingMrRequests = async (req, res) => {
+    try {
+        const mrRequests = await User.find({
+            role: "mr",
+            mrApprovalStatus: MR_PENDING_STATUS,
+        })
+            .sort({ createdAt: -1 })
+            .lean();
+
+        return res.status(200).json({
+            success: true,
+            totalRequests: mrRequests.length,
+            mrRequests: mrRequests.map(getPendingMrRequestPayload),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to fetch pending MR requests",
+            error: error.message,
+        });
+    }
+};
+
+export const approveMrRequest = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            _id: req.params.id,
+            role: "mr",
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "MR request not found",
+            });
+        }
+
+        user.mrApprovalStatus = MR_APPROVED_STATUS;
+        user.isVerified = true;
+        user.mrApprovedAt = new Date();
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "MR account approved successfully",
+            user: formatUserResponse(user),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to approve MR request",
+            error: error.message,
+        });
+    }
+};
+
+export const rejectMrRequest = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            _id: req.params.id,
+            role: "mr",
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "MR request not found",
+            });
+        }
+
+        user.mrApprovalStatus = MR_REJECTED_STATUS;
+        user.isVerified = false;
+        user.mrApprovedAt = null;
+        await user.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "MR account rejected successfully",
+            user: formatUserResponse(user),
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Failed to reject MR request",
             error: error.message,
         });
     }
@@ -408,10 +957,10 @@ export const getAdminCustomers = async (req, res) => {
 
             return {
                 _id: user._id,
-                name: shippingInfo.fullName || formatDisplayName(user.email),
+                name: shippingInfo.fullName || formatDisplayName(user),
                 email: user.email,
-                phone: shippingInfo.phone || "N/A",
-                city: shippingInfo.city || "N/A",
+                phone: shippingInfo.phone || user.phone || "N/A",
+                city: shippingInfo.city || user.city || "N/A",
                 orders: orderCountByUser.get(userId) || 0,
                 joined: user.createdAt,
                 isVerified: user.isVerified,
@@ -434,18 +983,26 @@ export const getAdminCustomers = async (req, res) => {
 
 export const getAdminDashboard = async (req, res) => {
     try {
-        const [orders, totalUsers, lowStockItems, prescriptionCount] = await Promise.all([
-            Order.find({})
-                .sort({ createdAt: -1 })
-                .limit(5)
-                .populate("user", "email")
-                .lean(),
-            User.countDocuments({ role: "user" }),
-            Product.countDocuments({
-                $or: [{ stock: { $lte: 10 } }, { status: { $in: ["Low Stock", "Out of Stock"] } }],
-            }),
-            PrescriptionRequest.countDocuments({}),
-        ]);
+        const [orders, totalUsers, pendingMrRequests, lowStockItems, prescriptionCount] =
+            await Promise.all([
+                Order.find({})
+                    .sort({ createdAt: -1 })
+                    .limit(5)
+                    .populate("user", "email")
+                    .lean(),
+                User.countDocuments({ role: "user" }),
+                User.countDocuments({
+                    role: "mr",
+                    mrApprovalStatus: MR_PENDING_STATUS,
+                }),
+                Product.countDocuments({
+                    $or: [
+                        { stock: { $lte: 10 } },
+                        { status: { $in: ["Low Stock", "Out of Stock"] } },
+                    ],
+                }),
+                PrescriptionRequest.countDocuments({}),
+            ]);
 
         const salesSummary = await Order.aggregate([
             {
@@ -483,6 +1040,7 @@ export const getAdminDashboard = async (req, res) => {
                 totalSales: totals.totalSales || 0,
                 totalOrders: totals.totalOrders || 0,
                 activeCustomers: totalUsers,
+                pendingMrRequests,
                 lowStockItems,
                 prescriptions: prescriptionCount,
             },

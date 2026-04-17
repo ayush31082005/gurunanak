@@ -73,4 +73,20 @@ app.use("/api/complaints", complaintRoutes);
 
 app.use("/api/delivery", deliveryRoutes);
 
+app.use((error, _req, res, _next) => {
+    const statusCode =
+        error?.name === "MulterError" || error?.message === "Unsupported file type"
+            ? 400
+            : 500;
+
+    res.status(statusCode).json({
+        success: false,
+        message:
+            error?.message ||
+            (statusCode === 400
+                ? "File upload failed"
+                : "Something went wrong on the server"),
+    });
+});
+
 export default app;

@@ -21,16 +21,27 @@ const createTransporter = () => {
 };
 
 const getEmailTemplate = ({ otp, purpose }) => {
-    const isRegister = purpose === "register";
-    const heading = isRegister ? "Complete Your Registration" : "Complete Your Login";
+    const isRegister = purpose === "register" || purpose === "mr_register";
+    const isMrRegister = purpose === "mr_register";
+    const heading = isRegister
+        ? isMrRegister
+            ? "Complete Your MR Registration"
+            : "Complete Your Registration"
+        : "Complete Your Login";
     const subject = isRegister
-        ? "Welcome to Gurunanak - Verify Your Email"
+        ? isMrRegister
+            ? "Gurunanak MR Registration Verification Code"
+            : "Welcome to Gurunanak - Verify Your Email"
         : "Gurunanak Login Verification Code";
     const intro = isRegister
-        ? "Thank you for choosing Gurunanak. Please use the verification code below to complete your account registration."
+        ? isMrRegister
+            ? "Thank you for applying as a Medical Representative. Please use the verification code below to confirm your email and submit your MR registration."
+            : "Thank you for choosing Gurunanak. Please use the verification code below to complete your account registration."
         : "We received a login request for your Gurunanak account. Please use the verification code below to continue securely.";
     const footer = isRegister
-        ? "Once verified, you will be able to access your account and continue shopping with ease."
+        ? isMrRegister
+            ? "Once verified, your MR profile will be submitted for admin approval."
+            : "Once verified, you will be able to access your account and continue shopping with ease."
         : "If you did not try to sign in, please ignore this email and consider securing your account.";
 
     return {

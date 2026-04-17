@@ -440,7 +440,12 @@ const Header = () => {
     navigate("/login", { replace: true });
   };
 
-  const accountPath = userRole === "admin" ? "/admin/dashboard" : "/user-dashboard";
+  const accountPath =
+    userRole === "admin"
+      ? "/admin/dashboard"
+      : userRole === "mr"
+        ? "/mr-dashboard"
+        : "/user-dashboard";
 
   return (
     <header className="fixed inset-x-0 top-0 z-[100] w-full border-b border-gray-200 bg-white">

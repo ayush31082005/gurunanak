@@ -26,21 +26,27 @@ const storage = multer.diskStorage({
     },
 });
 
-const fileFilter = (_req, file, callback) => {
-    const allowedMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+const createUpload = (allowedMimeTypes) =>
+    multer({
+        storage,
+        fileFilter: (_req, file, callback) => {
+            if (!allowedMimeTypes.includes(file.mimetype)) {
+                callback(new Error("Unsupported file type"));
+                return;
+            }
 
-    if (!allowedMimeTypes.includes(file.mimetype)) {
-        callback(new Error("Only JPG, JPEG, and PNG files are allowed."));
-        return;
-    }
+            callback(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+        },
+    });
 
-    callback(null, true);
-};
+const imageMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
+const documentMimeTypes = [...imageMimeTypes, "application/pdf"];
 
-export default multer({
-    storage,
-    fileFilter,
-    limits: {
-        fileSize: 5 * 1024 * 1024,
-    },
-});
+const upload = createUpload(imageMimeTypes);
+
+export const mrDocumentUpload = createUpload(documentMimeTypes);
+
+export default upload;
