@@ -2,18 +2,25 @@ import { useNavigate } from "react-router-dom";
 
 const quickServiceCards = [
   {
-    title: "Product Sell",
+    title: "Products",
     to: "/products",
     border: "border-sky-100",
     image:
       "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=900&q=80",
   },
   {
-    title: "Return Medicine",
+    title: "Reorder",
     to: "/user-dashboard?tab=orders",
-    border: "border-rose-100",
+    border: "border-amber-100",
     image:
-      "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1585435557343-3b092031a831?auto=format&fit=crop&w=900&q=80",
+  },
+  {
+    title: "Re-Prescription",
+    to: "/user-dashboard?tab=prescription",
+    border: "border-violet-100",
+    image:
+      "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=900&q=80",
   },
   {
     title: "Medicine Reminder",
@@ -23,18 +30,11 @@ const quickServiceCards = [
       "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=900&q=80",
   },
   {
-    title: "Reorder Prescription",
-    to: "/user-dashboard?tab=prescription",
-    border: "border-violet-100",
+    title: "Return Medicine",
+    to: "/returns",
+    border: "border-rose-100",
     image:
-      "https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=900&q=80",
-  },
-  {
-    title: "Reorder",
-    to: "/user-dashboard?tab=orders",
-    border: "border-amber-100",
-    image:
-      "https://images.unsplash.com/photo-1585435557343-3b092031a831?auto=format&fit=crop&w=900&q=80",
+      "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&w=900&q=80",
   },
 ];
 

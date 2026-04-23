@@ -102,17 +102,17 @@ const HeroBanner = () => {
                   size="lg"
                   className="!rounded-full !bg-white !px-7 !py-3 !text-slate-900 hover:!bg-slate-100"
                 >
-                  Shop Now
+                  Products
                 </Button>
               </Link>
 
-              <Link to="/upload-prescription">
+              <Link to="/user-dashboard?tab=orders">
                 <Button
                   variant="outline"
                   size="lg"
                   className="!rounded-full !border !border-white !bg-transparent !px-7 !py-3 !text-white hover:!bg-white/10"
                 >
-                  Upload Prescription
+                  Reorder
                 </Button>
               </Link>
             </div>
