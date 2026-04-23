@@ -1,11 +1,7 @@
 import axios from "axios";
+import { getApiBaseUrl } from "./config/apiBaseUrl";
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    (import.meta.env.PROD
-        ? "https://gurunanak.onrender.com/api"
-        : "http://localhost:5000/api");
+const API_BASE_URL = getApiBaseUrl();
 
 const API = axios.create({
     baseURL: API_BASE_URL,

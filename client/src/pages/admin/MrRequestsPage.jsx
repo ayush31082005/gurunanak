@@ -8,15 +8,9 @@ import {
     rejectMrRequest,
     updateMrRequest,
 } from "../../api/authApi";
+import { getApiOrigin } from "../../config/apiBaseUrl";
 
-const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL ||
-    import.meta.env.VITE_API_URL ||
-    (import.meta.env.PROD
-        ? "https://gurunanak.onrender.com/api"
-        : "http://localhost:5000/api");
-
-const SERVER_BASE_URL = API_BASE_URL.replace(/\/api\/?$/, "");
+const SERVER_BASE_URL = getApiOrigin();
 const statusFilters = [
     { id: "all", label: "All Requests" },
     { id: "pending", label: "Pending" },
