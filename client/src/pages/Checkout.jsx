@@ -271,7 +271,7 @@ const Checkout = () => {
                         </p>
                         <Link
                             to="/products"
-                            className="mt-6 inline-flex rounded-xl bg-[#87CEEB] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
+                            className="mt-6 inline-flex rounded-xl bg-[#0EA5E9] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#0284C7]"
                         >
                             Browse Products
                         </Link>
@@ -297,7 +297,7 @@ const Checkout = () => {
                     <div className="space-y-6 lg:col-span-2">
                         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-[#87CEEB]">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-[#0EA5E9]">
                                     <MapPin size={20} />
                                 </div>
                                 <div>
@@ -321,7 +321,7 @@ const Checkout = () => {
                                         value={address.fullName}
                                         onChange={handleChange}
                                         placeholder="Enter full name"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -340,7 +340,7 @@ const Checkout = () => {
                                             }))
                                         }
                                         placeholder="Enter mobile number"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -354,7 +354,7 @@ const Checkout = () => {
                                         value={address.email}
                                         onChange={handleChange}
                                         placeholder="Enter email address"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -368,7 +368,7 @@ const Checkout = () => {
                                         value={address.pincode}
                                         onChange={handlePincodeChange}
                                         placeholder="Enter pincode"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                     {isFetchingPincode ? (
                                         <p className="mt-2 text-xs text-slate-500">
@@ -419,7 +419,7 @@ const Checkout = () => {
                                             name="area"
                                             value={address.area}
                                             onChange={handleChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-[#0EA5E9]"
                                         >
                                             <option value="">Select area</option>
                                             {availableAreas.map((areaName, index) => (
@@ -435,7 +435,7 @@ const Checkout = () => {
                                             value={address.area}
                                             onChange={handleChange}
                                             placeholder="Area, street, sector, landmark"
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                         />
                                     )}
                                 </div>
@@ -450,7 +450,7 @@ const Checkout = () => {
                                         value={address.house}
                                         onChange={handleChange}
                                         placeholder="Flat, house number, building name"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
                             </div>
@@ -479,7 +479,7 @@ const Checkout = () => {
                                     value={coupon}
                                     onChange={(e) => setCoupon(e.target.value)}
                                     placeholder="Enter coupon code"
-                                    className="h-12 flex-1 rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#87CEEB]"
+                                    className="h-12 flex-1 rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                 />
                                 <button
                                     type="button"
@@ -550,7 +550,7 @@ const Checkout = () => {
                             <button
                                 type="button"
                                 onClick={handleProceedToPayment}
-                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#87CEEB] px-5 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
+                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#0EA5E9] px-5 text-sm font-bold text-white transition hover:bg-[#0284C7]"
                             >
                                 Proceed to Payment
                                 <ChevronRight size={18} />
@@ -566,11 +566,11 @@ const Checkout = () => {
                             <h3 className="text-base font-bold text-slate-900">Need Help?</h3>
                             <div className="mt-4 space-y-3 text-sm text-slate-600">
                                 <div className="flex items-center gap-3">
-                                    <Phone size={16} className="text-[#87CEEB]" />
+                                    <Phone size={16} className="text-[#0EA5E9]" />
                                     <span>+91 98765 43210</span>
                                 </div>
                                 <div className="flex items-center gap-3">
-                                    <Mail size={16} className="text-[#87CEEB]" />
+                                    <Mail size={16} className="text-[#0EA5E9]" />
                                     <span>support@gurunanak.com</span>
                                 </div>
                             </div>

@@ -1,8 +1,8 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+    Bell,
     CheckCircle2,
-    Clock3,
     Eye,
     IndianRupee,
     LayoutDashboard,
@@ -11,7 +11,6 @@ import {
     Package,
     Pencil,
     Plus,
-    RotateCcw,
     ShoppingBag,
     Trash2,
     TrendingUp,
@@ -19,6 +18,8 @@ import {
     X,
 } from "lucide-react";
 import API from "../../api";
+import { getMrOrders } from "../../api/mrApi";
+import { getMrNotifications } from "../../api/notificationApi";
 import {
     deleteProduct,
     getMyProducts,
@@ -34,74 +35,7 @@ const sidebarItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "products", label: "My Products", icon: Package },
     { id: "orders", label: "Orders", icon: ShoppingBag },
-    { id: "returns", label: "Return Product", icon: RotateCcw },
     { id: "earnings", label: "Earning", icon: Wallet },
-];
-
-const ordersData = [
-    {
-        id: "#ORD1024",
-        customer: "Rahul Verma",
-        product: "Herbal Protein Powder",
-        date: "12 Apr 2026",
-        amount: 899,
-        status: "Delivered",
-    },
-    {
-        id: "#ORD1025",
-        customer: "Priya Singh",
-        product: "Immunity Booster",
-        date: "13 Apr 2026",
-        amount: 499,
-        status: "Pending",
-    },
-    {
-        id: "#ORD1026",
-        customer: "Amit Kumar",
-        product: "Skin Care Combo Pack",
-        date: "14 Apr 2026",
-        amount: 1299,
-        status: "Shipped",
-    },
-    {
-        id: "#ORD1027",
-        customer: "Sneha Patel",
-        product: "Herbal Protein Powder",
-        date: "15 Apr 2026",
-        amount: 899,
-        status: "Delivered",
-    },
-];
-
-const earningsHistory = [
-    {
-        id: 1,
-        title: "Order Commission",
-        date: "10 Apr 2026",
-        amount: 2500,
-        type: "Credit",
-    },
-    {
-        id: 2,
-        title: "Referral Bonus",
-        date: "12 Apr 2026",
-        amount: 1200,
-        type: "Credit",
-    },
-    {
-        id: 3,
-        title: "Withdrawal",
-        date: "14 Apr 2026",
-        amount: 2000,
-        type: "Debit",
-    },
-    {
-        id: 4,
-        title: "Level Income",
-        date: "15 Apr 2026",
-        amount: 1800,
-        type: "Credit",
-    },
 ];
 
 const mrBrandDropdownOptions = [
@@ -142,6 +76,102 @@ const extractCategories = (responseData) => {
     return [];
 };
 
+const extractOrders = (responseData) => {
+    if (Array.isArray(responseData)) return responseData;
+    if (Array.isArray(responseData?.orders)) return responseData.orders;
+    if (Array.isArray(responseData?.data)) return responseData.data;
+    return [];
+};
+
+const extractNotifications = (responseData) => {
+    if (Array.isArray(responseData)) return responseData;
+    if (Array.isArray(responseData?.notifications)) return responseData.notifications;
+    if (Array.isArray(responseData?.data)) return responseData.data;
+    return [];
+};
+
+const formatCurrency = (value) =>
+    new Intl.NumberFormat("en-IN", {
+        style: "currency",
+        currency: "INR",
+        maximumFractionDigits: 0,
+    }).format(Number(value) || 0);
+
+const summarizeOrdersByProduct = (orders = []) => {
+    const productSummaryMap = new Map();
+
+    orders.forEach((order) => {
+        const productName = order?.productName || "Unnamed Product";
+        const productKey = String(order?.productId || productName);
+        const quantity = Number(order?.quantity) || 0;
+        const existingProduct = productSummaryMap.get(productKey);
+
+        if (existingProduct) {
+            existingProduct.quantity += quantity;
+            return;
+        }
+
+        productSummaryMap.set(productKey, {
+            id: productKey,
+            productName,
+            quantity,
+        });
+    });
+
+    return Array.from(productSummaryMap.values()).sort((firstProduct, secondProduct) => {
+        if (secondProduct.quantity !== firstProduct.quantity) {
+            return secondProduct.quantity - firstProduct.quantity;
+        }
+
+        return firstProduct.productName.localeCompare(secondProduct.productName);
+    });
+};
+
+const calculateProductsBalance = (products = []) =>
+    products.reduce(
+        (totalBalance, product) => totalBalance + (Number(product?.price) || 0),
+        0
+    );
+
+const PaginationControls = ({
+    currentPage,
+    totalPages,
+    onPrevious,
+    onNext,
+    label = "Page",
+}) => {
+    if (totalPages <= 1) {
+        return null;
+    }
+
+    return (
+        <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4">
+            <p className="text-sm text-slate-500">
+                {label} {currentPage} of {totalPages}
+            </p>
+
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={onPrevious}
+                    disabled={currentPage === 1}
+                    className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Prev
+                </button>
+
+                <button
+                    type="button"
+                    onClick={onNext}
+                    disabled={currentPage === totalPages}
+                    className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                    Next
+                </button>
+            </div>
+        </div>
+    );
+};
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => {
     return (
@@ -170,17 +200,29 @@ const SectionHeading = ({ title, subtitle }) => {
     );
 };
 
-const DashboardHome = ({ totalProducts, totalReturns }) => {
-    const totalOrders = ordersData.length;
-    const deliveredOrders = ordersData.filter(
-        (item) => item.status === "Delivered"
-    ).length;
+const DashboardHome = ({
+    totalProducts,
+    totalOrders = 0,
+    deliveredOrders = 0,
+    currentBalance = 0,
+    recentSales = [],
+    onViewOrders,
+}) => {
+    const averageProductValue = totalProducts > 0 ? currentBalance / totalProducts : 0;
+    const productSalesPerPage = 4;
+    const [salesPage, setSalesPage] = useState(1);
+    const totalSalesPages = Math.max(
+        1,
+        Math.ceil(recentSales.length / productSalesPerPage)
+    );
+    const paginatedSales = recentSales.slice(
+        (salesPage - 1) * productSalesPerPage,
+        salesPage * productSalesPerPage
+    );
 
-    const totalEarning = useMemo(() => {
-        return earningsHistory.reduce((acc, item) => {
-            return item.type === "Credit" ? acc + item.amount : acc - item.amount;
-        }, 0);
-    }, []);
+    useEffect(() => {
+        setSalesPage((currentPage) => Math.min(currentPage, totalSalesPages));
+    }, [totalSalesPages]);
 
     return (
         <div className="space-y-8">
@@ -209,10 +251,10 @@ const DashboardHome = ({ totalProducts, totalReturns }) => {
                     icon={CheckCircle2}
                 />
                 <StatCard
-                    title="Return Requests"
-                    value={totalReturns}
-                    subtitle="Returned product requests"
-                    icon={RotateCcw}
+                    title="Current Balance"
+                    value={formatCurrency(currentBalance)}
+                    subtitle="Total value of added products"
+                    icon={Wallet}
                 />
             </div>
 
@@ -220,45 +262,57 @@ const DashboardHome = ({ totalProducts, totalReturns }) => {
                 <div className="xl:col-span-2 border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="mb-5 flex items-center justify-between">
                         <h3 className="text-lg font-semibold text-slate-900">
-                            Recent Orders
+                            Product Sales
                         </h3>
-                        <button className="bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
+                        <button
+                            type="button"
+                            onClick={onViewOrders}
+                            className="bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+                        >
                             View All
                         </button>
                     </div>
 
-                    <div className="space-y-4">
-                        {ordersData.slice(0, 4).map((order) => (
-                            <div
-                                key={order.id}
-                                className="flex flex-col gap-3 border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-                            >
-                                <div>
-                                    <p className="font-semibold text-slate-900">{order.id}</p>
-                                    <p className="text-sm text-slate-500">
-                                        {order.customer} â€¢ {order.product}
-                                    </p>
-                                </div>
+                    {recentSales.length > 0 ? (
+                        <div className="space-y-4">
+                            {paginatedSales.map((product) => (
+                                <div
+                                    key={product.id}
+                                    className="flex items-center justify-between border border-slate-200 p-4"
+                                >
+                                    <div>
+                                        <p className="font-semibold text-slate-900">
+                                            {product.productName}
+                                        </p>
+                                        <p className="text-sm text-slate-500">
+                                            Quantity sold
+                                        </p>
+                                    </div>
 
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <span className="text-sm font-medium text-slate-700">
-                                        â‚¹{order.amount}
-                                    </span>
-                                    <span
-                                        className={`px-3 py-1 text-xs font-semibold ${
-                                            order.status === "Delivered"
-                                                ? "bg-emerald-100 text-emerald-700"
-                                                : order.status === "Pending"
-                                                  ? "bg-amber-100 text-amber-700"
-                                                  : "bg-blue-100 text-blue-700"
-                                        }`}
-                                    >
-                                        {order.status}
+                                    <span className="text-lg font-bold text-slate-900">
+                                        {product.quantity}
                                     </span>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+
+                            <PaginationControls
+                                currentPage={salesPage}
+                                totalPages={totalSalesPages}
+                                onPrevious={() =>
+                                    setSalesPage((currentPage) => Math.max(currentPage - 1, 1))
+                                }
+                                onNext={() =>
+                                    setSalesPage((currentPage) =>
+                                        Math.min(currentPage + 1, totalSalesPages)
+                                    )
+                                }
+                            />
+                        </div>
+                    ) : (
+                        <div className="border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                            No product sales found yet.
+                        </div>
+                    )}
                 </div>
 
                 <div className="border border-slate-200 bg-white p-5 shadow-sm">
@@ -268,30 +322,23 @@ const DashboardHome = ({ totalProducts, totalReturns }) => {
 
                     <div className="space-y-4">
                         <div className="bg-indigo-50 p-4">
-                            <p className="text-sm text-slate-600">This Month</p>
+                            <p className="text-sm text-slate-600">Products Added</p>
                             <h4 className="mt-1 text-2xl font-bold text-indigo-700">
-                                â‚¹8,450
+                                {totalProducts}
                             </h4>
                         </div>
 
                         <div className="bg-emerald-50 p-4">
-                            <p className="text-sm text-slate-600">Last Withdrawal</p>
+                            <p className="text-sm text-slate-600">Average Product Value</p>
                             <h4 className="mt-1 text-2xl font-bold text-emerald-700">
-                                â‚¹2,000
-                            </h4>
-                        </div>
-
-                        <div className="bg-amber-50 p-4">
-                            <p className="text-sm text-slate-600">Pending Settlement</p>
-                            <h4 className="mt-1 text-2xl font-bold text-amber-700">
-                                â‚¹1,250
+                                {formatCurrency(averageProductValue)}
                             </h4>
                         </div>
 
                         <div className="bg-slate-100 p-4">
-                            <p className="text-sm text-slate-600">Net Earnings</p>
+                            <p className="text-sm text-slate-600">Total Balance</p>
                             <h4 className="mt-1 text-2xl font-bold text-slate-900">
-                                â‚¹{totalEarning}
+                                {formatCurrency(currentBalance)}
                             </h4>
                         </div>
                     </div>
@@ -313,6 +360,17 @@ const ProductsSection = ({
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
+    const productsPerPage = 6;
+    const [productsPage, setProductsPage] = useState(1);
+    const totalProductPages = Math.max(1, Math.ceil(products.length / productsPerPage));
+    const paginatedProducts = products.slice(
+        (productsPage - 1) * productsPerPage,
+        productsPage * productsPerPage
+    );
+
+    useEffect(() => {
+        setProductsPage((currentPage) => Math.min(currentPage, totalProductPages));
+    }, [totalProductPages]);
 
     const openEditModal = (product) => {
         setSelectedProduct(product);
@@ -375,79 +433,95 @@ const ProductsSection = ({
                     No products added yet.
                 </div>
             ) : (
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                    {products.map((product) => (
-                        <div
-                            key={product.id}
-                            className="overflow-hidden border border-slate-200 bg-white shadow-sm"
-                        >
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className="h-52 w-full object-cover"
-                            />
+                <div>
+                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                        {paginatedProducts.map((product) => (
+                            <div
+                                key={product.id}
+                                className="overflow-hidden border border-slate-200 bg-white shadow-sm"
+                            >
+                                <img
+                                    src={product.image}
+                                    alt={product.name}
+                                    className="h-52 w-full object-cover"
+                                />
 
-                            <div className="p-5">
-                                <div className="mb-3 flex items-center justify-between gap-2">
-                                    <span className="bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                                        {product.categoryName}
-                                    </span>
+                                <div className="p-5">
+                                    <div className="mb-3 flex items-center justify-between gap-2">
+                                        <span className="bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                                            {product.categoryName}
+                                        </span>
 
-                                    <StatusBadge text={product.approvalStatus} />
-                                </div>
+                                        <StatusBadge text={product.approvalStatus} />
+                                    </div>
 
-                                <h3 className="text-lg font-bold text-slate-900">
-                                    {product.name}
-                                </h3>
+                                    <h3 className="text-lg font-bold text-slate-900">
+                                        {product.name}
+                                    </h3>
 
-                                <p className="mt-2 line-clamp-2 text-sm text-slate-500">
-                                    {product.description || "No description available."}
-                                </p>
+                                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">
+                                        {product.description || "No description available."}
+                                    </p>
 
-                                <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
-                                    <span>Stock: {product.stock} items</span>
-                                    <StatusBadge text={product.status} />
-                                </div>
+                                    <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
+                                        <span>Stock: {product.stock} items</span>
+                                        <StatusBadge text={product.status} />
+                                    </div>
 
-                                <div className="mt-4 flex items-center justify-between">
-                                    <span className="text-xl font-bold text-slate-900">
-                                        â‚¹{product.price}
-                                    </span>
-                                </div>
+                                    <div className="mt-4 flex items-center justify-between">
+                                        <span className="text-xl font-bold text-slate-900">
+                                            {formatCurrency(product.price)}
+                                        </span>
+                                    </div>
 
-                                <div className="mt-4 grid grid-cols-3 gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => openViewModal(product)}
-                                        className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
-                                    >
-                                        <Eye size={15} />
-                                        View
-                                    </button>
+                                    <div className="mt-4 grid grid-cols-3 gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => openViewModal(product)}
+                                            className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                        >
+                                            <Eye size={15} />
+                                            View
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() => openEditModal(product)}
-                                        className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-                                    >
-                                        <Pencil size={15} />
-                                        Edit
-                                    </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => openEditModal(product)}
+                                            className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                                        >
+                                            <Pencil size={15} />
+                                            Edit
+                                        </button>
 
-                                    <button
-                                        type="button"
-                                        onClick={() =>
-                                            handleDeleteProduct(product.id, product.name)
-                                        }
-                                        className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
-                                    >
-                                        <Trash2 size={15} />
-                                        Delete
-                                    </button>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                handleDeleteProduct(product.id, product.name)
+                                            }
+                                            className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                                        >
+                                            <Trash2 size={15} />
+                                            Delete
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
+
+                    <PaginationControls
+                        currentPage={productsPage}
+                        totalPages={totalProductPages}
+                        onPrevious={() =>
+                            setProductsPage((currentPage) => Math.max(currentPage - 1, 1))
+                        }
+                        onNext={() =>
+                            setProductsPage((currentPage) =>
+                                Math.min(currentPage + 1, totalProductPages)
+                            )
+                        }
+                        label="Products page"
+                    />
                 </div>
             )}
 
@@ -484,12 +558,25 @@ const ProductsSection = ({
     );
 };
 
-const OrdersSection = () => {
+const OrdersSection = ({ orders, loading, error }) => {
+    const summarizedOrders = useMemo(() => summarizeOrdersByProduct(orders), [orders]);
+    const ordersPerPage = 8;
+    const [ordersPage, setOrdersPage] = useState(1);
+    const totalOrderPages = Math.max(1, Math.ceil(summarizedOrders.length / ordersPerPage));
+    const paginatedOrders = summarizedOrders.slice(
+        (ordersPage - 1) * ordersPerPage,
+        ordersPage * ordersPerPage
+    );
+
+    useEffect(() => {
+        setOrdersPage((currentPage) => Math.min(currentPage, totalOrderPages));
+    }, [totalOrderPages]);
+
     return (
         <div>
             <SectionHeading
                 title="Orders"
-                subtitle="Track all your recent product orders."
+                subtitle="See which of your products sold and how many units sold."
             />
 
             <div className="overflow-hidden border border-slate-200 bg-white shadow-sm">
@@ -498,154 +585,54 @@ const OrdersSection = () => {
                         <thead className="bg-slate-50">
                             <tr>
                                 <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Order ID
+                                    Product Name
                                 </th>
                                 <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Customer
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Product
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Date
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Amount
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Status
+                                    Quantity Sold
                                 </th>
                             </tr>
                         </thead>
 
                         <tbody>
-                            {ordersData.map((order) => (
-                                <tr key={order.id} className="border-t border-slate-200">
-                                    <td className="px-5 py-4 text-sm font-semibold text-slate-900">
-                                        {order.id}
-                                    </td>
-                                    <td className="px-5 py-4 text-sm text-slate-600">
-                                        {order.customer}
-                                    </td>
-                                    <td className="px-5 py-4 text-sm text-slate-600">
-                                        {order.product}
-                                    </td>
-                                    <td className="px-5 py-4 text-sm text-slate-600">
-                                        {order.date}
-                                    </td>
-                                    <td className="px-5 py-4 text-sm font-medium text-slate-800">
-                                        â‚¹{order.amount}
-                                    </td>
-                                    <td className="px-5 py-4 text-sm">
-                                        <span
-                                            className={`px-3 py-1 text-xs font-semibold ${
-                                                order.status === "Delivered"
-                                                    ? "bg-emerald-100 text-emerald-700"
-                                                    : order.status === "Pending"
-                                                      ? "bg-amber-100 text-amber-700"
-                                                      : "bg-blue-100 text-blue-700"
-                                            }`}
-                                        >
-                                            {order.status}
-                                        </span>
+                            {loading ? (
+                                <tr>
+                                    <td
+                                        colSpan="2"
+                                        className="px-5 py-10 text-center text-sm text-slate-500"
+                                    >
+                                        Loading orders...
                                     </td>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    );
-};
-
-const ReturnsSection = ({ returns }) => {
-    return (
-        <div>
-            <SectionHeading
-                title="Return Product"
-                subtitle="View all returned product requests here."
-            />
-
-            <div className="overflow-hidden border border-slate-200 bg-white shadow-sm">
-                <div className="overflow-x-auto">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-slate-50">
-                            <tr>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Return ID
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Order ID
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Customer
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Product
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Amount
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Reason
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Date
-                                </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
-                                    Status
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {returns.length > 0 ? (
-                                returns.map((item) => (
-                                    <tr key={item.id} className="border-t border-slate-200">
+                            ) : error ? (
+                                <tr>
+                                    <td
+                                        colSpan="2"
+                                        className="px-5 py-10 text-center text-sm text-rose-600"
+                                    >
+                                        {error}
+                                    </td>
+                                </tr>
+                            ) : paginatedOrders.length > 0 ? (
+                                paginatedOrders.map((order) => (
+                                    <tr
+                                        key={order.id}
+                                        className="border-t border-slate-200"
+                                    >
+                                        <td className="px-5 py-4 text-sm text-slate-600">
+                                            {order.productName}
+                                        </td>
                                         <td className="px-5 py-4 text-sm font-semibold text-slate-900">
-                                            RTN-{item.id}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm text-slate-700">
-                                            {item.orderId}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm text-slate-700">
-                                            {item.customer}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm text-slate-700">
-                                            {item.product}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm font-medium text-slate-800">
-                                            â‚¹{item.amount}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm text-slate-700">
-                                            {item.reason}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm text-slate-700">
-                                            {item.date}
-                                        </td>
-                                        <td className="px-5 py-4 text-sm">
-                                            <span
-                                                className={`px-3 py-1 text-xs font-semibold ${
-                                                    item.status === "Pending"
-                                                        ? "bg-amber-100 text-amber-700"
-                                                        : item.status === "Approved"
-                                                          ? "bg-emerald-100 text-emerald-700"
-                                                          : "bg-rose-100 text-rose-700"
-                                                }`}
-                                            >
-                                                {item.status}
-                                            </span>
+                                            {order.quantity}
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan="8"
+                                        colSpan="2"
                                         className="px-5 py-10 text-center text-sm text-slate-500"
                                     >
-                                        No return products found.
+                                        No MR-linked product sales found yet.
                                     </td>
                                 </tr>
                             )}
@@ -653,89 +640,112 @@ const ReturnsSection = ({ returns }) => {
                     </table>
                 </div>
             </div>
+
+            <PaginationControls
+                currentPage={ordersPage}
+                totalPages={totalOrderPages}
+                onPrevious={() =>
+                    setOrdersPage((currentPage) => Math.max(currentPage - 1, 1))
+                }
+                onNext={() =>
+                    setOrdersPage((currentPage) =>
+                        Math.min(currentPage + 1, totalOrderPages)
+                    )
+                }
+                label="Orders page"
+            />
         </div>
     );
 };
 
-const EarningsSection = () => {
-    const totalCredit = earningsHistory
-        .filter((item) => item.type === "Credit")
-        .reduce((acc, item) => acc + item.amount, 0);
+const EarningsSection = ({ products }) => {
+    const totalProducts = products.length;
+    const totalBalance = useMemo(() => calculateProductsBalance(products), [products]);
+    const averageProductPrice = totalProducts > 0 ? totalBalance / totalProducts : 0;
+    const highestValueProduct = useMemo(() => {
+        if (!products.length) {
+            return null;
+        }
 
-    const totalDebit = earningsHistory
-        .filter((item) => item.type === "Debit")
-        .reduce((acc, item) => acc + item.amount, 0);
+        return products.reduce((highestProduct, product) => {
+            if ((Number(product?.price) || 0) > (Number(highestProduct?.price) || 0)) {
+                return product;
+            }
 
-    const balance = totalCredit - totalDebit;
+            return highestProduct;
+        }, products[0]);
+    }, [products]);
 
     return (
         <div>
             <SectionHeading
                 title="Earnings"
-                subtitle="View your earnings, withdrawals and growth."
+                subtitle="See the total balance of all products you have added."
             />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
-                    title="Total Credit"
-                    value={`â‚¹${totalCredit}`}
-                    subtitle="All credited income"
+                    title="Total Products"
+                    value={totalProducts}
+                    subtitle="Products added by you"
                     icon={IndianRupee}
                 />
                 <StatCard
-                    title="Total Debit"
-                    value={`â‚¹${totalDebit}`}
-                    subtitle="Withdrawals and deductions"
-                    icon={Clock3}
+                    title="Average Price"
+                    value={formatCurrency(averageProductPrice)}
+                    subtitle="Average value per product"
+                    icon={Wallet}
                 />
                 <StatCard
-                    title="Available Balance"
-                    value={`â‚¹${balance}`}
-                    subtitle="Current wallet balance"
+                    title="Total Balance"
+                    value={formatCurrency(totalBalance)}
+                    subtitle="Sum of all added product prices"
                     icon={TrendingUp}
                 />
             </div>
 
             <div className="mt-8 border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="mb-5 text-lg font-semibold text-slate-900">
-                    Earnings History
+                    Added Products Balance
                 </h3>
 
-                <div className="space-y-4">
-                    {earningsHistory.map((item) => (
-                        <div
-                            key={item.id}
-                            className="flex flex-col gap-3 border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                            <div>
-                                <h4 className="font-semibold text-slate-900">{item.title}</h4>
-                                <p className="text-sm text-slate-500">{item.date}</p>
-                            </div>
+                {products.length > 0 ? (
+                    <div className="space-y-4">
+                        {products.map((product) => (
+                            <div
+                                key={product.id}
+                                className="flex flex-col gap-3 border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                                <div>
+                                    <h4 className="font-semibold text-slate-900">
+                                        {product.name}
+                                    </h4>
+                                    <p className="text-sm text-slate-500">
+                                        {product.categoryName || "Uncategorized"}
+                                    </p>
+                                </div>
 
-                            <div className="flex items-center gap-3">
-                                <span
-                                    className={`px-3 py-1 text-xs font-semibold ${
-                                        item.type === "Credit"
-                                            ? "bg-emerald-100 text-emerald-700"
-                                            : "bg-rose-100 text-rose-700"
-                                    }`}
-                                >
-                                    {item.type}
-                                </span>
-
-                                <span
-                                    className={`text-lg font-bold ${
-                                        item.type === "Credit"
-                                            ? "text-emerald-700"
-                                            : "text-rose-700"
-                                    }`}
-                                >
-                                    {item.type === "Credit" ? "+" : "-"}â‚¹{item.amount}
+                                <span className="text-lg font-bold text-slate-900">
+                                    {formatCurrency(product.price)}
                                 </span>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
+                        No products added yet, so balance is {formatCurrency(0)}.
+                    </div>
+                )}
+
+                {highestValueProduct ? (
+                    <div className="mt-5 bg-slate-50 p-4 text-sm text-slate-700">
+                        Highest value product:{" "}
+                        <span className="font-semibold text-slate-900">
+                            {highestValueProduct.name}
+                        </span>{" "}
+                        ({formatCurrency(highestValueProduct.price)})
+                    </div>
+                ) : null}
             </div>
         </div>
     );
@@ -749,19 +759,11 @@ const MrDashboard = () => {
     const [categories, setCategories] = useState([]);
     const [productsLoading, setProductsLoading] = useState(true);
     const [productsError, setProductsError] = useState("");
-
-    const [returns] = useState([
-        {
-            id: 1001,
-            orderId: "#ORD1025",
-            customer: "Priya Singh",
-            product: "Immunity Booster",
-            amount: 499,
-            reason: "Damaged product received",
-            status: "Pending",
-            date: "16 Apr 2026",
-        },
-    ]);
+    const [mrOrders, setMrOrders] = useState([]);
+    const [ordersLoading, setOrdersLoading] = useState(true);
+    const [ordersError, setOrdersError] = useState("");
+    const [, setMrNotifications] = useState([]);
+    const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
     const currentUser = useMemo(() => {
         try {
@@ -811,6 +813,16 @@ const MrDashboard = () => {
         [allowedMrCategoryNames, categories]
     );
 
+    const summarizedMrOrders = useMemo(
+        () => summarizeOrdersByProduct(mrOrders),
+        [mrOrders]
+    );
+
+    const totalBalance = useMemo(
+        () => calculateProductsBalance(normalizedProducts),
+        [normalizedProducts]
+    );
+
     const brandOptions = useMemo(() => {
         const knownBrands = [
             ...mrBrandDropdownOptions,
@@ -849,8 +861,45 @@ const MrDashboard = () => {
         }
     };
 
+    const loadMrOrders = async () => {
+        try {
+            setOrdersLoading(true);
+            setOrdersError("");
+
+            const response = await getMrOrders();
+            setMrOrders(extractOrders(response.data));
+        } catch (requestError) {
+            setMrOrders([]);
+            setOrdersError(
+                requestError?.response?.data?.message ||
+                    requestError?.message ||
+                    "Failed to load your orders."
+            );
+        } finally {
+            setOrdersLoading(false);
+        }
+    };
+
+    const loadMrNotifications = async () => {
+        try {
+            const response = await getMrNotifications();
+            const notifications = extractNotifications(response.data);
+
+            setMrNotifications(notifications);
+            setUnreadNotificationCount(
+                Number(response?.data?.unreadCount) ||
+                    notifications.filter((notification) => !notification?.isRead).length
+            );
+        } catch (_requestError) {
+            setMrNotifications([]);
+            setUnreadNotificationCount(0);
+        }
+    };
+
     useEffect(() => {
         loadMrProducts();
+        loadMrOrders();
+        loadMrNotifications();
     }, []);
 
     const handleLogout = () => {
@@ -875,19 +924,28 @@ const MrDashboard = () => {
                 );
 
             case "orders":
-                return <OrdersSection />;
-
-            case "returns":
-                return <ReturnsSection returns={returns} />;
+                return (
+                    <OrdersSection
+                        orders={mrOrders}
+                        loading={ordersLoading}
+                        error={ordersError}
+                    />
+                );
 
             case "earnings":
-                return <EarningsSection />;
+                return <EarningsSection products={normalizedProducts} />;
 
             default:
                 return (
                     <DashboardHome
                         totalProducts={normalizedProducts.length}
-                        totalReturns={returns.length}
+                        totalOrders={mrOrders.length}
+                        deliveredOrders={
+                            mrOrders.filter((order) => order.orderStatus === "delivered").length
+                        }
+                        currentBalance={totalBalance}
+                        recentSales={summarizedMrOrders}
+                        onViewOrders={() => setActiveTab("orders")}
                     />
                 );
         }
@@ -904,11 +962,11 @@ const MrDashboard = () => {
                 )}
 
                 <aside
-                    className={`fixed left-0 top-0 z-50 h-screen w-72 transform border-r border-slate-200 bg-white p-5 shadow-lg transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${
+                    className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-lg transition-transform duration-300 lg:translate-x-0 ${
                         sidebarOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
                 >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
                         <div>
                             <h1 className="text-2xl font-extrabold text-slate-900">
                                 MR Panel
@@ -924,52 +982,56 @@ const MrDashboard = () => {
                         </button>
                     </div>
 
-                    <nav className="mt-8 space-y-2">
-                        {sidebarItems.map((item) => {
-                            const Icon = item.icon;
-                            const isActive = activeTab === item.id;
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6">
+                        <nav className="space-y-2">
+                            {sidebarItems.map((item) => {
+                                const Icon = item.icon;
+                                const isActive = activeTab === item.id;
 
-                            return (
-                                <button
-                                    key={item.id}
-                                    onClick={() => {
-                                        setActiveTab(item.id);
-                                        setSidebarOpen(false);
-                                    }}
-                                    className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${
-                                        isActive
-                                            ? "bg-indigo-600 text-white shadow-md"
-                                            : "text-slate-700 hover:bg-slate-100"
-                                    }`}
-                                >
-                                    <Icon size={20} />
-                                    {item.label}
-                                </button>
-                            );
-                        })}
-                    </nav>
+                                return (
+                                    <button
+                                        key={item.id}
+                                        onClick={() => {
+                                            setActiveTab(item.id);
+                                            setSidebarOpen(false);
+                                        }}
+                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${
+                                            isActive
+                                                ? "bg-indigo-600 text-white shadow-md"
+                                                : "text-slate-700 hover:bg-slate-100"
+                                        }`}
+                                    >
+                                        <Icon size={20} />
+                                        {item.label}
+                                    </button>
+                                );
+                            })}
+                        </nav>
 
-                    <div className="mt-6 border-t border-slate-200 pt-4">
-                        <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-rose-600"
-                        >
-                            <LogOut size={20} />
-                            Logout
-                        </button>
-                    </div>
+                        <div className="mt-6 border-t border-slate-200 pt-4">
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-700 transition hover:bg-slate-100 hover:text-rose-600"
+                            >
+                                <LogOut size={20} />
+                                Logout
+                            </button>
+                        </div>
 
-                    <div className="mt-10 bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white">
-                        <p className="text-sm text-indigo-100">Current Balance</p>
-                        <h3 className="mt-2 text-3xl font-bold">â‚¹3,500</h3>
-                        <p className="mt-2 text-sm text-indigo-100">
-                            Keep growing your orders and earnings.
-                        </p>
+                        <div className="mt-10 bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white">
+                            <p className="text-sm text-indigo-100">Current Balance</p>
+                            <h3 className="mt-2 text-3xl font-bold">
+                                {formatCurrency(totalBalance)}
+                            </h3>
+                            <p className="mt-2 text-sm text-indigo-100">
+                                Keep growing your orders and earnings.
+                            </p>
+                        </div>
                     </div>
                 </aside>
 
-                <div className="flex-1">
+                <div className="flex-1 lg:pl-72">
                     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur">
                         <div className="flex items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
                             <div className="flex items-center gap-3">
@@ -991,6 +1053,11 @@ const MrDashboard = () => {
                             </div>
 
                             <div className="flex items-center gap-3">
+                                <div className="hidden items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 sm:flex">
+                                    <Bell size={16} />
+                                    <span>{unreadNotificationCount} unread</span>
+                                </div>
+
                                 <div className="hidden text-right sm:block">
                                     <p className="text-sm font-semibold text-slate-900">
                                         {currentUser?.name || currentUser?.email || "MR User"}

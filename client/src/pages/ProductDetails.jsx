@@ -118,7 +118,7 @@ const ProductDetails = () => {
               </p>
               <Link
                 to="/products"
-                className="mt-5 inline-flex rounded-xl bg-[#87CEEB] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                className="mt-5 inline-flex rounded-xl bg-[#0EA5E9] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
               >
                 Browse Products
               </Link>
@@ -152,7 +152,7 @@ const ProductDetails = () => {
 
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <div className="flex items-center gap-3 px-1 py-1">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#87CEEB]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#0EA5E9]">
                     <Truck size={18} />
                   </div>
                   <div>
@@ -162,7 +162,7 @@ const ProductDetails = () => {
                 </div>
 
                 <div className="flex items-center gap-3 px-1 py-1">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#87CEEB]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-100 text-[#0EA5E9]">
                     <Headphones size={18} />
                   </div>
                   <div>
@@ -236,7 +236,7 @@ const ProductDetails = () => {
                   <button
                     type="button"
                     onClick={handleAddToCart}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#87CEEB] px-5 py-3 text-sm font-semibold text-[#87CEEB] transition hover:bg-[#87CEEB] hover:text-white"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-[#0EA5E9] px-5 py-3 text-sm font-semibold text-[#0EA5E9] transition hover:bg-[#0EA5E9] hover:text-white"
                   >
                     <ShoppingCart size={16} />
                     Add to Cart
@@ -245,7 +245,7 @@ const ProductDetails = () => {
                   <button
                     type="button"
                     onClick={handleBuyNow}
-                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#0EA5E9] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                   >
                     <Zap size={16} />
                     Buy Now

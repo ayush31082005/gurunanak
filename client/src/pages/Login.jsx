@@ -3,13 +3,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
     ArrowRight,
-    CheckCircle2,
     Mail,
     PackageCheck,
     Pill,
     ShieldCheck,
 } from "lucide-react";
 import { sendLoginOtp, verifyLoginOtp } from "../api/authApi";
+import { useToast } from "../context/ToastContext";
 
 const loginSlides = [
     {
@@ -77,6 +77,7 @@ const getRedirectPathForUser = (user, locationState) => {
 const Login = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { success: showSuccessToast } = useToast();
     const OTP_RESEND_SECONDS = 60;
 
     const [otpSent, setOtpSent] = useState(false);
@@ -85,7 +86,6 @@ const Login = () => {
     const [message, setMessage] = useState(location.state?.message || "");
     const [error, setError] = useState("");
     const [resendTimer, setResendTimer] = useState(0);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [authenticatedUser, setAuthenticatedUser] = useState(null);
     const [form, setForm] = useState({
         email: "",
@@ -147,11 +147,9 @@ const Login = () => {
     const currentSlide = loginSlides[activeSlide];
     const SlideIcon = currentSlide.icon;
 
-    const handleSuccessPopupClose = () => {
-        setShowSuccessPopup(false);
-
+    const redirectAfterLogin = (nextAuthenticatedUser = authenticatedUser) => {
         const redirectTarget = getRedirectPathForUser(
-            authenticatedUser,
+            nextAuthenticatedUser,
             location.state
         );
 
@@ -284,9 +282,15 @@ const Login = () => {
             localStorage.setItem("user", JSON.stringify(data.user));
             window.dispatchEvent(new Event("authchange"));
 
-            setAuthenticatedUser(data.user || null);
+            const nextAuthenticatedUser = data.user || null;
+            setAuthenticatedUser(nextAuthenticatedUser);
             setMessage(data.message || "Login successful");
-            setShowSuccessPopup(true);
+            showSuccessToast("Your account login is complete.", {
+                title: "Login Successful",
+            });
+            window.setTimeout(() => {
+                redirectAfterLogin(nextAuthenticatedUser);
+            }, 900);
         } catch (err) {
             const nextMessage =
                 err.response?.data?.message ||
@@ -306,29 +310,6 @@ const Login = () => {
 
     return (
         <>
-            {showSuccessPopup ? (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
-                    <div className="w-full max-w-md rounded-[28px] bg-white p-6 text-center shadow-[0_20px_60px_rgba(15,23,42,0.22)] sm:p-8">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                            <CheckCircle2 size={32} />
-                        </div>
-                        <h3 className="mt-5 text-2xl font-bold text-slate-900">
-                            Login Successful
-                        </h3>
-                        <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
-                            Your account login is complete. Press OK to continue.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={handleSuccessPopupClose}
-                            className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#87CEEB] px-6 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
-                        >
-                            OK
-                        </button>
-                    </div>
-                </div>
-            ) : null}
-
             <section className="bg-[#f6f7fb] py-3 sm:py-4">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
@@ -468,7 +449,7 @@ const Login = () => {
                                                             type="button"
                                                             onClick={handleResendOtp}
                                                             disabled={loading || resendTimer > 0}
-                                                            className="font-semibold text-[#87CEEB] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                                                            className="font-semibold text-[#0EA5E9] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
                                                         >
                                                             Resend OTP
                                                         </button>
@@ -479,7 +460,7 @@ const Login = () => {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#87CEEB] px-5 text-sm font-bold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70"
+                                                className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0EA5E9] px-5 text-sm font-bold text-white transition hover:bg-[#0284C7] disabled:cursor-not-allowed disabled:opacity-70"
                                             >
                                                 {loading
                                                     ? "Please wait..."
@@ -495,7 +476,7 @@ const Login = () => {
                                         New on Gurunanak?{" "}
                                         <Link
                                             to="/register"
-                                            className="font-semibold text-[#87CEEB] hover:underline"
+                                            className="font-semibold text-[#0EA5E9] hover:underline"
                                         >
                                             Sign Up
                                         </Link>

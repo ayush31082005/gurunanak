@@ -93,7 +93,7 @@ const Footer = () => {
                   href={`tel:${SUPPORT_PHONE.replace(/\D/g, "")}`}
                   className="flex items-start gap-3 transition-colors hover:text-white"
                 >
-                  <Phone size={16} className="mt-0.5 shrink-0 text-[#5FC3E7]" />
+                  <Phone size={16} className="mt-0.5 shrink-0 text-[#0284C7]" />
                   <span>{SUPPORT_PHONE}</span>
                 </a>
 
@@ -101,17 +101,17 @@ const Footer = () => {
                   href={`mailto:${SUPPORT_EMAIL}`}
                   className="flex items-start gap-3 break-all transition-colors hover:text-white"
                 >
-                  <Mail size={16} className="mt-0.5 shrink-0 text-[#5FC3E7]" />
+                  <Mail size={16} className="mt-0.5 shrink-0 text-[#0284C7]" />
                   <span>{SUPPORT_EMAIL}</span>
                 </a>
 
                 <div className="flex items-start gap-3">
-                  <MapPin size={16} className="mt-0.5 shrink-0 text-[#5FC3E7]" />
+                  <MapPin size={16} className="mt-0.5 shrink-0 text-[#0284C7]" />
                   <span>{SUPPORT_ADDRESS}</span>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Clock3 size={16} className="mt-0.5 shrink-0 text-[#5FC3E7]" />
+                  <Clock3 size={16} className="mt-0.5 shrink-0 text-[#0284C7]" />
                   <span>{SUPPORT_HOURS}</span>
                 </div>
               </div>
@@ -125,7 +125,7 @@ const Footer = () => {
                       target="_blank"
                       rel="noreferrer"
                       aria-label={item.label}
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-500/70 bg-slate-800/60 text-slate-200 transition hover:border-[#5FC3E7] hover:bg-[#87CEEB] hover:text-white"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-500/70 bg-slate-800/60 text-slate-200 transition hover:border-[#0284C7] hover:bg-[#0EA5E9] hover:text-white"
                     title={item.label}
                   >
                     <img

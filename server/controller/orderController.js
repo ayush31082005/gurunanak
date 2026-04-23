@@ -1,7 +1,9 @@
 import crypto from "crypto";
 import mongoose from "mongoose";
+import Notification from "../models/Notification.js";
 import Order from "../models/Order.js";
 import Product from "../models/Product.js";
+import Return from "../models/Return.js";
 import sendEmail from "../utils/sendEmail.js";
 import { sendOrderNotification } from "../utils/sendOrderNotification.js";
 
@@ -9,8 +11,10 @@ const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
 
 const stockReservedStatuses = new Set([
     "pending",
+    "pick_product",
     "placed",
     "shipped",
+    "out_for_delivery",
     "delivered",
 ]);
 
@@ -44,6 +48,85 @@ const normalizeItems = (items = []) =>
                 Number.isFinite(item.price) &&
                 Number.isFinite(item.quantity)
         );
+
+const getProductOwnershipMap = async (items = []) => {
+    const productIds = [
+        ...new Set(
+            items
+                .map((item) => String(item?.productId || ""))
+                .filter((productId) => mongoose.Types.ObjectId.isValid(productId))
+        ),
+    ];
+
+    if (!productIds.length) {
+        return new Map();
+    }
+
+    const products = await Product.find({ _id: { $in: productIds } })
+        .select("_id createdBy createdByRole")
+        .lean();
+
+    return new Map(products.map((product) => [String(product._id), product]));
+};
+
+const attachProductOwnershipToItems = async (items = []) => {
+    const ownershipMap = await getProductOwnershipMap(items);
+
+    return items.map((item) => {
+        const ownership = ownershipMap.get(String(item?.productId || ""));
+        const productOwnerRole = ownership?.createdByRole === "mr" ? "mr" : "admin";
+
+        return {
+            ...item,
+            productOwnerRole,
+            mrId: productOwnerRole === "mr" ? ownership?.createdBy || null : null,
+        };
+    });
+};
+
+const getMrOwnedOrderItems = (items = []) => {
+    const seenItems = new Set();
+
+    return items.filter((item) => {
+        if (item?.productOwnerRole !== "mr" || !item?.mrId) {
+            return false;
+        }
+
+        const uniqueKey = `${String(item.mrId)}:${String(item.productId || item.name)}`;
+
+        if (seenItems.has(uniqueKey)) {
+            return false;
+        }
+
+        seenItems.add(uniqueKey);
+        return true;
+    });
+};
+
+const createMrNotificationsForOrderItems = async ({
+    items = [],
+    orderId,
+    title,
+    messageBuilder,
+}) => {
+    const mrItems = getMrOwnedOrderItems(items);
+
+    if (!mrItems.length) {
+        return;
+    }
+
+    await Notification.insertMany(
+        mrItems.map((item) => ({
+            mrId: item.mrId,
+            title,
+            message: messageBuilder(item),
+            relatedOrder: orderId,
+            relatedProduct: mongoose.Types.ObjectId.isValid(item.productId)
+                ? item.productId
+                : null,
+        }))
+    );
+};
 
 const validateOrderPayload = ({ items, shippingInfo }) => {
     const normalizedItems = normalizeItems(items);
@@ -112,7 +195,7 @@ const getTrackedOrderItems = (items = []) => {
     return quantityByProductId;
 };
 
-const adjustInventoryForItems = async (items = [], action = "decrement") => {
+export const adjustInventoryForItems = async (items = [], action = "decrement") => {
     const quantityByProductId = getTrackedOrderItems(items);
 
     if (quantityByProductId.size === 0) {
@@ -229,8 +312,10 @@ Thank you for shopping with us.`
 const allowedAdminStatuses = new Set([
     "pending",
     "payment_pending",
+    "pick_product",
     "placed",
     "shipped",
+    "out_for_delivery",
     "delivered",
     "cancelled",
 ]);
@@ -244,8 +329,10 @@ const cancellableUserStatuses = new Set([
 const statusMessages = {
     pending: "Order marked as pending by admin",
     payment_pending: "Order marked as awaiting payment by admin",
+    pick_product: "Product is being picked from inventory",
     placed: "Order confirmed by admin",
     shipped: "Order shipped by admin",
+    out_for_delivery: "Order is out for delivery",
     delivered: "Order delivered successfully",
     cancelled: "Order cancelled by admin",
 };
@@ -281,6 +368,9 @@ const createRazorpayApiOrder = async (amount, receipt) => {
     return data;
 };
 
+const isOnlinePaymentMethod = (paymentMethod = "") =>
+    ["card", "upi"].includes(String(paymentMethod || "").trim().toLowerCase());
+
 export const createOrder = async (req, res) => {
     let normalizedItems = [];
     let stockReduced = false;
@@ -311,6 +401,8 @@ export const createOrder = async (req, res) => {
             });
         }
 
+        normalizedItems = await attachProductOwnershipToItems(normalizedItems);
+
         const { subtotal, discount } = getPricing(normalizedItems, pricing);
         const isFirstOrder = !(await hasPreviousConfirmedOrder(req.user._id));
         const codFee = getCodFee({ subtotal, paymentMethod, isFirstOrder });
@@ -334,12 +426,12 @@ export const createOrder = async (req, res) => {
             platformFee: 0,
             discount,
             total,
-            status: "pending",
+            status: "placed",
             stockReduced: true,
             tracking: [
                 {
-                    status: "pending",
-                    message: "Order placed successfully",
+                    status: "placed",
+                    message: "Cash on delivery order placed successfully",
                     timestamp: new Date(),
                 },
             ],
@@ -353,6 +445,16 @@ export const createOrder = async (req, res) => {
 
         sendOrderNotification(order).catch((error) => {
             console.error("Admin order notification failed:", error.message);
+        });
+
+        createMrNotificationsForOrderItems({
+            items: normalizedItems,
+            orderId: order._id,
+            title: "New order received",
+            messageBuilder: (item) =>
+                `Your product "${item.name}" has been ordered by a customer.`,
+        }).catch((error) => {
+            console.error("MR order notification failed:", error.message);
         });
 
         return res.status(201).json({
@@ -408,7 +510,8 @@ export const createRazorpayOrder = async (req, res) => {
             });
         }
 
-        const { subtotal, discount } = getPricing(normalizedItems, pricing);
+        const enrichedItems = await attachProductOwnershipToItems(normalizedItems);
+        const { subtotal, discount } = getPricing(enrichedItems, pricing);
         const total = Math.max(subtotal - discount, 0);
         const amountInPaise = Math.round(total * 100);
         const receipt = `rcpt_${Date.now()}`;
@@ -420,7 +523,7 @@ export const createRazorpayOrder = async (req, res) => {
 
         const order = await Order.create({
             user: req.user._id,
-            items: normalizedItems,
+            items: enrichedItems,
             shippingInfo: normalizedShippingInfo,
             paymentMethod,
             subtotal,
@@ -533,6 +636,16 @@ export const verifyRazorpayPayment = async (req, res) => {
             console.error("Admin order notification failed:", error.message);
         });
 
+        createMrNotificationsForOrderItems({
+            items: order.items,
+            orderId: order._id,
+            title: "New order received",
+            messageBuilder: (item) =>
+                `Your product "${item.name}" has been ordered by a customer.`,
+        }).catch((error) => {
+            console.error("MR order notification failed:", error.message);
+        });
+
         return res.status(200).json({
             success: true,
             message: "Payment verified and order confirmed",
@@ -598,9 +711,27 @@ export const getMySingleOrder = async (req, res) => {
             });
         }
 
+        const returnRequest = await Return.findOne({ order: order._id })
+            .select("type status refundStatus replacementOrder requestedAt processedAt pickedUpAt manualPendingAt refundCompletedAt createdAt updatedAt")
+            .lean();
+
+        const originalOrder =
+            order.originalOrderId
+                ? await Order.findOne({
+                    _id: order.originalOrderId,
+                    "shippingInfo.email": userEmail,
+                })
+                    .select("_id status createdAt deliveredAt paymentMethod tracking")
+                    .lean()
+                : null;
+
         return res.status(200).json({
             success: true,
-            order,
+            order: {
+                ...order.toObject(),
+                returnRequest,
+                originalOrder,
+            },
         });
     } catch (error) {
         console.error("Single order error:", error);
@@ -626,6 +757,13 @@ export const cancelMyOrder = async (req, res) => {
             return res.status(404).json({
                 success: false,
                 message: "Order not found",
+            });
+        }
+
+        if (order.orderType === "replacement") {
+            return res.status(400).json({
+                success: false,
+                message: "Replacement orders cannot be cancelled",
             });
         }
 
@@ -716,6 +854,39 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
+        const hasActiveReturnFlow =
+            Boolean(order.isReturnRequested) ||
+            (order.returnStatus && order.returnStatus !== "not_requested");
+
+        if (
+            nextStatus === "cancelled" &&
+            (order.orderType === "replacement" || hasActiveReturnFlow)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "Replacement or return-in-process orders cannot be cancelled",
+            });
+        }
+
+        if (order.paymentMethod === "cod" && nextStatus === "payment_pending") {
+            return res.status(400).json({
+                success: false,
+                message: "Cash on delivery orders cannot be marked as payment pending",
+            });
+        }
+
+        if (
+            isOnlinePaymentMethod(order.paymentMethod) &&
+            !order.razorpayPaymentId &&
+            nextStatus !== "payment_pending" &&
+            nextStatus !== "cancelled"
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "This order is waiting for Razorpay payment confirmation",
+            });
+        }
+
         const shouldReserveStock = stockReservedStatuses.has(nextStatus);
 
         if (shouldReserveStock && !order.stockReduced) {
@@ -731,6 +902,9 @@ export const updateOrderStatus = async (req, res) => {
         }
 
         order.status = nextStatus;
+        if (nextStatus === "delivered" && !order.deliveredAt) {
+            order.deliveredAt = new Date();
+        }
         order.tracking.push({
             status: nextStatus,
             message: statusMessages[nextStatus] || "Order updated by admin",
@@ -738,6 +912,16 @@ export const updateOrderStatus = async (req, res) => {
         });
 
         await order.save();
+
+        createMrNotificationsForOrderItems({
+            items: order.items,
+            orderId: order._id,
+            title: "Order status updated",
+            messageBuilder: (item) =>
+                `Order status for "${item.name}" is now ${nextStatus}.`,
+        }).catch((notificationError) => {
+            console.error("MR status notification failed:", notificationError.message);
+        });
 
         return res.status(200).json({
             success: true,

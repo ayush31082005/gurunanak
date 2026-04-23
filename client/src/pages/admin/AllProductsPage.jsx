@@ -388,7 +388,7 @@ const AllProductsPage = ({
                             <ChevronLeft size={16} /> Back
                         </Link>
 
-                        <span className="rounded-full bg-[#EEF9FE] px-3 py-1 text-xs font-semibold text-[#87CEEB]">
+                        <span className="rounded-full bg-[#E0F2FE] px-3 py-1 text-xs font-semibold text-[#0EA5E9]">
                             {selectedCategoryName}
                         </span>
                     </div>
@@ -403,7 +403,7 @@ const AllProductsPage = ({
                     <button
                         type="button"
                         onClick={() => setIsAddModalOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white"
+                        className="inline-flex items-center gap-2 rounded-2xl bg-[#0EA5E9] px-5 py-3 text-sm font-semibold text-white"
                     >
                         <Plus size={18} /> Add Product
                     </button>
@@ -418,7 +418,7 @@ const AllProductsPage = ({
                         onClick={() => setOwnershipFilter(filter.id)}
                         className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
                             ownershipFilter === filter.id
-                                ? "bg-[#87CEEB] text-white"
+                                ? "bg-[#0EA5E9] text-white"
                                 : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                         }`}
                     >
@@ -543,7 +543,7 @@ const AllProductsPage = ({
                                                 <button
                                                     type="button"
                                                     onClick={() => handleView(product)}
-                                                    className="rounded-xl bg-[#87CEEB] px-3 py-2 font-medium text-white"
+                                                    className="rounded-xl bg-[#0EA5E9] px-3 py-2 font-medium text-white"
                                                 >
                                                     View
                                                 </button>
@@ -635,7 +635,7 @@ const AllProductsPage = ({
                                             onClick={() => setCurrentPage(pageNumber)}
                                             className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                                                 currentPage === pageNumber
-                                                    ? "bg-[#87CEEB] text-white"
+                                                    ? "bg-[#0EA5E9] text-white"
                                                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                                             }`}
                                         >

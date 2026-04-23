@@ -340,7 +340,7 @@ const MrRequestsPage = () => {
                     <button
                         type="button"
                         onClick={fetchMrRequests}
-                        className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                        className="rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                     >
                         Refresh Requests
                     </button>
@@ -360,7 +360,7 @@ const MrRequestsPage = () => {
                             onClick={() => setStatusFilter(filter.id)}
                             className={`rounded-2xl px-4 py-2 text-sm font-semibold transition ${
                                 statusFilter === filter.id
-                                    ? "bg-[#87CEEB] text-white"
+                                    ? "bg-[#0EA5E9] text-white"
                                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                             }`}
                         >
@@ -565,7 +565,7 @@ const MrRequestsPage = () => {
                                             onClick={() => setCurrentPage(pageNumber)}
                                             className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                                                 currentPage === pageNumber
-                                                    ? "bg-[#87CEEB] text-white"
+                                                    ? "bg-[#0EA5E9] text-white"
                                                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                                             }`}
                                         >
@@ -634,7 +634,7 @@ const MrRequestsPage = () => {
                                             name="name"
                                             value={editForm.name}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -647,7 +647,7 @@ const MrRequestsPage = () => {
                                             name="email"
                                             value={editForm.email}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -660,7 +660,7 @@ const MrRequestsPage = () => {
                                             name="phone"
                                             value={editForm.phone}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -673,7 +673,7 @@ const MrRequestsPage = () => {
                                             name="medicalStoreName"
                                             value={editForm.medicalStoreName}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -686,7 +686,7 @@ const MrRequestsPage = () => {
                                             name="city"
                                             value={editForm.city}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -699,7 +699,7 @@ const MrRequestsPage = () => {
                                             name="state"
                                             value={editForm.state}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -712,7 +712,7 @@ const MrRequestsPage = () => {
                                             name="gstNumber"
                                             value={editForm.gstNumber}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
 
@@ -725,7 +725,7 @@ const MrRequestsPage = () => {
                                             name="panNumber"
                                             value={editForm.panNumber}
                                             onChange={handleEditFormChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                         />
                                     </div>
                                 </div>
@@ -739,7 +739,7 @@ const MrRequestsPage = () => {
                                         name="drugLicenseNumber"
                                         value={editForm.drugLicenseNumber}
                                         onChange={handleEditFormChange}
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#87CEEB]"
+                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-700 outline-none transition focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -755,7 +755,7 @@ const MrRequestsPage = () => {
                                     <button
                                         type="submit"
                                         disabled={isSubmittingEdit}
-                                        className="rounded-2xl bg-[#87CEEB] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70"
+                                        className="rounded-2xl bg-[#0EA5E9] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0284C7] disabled:cursor-not-allowed disabled:opacity-70"
                                     >
                                         {isSubmittingEdit ? "Saving..." : "Save Changes"}
                                     </button>

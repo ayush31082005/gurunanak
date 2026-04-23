@@ -42,11 +42,29 @@ const createUpload = (allowedMimeTypes) =>
         },
     });
 
+const createMemoryUpload = (allowedMimeTypes) =>
+    multer({
+        storage: multer.memoryStorage(),
+        fileFilter: (_req, file, callback) => {
+            if (!allowedMimeTypes.includes(file.mimetype)) {
+                callback(new Error("Unsupported file type"));
+                return;
+            }
+
+            callback(null, true);
+        },
+        limits: {
+            fileSize: 5 * 1024 * 1024,
+        },
+    });
+
 const imageMimeTypes = ["image/jpeg", "image/png", "image/jpg"];
 const documentMimeTypes = [...imageMimeTypes, "application/pdf"];
 
 const upload = createUpload(imageMimeTypes);
 
 export const mrDocumentUpload = createUpload(documentMimeTypes);
+export const imageMemoryUpload = createMemoryUpload(imageMimeTypes);
+export const documentMemoryUpload = createMemoryUpload(documentMimeTypes);
 
 export default upload;

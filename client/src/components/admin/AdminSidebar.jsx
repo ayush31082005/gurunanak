@@ -8,6 +8,8 @@ import {
     FileText,
     BriefcaseMedical,
     ClipboardCheck,
+    RotateCcw,
+    Landmark,
     LogOut,
     X,
 } from "lucide-react";
@@ -16,6 +18,8 @@ const menuItems = [
     { label: "Dashboard", path: "/admin/dashboard", icon: LayoutDashboard },
     { label: "Products", path: "/admin/products", icon: Pill },
     { label: "Orders", path: "/admin/orders", icon: ShoppingCart },
+    { label: "Returns", path: "/admin/returns", icon: RotateCcw },
+    { label: "User Bank", path: "/admin/user-banks", icon: Landmark },
     { label: "Customers", path: "/admin/customers", icon: Users },
     { label: "MR Requests", path: "/admin/mr-requests", icon: BriefcaseMedical },
     { label: "MR Product Requests", path: "/admin/mr-products", icon: ClipboardCheck },
@@ -77,7 +81,7 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
                                     className={({ isActive }) =>
                                         `flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition ${
                                             isActive
-                                                ? "bg-[#87CEEB] text-white shadow-lg shadow-[#87CEEB]/25"
+                                                ? "bg-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/25"
                                                 : "text-slate-600 hover:bg-slate-100"
                                         }`
                                     }
@@ -93,7 +97,7 @@ const AdminSidebar = ({ mobileOpen, setMobileOpen }) => {
                         <button
                             type="button"
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#87CEEB]"
+                            className="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#0EA5E9]"
                         >
                             <LogOut size={18} />
                             Logout

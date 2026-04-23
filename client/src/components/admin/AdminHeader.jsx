@@ -55,7 +55,7 @@ const AdminHeader = ({ title, setMobileOpen }) => {
                             placeholder="Search anything..."
                             value={searchValue}
                             onChange={handleSearchChange}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-[#87CEEB] sm:w-72"
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none focus:border-[#0EA5E9] sm:w-72"
                         />
                     </div>
                 </div>

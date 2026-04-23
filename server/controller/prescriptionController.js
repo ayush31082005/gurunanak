@@ -4,6 +4,7 @@ import {
     deletePrescriptionFromCloudinary,
 } from "../utils/cloudinary.js";
 import { sendPrescriptionNotification } from "../utils/sendPrescriptionNotification.js";
+import { runImprovedOcr } from "../services/prescriptionOcrService.js";
 
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "application/pdf"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -12,8 +13,8 @@ const ADMIN_PRESCRIPTION_STATUSES = new Set(["submitted", "reviewed", "processed
 const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 const normalizeEmail = (email = "") => String(email).trim().toLowerCase();
 
-const parseBase64File = (fileData) => {
-    const matches = fileData.match(/^data:(.+);base64,(.+)$/);
+const parseBase64File = (fileData = "") => {
+    const matches = String(fileData).match(/^data:(.+);base64,(.+)$/);
 
     if (!matches) {
         throw new Error("Invalid file payload");
@@ -25,11 +26,35 @@ const parseBase64File = (fileData) => {
     };
 };
 
+const getUploadedFilePayload = (req) => {
+    if (req.file?.buffer) {
+        return {
+            mimeType: req.file.mimetype,
+            buffer: req.file.buffer,
+            fileName: req.file.originalname,
+            fileType: req.file.mimetype,
+        };
+    }
+
+    if (req.body?.fileData && req.body?.fileName && req.body?.fileType) {
+        const { mimeType, buffer } = parseBase64File(req.body.fileData);
+
+        return {
+            mimeType,
+            buffer,
+            fileName: req.body.fileName,
+            fileType: req.body.fileType,
+        };
+    }
+
+    throw new Error("Prescription file is required.");
+};
+
 export const submitPrescription = async (req, res) => {
     try {
-        const { name, email, mobile, address, fileData, fileName, fileType } = req.body;
+        const { name, email, mobile, address } = req.body;
 
-        if (!name || !email || !mobile || !address || !fileData || !fileName || !fileType) {
+        if (!name || !email || !mobile || !address) {
             return res.status(400).json({
                 success: false,
                 message: "Name, email, mobile number, address, and prescription file are required.",
@@ -71,14 +96,14 @@ export const submitPrescription = async (req, res) => {
             });
         }
 
+        const { mimeType, buffer, fileName, fileType } = getUploadedFilePayload(req);
+
         if (!ALLOWED_TYPES.includes(fileType)) {
             return res.status(400).json({
                 success: false,
                 message: "Only JPG, PNG, and PDF prescriptions are allowed.",
             });
         }
-
-        const { mimeType, buffer } = parseBase64File(fileData);
 
         if (mimeType !== fileType) {
             return res.status(400).json({
@@ -113,15 +138,7 @@ export const submitPrescription = async (req, res) => {
             cloudinaryPublicId: cloudinaryUpload.public_id,
         });
 
-        try {
-            await sendPrescriptionNotification(prescription);
-            prescription.notificationSent = true;
-            await prescription.save();
-        } catch (notificationError) {
-            console.error("Prescription notification failed:", notificationError.message);
-        }
-
-        return res.status(201).json({
+        const responsePayload = {
             success: true,
             message: "Prescription submitted successfully.",
             prescription: {
@@ -130,9 +147,35 @@ export const submitPrescription = async (req, res) => {
                 status: prescription.status,
                 notificationSent: prescription.notificationSent,
             },
+        };
+
+        res.status(201).json(responsePayload);
+
+        setImmediate(async () => {
+            try {
+                let ocrText = "";
+
+                if (fileType !== "application/pdf") {
+                    ocrText = await runImprovedOcr(buffer);
+                }
+
+                await sendPrescriptionNotification(prescription, ocrText);
+                prescription.notificationSent = true;
+                await prescription.save();
+            } catch (notificationError) {
+                console.error("Prescription notification failed:", notificationError.message);
+            }
         });
+        return;
     } catch (error) {
         console.error("Prescription submission failed:", error.message);
+
+        if (error.message === "Prescription file is required.") {
+            return res.status(400).json({
+                success: false,
+                message: error.message,
+            });
+        }
 
         return res.status(500).json({
             success: false,
@@ -224,19 +267,30 @@ export const reorderPrescription = async (req, res) => {
             status: "submitted",
         });
 
-        try {
-            await sendPrescriptionNotification(reorderedPrescription);
-            reorderedPrescription.notificationSent = true;
-            await reorderedPrescription.save();
-        } catch (notificationError) {
-            console.error("Prescription reorder notification failed:", notificationError.message);
-        }
-
-        return res.status(201).json({
+        const responsePayload = {
             success: true,
             message: "Prescription reordered successfully.",
             prescription: reorderedPrescription,
+        };
+
+        res.status(201).json(responsePayload);
+
+        setImmediate(async () => {
+            try {
+                let ocrText = "";
+
+                if (existingPrescription.fileType !== "application/pdf") {
+                    ocrText = await runImprovedOcr(fileBuffer);
+                }
+
+                await sendPrescriptionNotification(reorderedPrescription, ocrText);
+                reorderedPrescription.notificationSent = true;
+                await reorderedPrescription.save();
+            } catch (notificationError) {
+                console.error("Prescription reorder notification failed:", notificationError.message);
+            }
         });
+        return;
     } catch (error) {
         console.error("Prescription reorder failed:", error.message);
 

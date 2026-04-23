@@ -5,6 +5,7 @@ import {
   Search,
   User,
   ShoppingCart,
+  Bell,
   ChevronDown,
   Menu,
   X,
@@ -418,6 +419,20 @@ const Header = () => {
     navigate("/login");
   };
 
+  const handleReminderClick = (event) => {
+    const token = localStorage.getItem("token");
+
+    if (token) return;
+
+    event.preventDefault();
+    navigate("/login", {
+      state: {
+        message: "Please login first to manage medicine reminders.",
+        redirectTo: "/reminder",
+      },
+    });
+  };
+
   const handleQuickOrderClick = (event) => {
     const token = localStorage.getItem("token");
 
@@ -479,7 +494,7 @@ const Header = () => {
               >
                 <button
                   type="submit"
-                  className="shrink-0 text-gray-400 transition hover:text-[#87CEEB]"
+                  className="shrink-0 text-gray-400 transition hover:text-[#0EA5E9]"
                 >
                   <Search size={18} />
                 </button>
@@ -530,6 +545,15 @@ const Header = () => {
             )}
 
             <Link
+              to="/reminder"
+              onClick={handleReminderClick}
+              className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-slate-700 sm:h-auto sm:w-auto sm:border-0 sm:p-0 sm:text-sm sm:font-medium"
+            >
+              <Bell size={18} />
+              <span className="hidden sm:inline sm:ml-1">Reminder</span>
+            </Link>
+
+            <Link
               to="/cart"
               onClick={handleCartClick}
               className="relative flex h-10 w-10 items-center justify-center rounded-full border border-gray-200 text-slate-700 sm:h-auto sm:w-auto sm:border-0 sm:p-0 sm:text-sm sm:font-medium"
@@ -546,7 +570,7 @@ const Header = () => {
             <Link
               to="/upload-prescription"
               onClick={handleQuickOrderClick}
-              className="hidden rounded-full bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8] sm:block lg:px-5 lg:py-2.5"
+              className="hidden rounded-full bg-[#0EA5E9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0284C7] sm:block lg:px-5 lg:py-2.5"
             >
               Quick Order
             </Link>
@@ -568,7 +592,7 @@ const Header = () => {
             >
               <button
                 type="submit"
-                className="shrink-0 text-gray-400 transition hover:text-[#87CEEB]"
+                className="shrink-0 text-gray-400 transition hover:text-[#0EA5E9]"
               >
                 <Search size={18} />
               </button>
@@ -704,7 +728,7 @@ const Header = () => {
 
             <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4">
               <div className="mb-4 flex items-center gap-2 border-b border-slate-200 px-1 pb-4 text-sm text-slate-700">
-                <MapPin size={16} className="text-[#87CEEB]" />
+                <MapPin size={16} className="text-[#0EA5E9]" />
                 <span className="truncate">{selectedCity}</span>
               </div>
 
@@ -719,7 +743,7 @@ const Header = () => {
                       }
                       className={`flex w-full items-center justify-between rounded-[6px] border px-4 py-3 text-left text-[15px] font-medium transition ${
                         activeMobileCategory === item.slug
-                          ? "border-[#BFE8F8] bg-[#F7FDFF] text-slate-900"
+                          ? "border-[#BAE6FD] bg-[#F7FDFF] text-slate-900"
                           : "border-transparent text-slate-800 hover:bg-slate-50 hover:text-slate-900"
                       }`}
                     >
@@ -811,6 +835,19 @@ const Header = () => {
               )}
 
               <Link
+                to="/reminder"
+                onClick={(event) => {
+                  handleReminderClick(event);
+                  if (!event.defaultPrevented) {
+                    setMobileMenuOpen(false);
+                  }
+                }}
+                className="mb-3 flex items-center justify-center rounded-[6px] border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-50"
+              >
+                Medicine Reminder
+              </Link>
+
+              <Link
                 to="/upload-prescription"
                 onClick={(event) => {
                   handleQuickOrderClick(event);
@@ -818,7 +855,7 @@ const Header = () => {
                     setMobileMenuOpen(false);
                   }
                 }}
-                className="mb-3 flex items-center justify-center rounded-[6px] bg-[#87CEEB] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                className="mb-3 flex items-center justify-center rounded-[6px] bg-[#0EA5E9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
               >
                 Quick Order
               </Link>
@@ -827,7 +864,7 @@ const Header = () => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 border border-[#BFE8F8] px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#87CEEB] transition hover:bg-[#EEF9FE]"
+                  className="flex w-full items-center justify-center gap-2 border border-[#BAE6FD] px-4 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-[#0EA5E9] transition hover:bg-[#E0F2FE]"
                 >
                   <LogOut size={16} />
                   Logout

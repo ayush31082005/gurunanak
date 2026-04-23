@@ -29,6 +29,16 @@ const orderItemSchema = new mongoose.Schema(
             required: true,
             min: 1,
         },
+        mrId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            default: null,
+        },
+        productOwnerRole: {
+            type: String,
+            enum: ["admin", "mr"],
+            default: "admin",
+        },
     },
     { _id: false }
 );
@@ -98,6 +108,55 @@ const orderSchema = new mongoose.Schema(
             default: "pending",
         },
 
+        deliveredAt: {
+            type: Date,
+            default: null,
+        },
+
+        isReturnRequested: {
+            type: Boolean,
+            default: false,
+        },
+
+        returnStatus: {
+            type: String,
+            enum: [
+                "not_requested",
+                "pending",
+                "approved",
+                "rejected",
+                "refund_completed",
+                "replacement_created",
+            ],
+            default: "not_requested",
+        },
+
+        refundStatus: {
+            type: String,
+            enum: [
+                "not_applicable",
+                "pending",
+                "approved",
+                "picked_up",
+                "manual_pending",
+                "manual_completed",
+                "rejected",
+            ],
+            default: "not_applicable",
+        },
+
+        orderType: {
+            type: String,
+            enum: ["standard", "replacement"],
+            default: "standard",
+        },
+
+        originalOrderId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Order",
+            default: null,
+        },
+
         stockReduced: {
             type: Boolean,
             default: false,
@@ -113,6 +172,8 @@ const orderSchema = new mongoose.Schema(
     },
     { timestamps: true }
 );
+
+orderSchema.index({ "items.mrId": 1, createdAt: -1 });
 
 const Order = mongoose.model("Order", orderSchema);
 

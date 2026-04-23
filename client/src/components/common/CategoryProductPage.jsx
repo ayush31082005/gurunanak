@@ -584,7 +584,7 @@ const CategoryProductPage = ({
                                                         <button
                                                             type="button"
                                                             onClick={() => handleAddToCart(item)}
-                                                            className="rounded-xl border border-[#87CEEB] px-4 py-2 text-sm font-semibold text-[#87CEEB] transition hover:bg-[#87CEEB] hover:text-white"
+                                                            className="rounded-xl border border-[#0EA5E9] px-4 py-2 text-sm font-semibold text-[#0EA5E9] transition hover:bg-[#0EA5E9] hover:text-white"
                                                         >
                                                             Add
                                                         </button>
@@ -592,7 +592,7 @@ const CategoryProductPage = ({
                                                         <button
                                                             type="button"
                                                             onClick={() => handleBuyNow(item)}
-                                                            className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                                                            className="rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                                                         >
                                                             Buy Now
                                                         </button>
@@ -632,7 +632,7 @@ const CategoryProductPage = ({
                                                 onClick={() => setCurrentPage(pageNumber)}
                                                 className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                                                     currentPage === pageNumber
-                                                        ? "bg-[#87CEEB] text-white"
+                                                        ? "bg-[#0EA5E9] text-white"
                                                         : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                                                 }`}
                                             >
@@ -785,7 +785,7 @@ const CategoryProductPage = ({
                                         type="button"
                                         onClick={applyFilter}
                                         className={`inline-flex min-w-[170px] items-center justify-center rounded-[10px] px-6 py-3 text-[15px] font-semibold transition ${hasAnyActiveFilters
-                                            ? "bg-[#87CEEB] text-white hover:bg-[#6EC6E8]"
+                                            ? "bg-[#0EA5E9] text-white hover:bg-[#0284C7]"
                                             : "bg-[#ffd8d4] text-white"
                                             }`}
                                     >

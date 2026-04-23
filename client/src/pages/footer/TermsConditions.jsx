@@ -64,7 +64,7 @@ const TermsConditions = () => {
               <h1 className="mt-5 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
                 Website Terms for
                 <br />
-                <span className="text-[#87CEEB]">Gurunanak Pharmacy</span>
+                <span className="text-[#0EA5E9]">Gurunanak Pharmacy</span>
               </h1>
 
               <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
@@ -81,7 +81,7 @@ const TermsConditions = () => {
 
             <div className="p-2">
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#0EA5E9]">
                   <HeartHandshake size={22} />
                 </div>
                 <div>
@@ -109,7 +109,7 @@ const TermsConditions = () => {
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {termsCards.map((item) => (
             <div key={item.title} className="p-2">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#0EA5E9]">
                 {item.icon}
               </div>
               <h3 className="text-lg font-bold text-slate-900">{item.title}</h3>
@@ -122,8 +122,8 @@ const TermsConditions = () => {
           <h2 className="text-2xl font-bold text-slate-900">Important Terms</h2>
           <div className="mt-5 grid gap-3">
             {keyPoints.map((point) => (
-              <div key={point} className="flex items-start gap-3 border-l-2 border-[#87CEEB] pl-4 text-sm text-slate-700">
-                <span className="mt-0.5 text-[#87CEEB]">
+              <div key={point} className="flex items-start gap-3 border-l-2 border-[#0EA5E9] pl-4 text-sm text-slate-700">
+                <span className="mt-0.5 text-[#0EA5E9]">
                   <ShieldCheck size={16} />
                 </span>
                 <p className="leading-6">{point}</p>

@@ -33,7 +33,7 @@ const Cart = () => {
               <div className="max-w-3xl">
                 <div className="flex items-center gap-2.5">
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50">
-                    <ShoppingBag size={22} className="text-[#87CEEB]" />
+                    <ShoppingBag size={22} className="text-[#0EA5E9]" />
                   </div>
 
                   <div>
@@ -62,7 +62,7 @@ const Cart = () => {
 
                     <Link
                       to="/products"
-                      className="mt-6 inline-flex rounded-xl bg-[#87CEEB] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
+                      className="mt-6 inline-flex rounded-xl bg-[#0EA5E9] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#0284C7]"
                     >
                       Browse Products
                     </Link>
@@ -181,7 +181,7 @@ const Cart = () => {
                   <button
                     type="button"
                     onClick={() => navigate("/checkout")}
-                    className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#87CEEB] px-5 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
+                    className="mt-6 inline-flex h-12 w-full items-center justify-center rounded-xl bg-[#0EA5E9] px-5 text-sm font-bold text-white transition hover:bg-[#0284C7]"
                   >
                     Proceed to Checkout
                   </button>

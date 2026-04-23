@@ -27,6 +27,7 @@ const getPrescriptionTemplate = ({
     fileUrl,
     fileName,
     submittedAt,
+    ocrText,
 }) => ({
     subject: `New Prescription Upload from ${name}`,
     html: `
@@ -45,6 +46,13 @@ const getPrescriptionTemplate = ({
               <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#4b5563;"><strong>File:</strong> ${fileName}</p>
               <p style="margin:0;font-size:14px;line-height:1.7;color:#4b5563;"><strong>Submitted:</strong> ${submittedAt}</p>
             </div>
+
+            ${ocrText ? `
+            <div style="margin:0 0 20px;padding:18px;border-radius:14px;background:#f9fafb;border:1px solid #e5e7eb;">
+              <p style="margin:0 0 8px;font-size:14px;line-height:1.7;color:#4b5563;"><strong>Scanned Prescription Data:</strong></p>
+              <p style="margin:0;font-size:14px;line-height:1.7;color:#374151;white-space:pre-wrap;">--------------------------\n${ocrText}\n--------------------------</p>
+            </div>
+            ` : ""}
 
             <p style="margin:0 0 18px;font-size:15px;line-height:1.7;color:#4b5563;">
               Review the uploaded prescription using the secure link below and contact the customer to confirm the order.
@@ -68,7 +76,7 @@ const getPrescriptionTemplate = ({
     `,
 });
 
-export const sendPrescriptionNotification = async (prescription) => {
+export const sendPrescriptionNotification = async (prescription, ocrText = "") => {
     const { smtpUser, transporter } = createTransporter();
     const recipient =
         process.env.PRESCRIPTION_NOTIFICATION_EMAIL ||
@@ -89,6 +97,7 @@ export const sendPrescriptionNotification = async (prescription) => {
             dateStyle: "medium",
             timeStyle: "short",
         }),
+        ocrText,
     });
 
     await transporter.sendMail({

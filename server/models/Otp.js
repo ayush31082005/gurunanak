@@ -91,6 +91,13 @@ const otpSchema = new mongoose.Schema(
                 default: "",
             },
         },
+        registrationData: {
+            name: {
+                type: String,
+                trim: true,
+                default: "",
+            },
+        },
         expiresAt: {
             type: Date,
             required: true

@@ -215,7 +215,7 @@ const HealthResourceCenter = () => {
                                                     setDropdownOpen(false);
                                                 }}
                                                 className={`block w-full px-5 py-4 text-left text-base font-bold transition ${selectedFilter === option
-                                                        ? "bg-orange-50 text-[#87CEEB]"
+                                                        ? "bg-orange-50 text-[#0EA5E9]"
                                                         : "text-slate-900 hover:bg-slate-50"
                                                     }`}
                                             >
@@ -254,7 +254,7 @@ const HealthResourceCenter = () => {
                                         key={item.id}
                                         className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
                                     >
-                                        <div className="mb-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#87CEEB]">
+                                        <div className="mb-3 inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#0EA5E9]">
                                             {item.type === "disease"
                                                 ? "Disease"
                                                 : item.type === "medicine"
@@ -296,7 +296,7 @@ const HealthResourceCenter = () => {
                         <div className="w-full max-w-[560px] rounded-[28px] bg-white p-6 shadow-[0_24px_64px_rgba(15,23,42,0.22)] sm:p-7">
                             <div className="flex items-start justify-between gap-4">
                                 <div>
-                                    <span className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#87CEEB]">
+                                    <span className="inline-flex rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-[#0EA5E9]">
                                         {selectedResource.type === "disease"
                                             ? "Disease"
                                             : selectedResource.type === "medicine"

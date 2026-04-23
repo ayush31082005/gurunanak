@@ -756,7 +756,7 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={openSortPopup}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#87CEEB] hover:text-[#87CEEB]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#0EA5E9] hover:text-[#0EA5E9]"
                   >
                     Sort
                     <ArrowUpDown size={16} />
@@ -765,7 +765,7 @@ const Products = () => {
                   <button
                     type="button"
                     onClick={openFilterPopup}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#87CEEB] hover:text-[#87CEEB]"
+                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition hover:border-[#0EA5E9] hover:text-[#0EA5E9]"
                   >
                     All filters
                     <SlidersHorizontal size={16} />
@@ -780,7 +780,7 @@ const Products = () => {
                       key={`${chip.type}-${chip.label}`}
                       type="button"
                       onClick={() => handleRemoveFilter(chip.type)}
-                      className="inline-flex items-center gap-2 rounded-full border border-[#87CEEB] bg-[#eef9fd] px-3 py-1.5 text-sm font-medium text-[#1e3a5f]"
+                      className="inline-flex items-center gap-2 rounded-full border border-[#0EA5E9] bg-[#E0F2FE] px-3 py-1.5 text-sm font-medium text-[#1e3a5f]"
                     >
                       {chip.label}
                       <X size={14} />
@@ -828,7 +828,7 @@ const Products = () => {
                         type="button"
                         onClick={() => setCurrentPage(pageNumber)}
                         className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${currentPage === pageNumber
-                            ? "bg-[#87CEEB] text-white"
+                            ? "bg-[#0EA5E9] text-white"
                             : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                           }`}
                       >
@@ -1014,7 +1014,7 @@ const Products = () => {
                     type="button"
                     onClick={applyFilter}
                     className={`inline-flex min-w-[170px] items-center justify-center rounded-[10px] px-6 py-3 text-[15px] font-semibold transition ${hasAnyActiveFilters
-                        ? "bg-[#87CEEB] text-white hover:bg-[#6cc5e6]"
+                        ? "bg-[#0EA5E9] text-white hover:bg-[#0284C7]"
                         : "bg-[#e5e7eb] text-[#9ca3af]"
                       }`}
                   >

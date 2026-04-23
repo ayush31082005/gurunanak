@@ -103,7 +103,7 @@ const CallBanner = () => {
                 type="button"
                 onClick={handleSubmit}
                 disabled={isSubmitting}
-                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#87CEEB] px-4 text-xs font-semibold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[190px]"
+                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-full bg-[#0EA5E9] px-4 text-xs font-semibold text-white transition hover:bg-[#0284C7] disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto sm:min-w-[190px]"
               >
                 <Phone size={14} />
                 <span>{isSubmitting ? "Sending..." : "Get a Call Back"}</span>

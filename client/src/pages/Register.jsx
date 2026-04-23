@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import {
     ArrowRight,
     BriefcaseMedical,
-    CheckCircle2,
     FileText,
     Mail,
     MapPinned,
@@ -22,6 +21,7 @@ import {
     verifyMrRegisterOtp,
     verifyUserRegisterOtp,
 } from "../api/authApi";
+import { useToast } from "../context/ToastContext";
 
 const userRegisterSlides = [
     {
@@ -126,6 +126,7 @@ const initialMrForm = {
 
 const Register = () => {
     const navigate = useNavigate();
+    const { success: showSuccessToast } = useToast();
     const OTP_RESEND_SECONDS = 60;
 
     const [registerType, setRegisterType] = useState("user");
@@ -135,9 +136,9 @@ const Register = () => {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [resendTimer, setResendTimer] = useState(0);
-    const [showSuccessPopup, setShowSuccessPopup] = useState(false);
     const [registeredUser, setRegisteredUser] = useState(null);
     const [userForm, setUserForm] = useState({
+        name: "",
         email: "",
         otp: ["", "", "", "", "", ""],
     });
@@ -153,9 +154,9 @@ const Register = () => {
         setMessage("");
         setError("");
         setResendTimer(0);
-        setShowSuccessPopup(false);
         setRegisteredUser(null);
         setUserForm({
+            name: "",
             email: "",
             otp: ["", "", "", "", "", ""],
         });
@@ -189,10 +190,11 @@ const Register = () => {
         return () => clearInterval(timer);
     }, [otpSent, resendTimer]);
 
-    const handleSuccessPopupClose = () => {
-        setShowSuccessPopup(false);
-
-        if (registerType === "mr") {
+    const redirectAfterRegistration = (
+        nextRegisterType = registerType,
+        nextRegisteredUser = registeredUser
+    ) => {
+        if (nextRegisterType === "mr") {
             navigate("/login", {
                 replace: true,
                 state: {
@@ -203,7 +205,7 @@ const Register = () => {
             return;
         }
 
-        if (registeredUser) {
+        if (nextRegisteredUser) {
             navigate("/user-dashboard", { replace: true });
             return;
         }
@@ -308,8 +310,8 @@ const Register = () => {
         setError("");
         setMessage("");
 
-        if (!userForm.email) {
-            setError("Please enter your email address");
+        if (!userForm.name.trim() || !userForm.email) {
+            setError("Please enter your full name and email address");
             return;
         }
 
@@ -317,6 +319,7 @@ const Register = () => {
             setLoading(true);
 
             const { data } = await sendUserRegisterOtp({
+                name: userForm.name.trim(),
                 email: userForm.email,
                 role: "user",
             });
@@ -354,6 +357,7 @@ const Register = () => {
             setLoading(true);
 
             const { data } = await sendUserRegisterOtp({
+                name: userForm.name.trim(),
                 email: userForm.email,
                 role: "user",
             });
@@ -397,9 +401,15 @@ const Register = () => {
             localStorage.setItem("user", JSON.stringify(data.user));
             window.dispatchEvent(new Event("authchange"));
 
-            setRegisteredUser(data.user || null);
+            const nextRegisteredUser = data.user || null;
+            setRegisteredUser(nextRegisteredUser);
             setMessage(data.message || "Registration successful");
-            setShowSuccessPopup(true);
+            showSuccessToast("Your account has been created successfully.", {
+                title: "Registration Successful",
+            });
+            window.setTimeout(() => {
+                redirectAfterRegistration("user", nextRegisteredUser);
+            }, 900);
         } catch (err) {
             const nextMessage =
                 err.response?.data?.message ||
@@ -515,12 +525,21 @@ const Register = () => {
                 otp: finalOtp,
             });
 
-            setRegisteredUser(data.user || null);
+            const nextRegisteredUser = data.user || null;
+            setRegisteredUser(nextRegisteredUser);
             setMessage(
                 data.message ||
                     "MR registration submitted successfully. Please wait for admin approval."
             );
-            setShowSuccessPopup(true);
+            showSuccessToast(
+                "Your MR account request is now pending admin approval. You can login after approval.",
+                {
+                    title: "MR Registration Submitted",
+                }
+            );
+            window.setTimeout(() => {
+                redirectAfterRegistration("mr", nextRegisteredUser);
+            }, 1200);
         } catch (err) {
             setError(
                 err.response?.data?.message ||
@@ -562,7 +581,7 @@ const Register = () => {
             <label className="mb-2 block text-sm font-semibold text-slate-700">
                 {label}
             </label>
-            <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 transition hover:border-[#87CEEB] hover:bg-sky-50 ${otpSent ? "cursor-not-allowed opacity-70" : ""}`}>
+            <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-slate-300 px-4 py-3 text-sm text-slate-600 transition hover:border-[#0EA5E9] hover:bg-sky-50 ${otpSent ? "cursor-not-allowed opacity-70" : ""}`}>
                 <FileText size={18} className="text-slate-400" />
                 <span className="truncate">
                     {mrForm[name]?.name || `Upload ${label.toLowerCase()}`}
@@ -582,36 +601,6 @@ const Register = () => {
 
     return (
         <>
-            {showSuccessPopup ? (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4">
-                    <div className="w-full max-w-md rounded-[28px] bg-white p-6 text-center shadow-[0_20px_60px_rgba(15,23,42,0.22)] sm:p-8">
-                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                            <CheckCircle2 size={32} />
-                        </div>
-
-                        <h3 className="mt-5 text-2xl font-bold text-slate-900">
-                            {registerType === "mr"
-                                ? "MR Registration Submitted"
-                                : "Registration Successful"}
-                        </h3>
-
-                        <p className="mt-3 text-sm leading-7 text-slate-600 sm:text-base">
-                            {registerType === "mr"
-                                ? "Your MR account request is now pending admin approval. You can login after approval."
-                                : "Your account has been created successfully. Press OK to continue."}
-                        </p>
-
-                        <button
-                            type="button"
-                            onClick={handleSuccessPopupClose}
-                            className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-[#87CEEB] px-6 text-sm font-bold text-white transition hover:bg-[#6EC6E8]"
-                        >
-                            OK
-                        </button>
-                    </div>
-                </div>
-            ) : null}
-
             <section className="bg-[#f6f7fb] py-3 sm:py-4">
                 <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
                     <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
@@ -795,20 +784,39 @@ const Register = () => {
                                                     </div>
                                                 </>
                                             ) : (
-                                                <div>
-                                                    <label className="mb-2 block text-sm font-semibold text-slate-700">
-                                                        Enter email address
-                                                    </label>
-                                                    <div className="flex items-center border-b-2 border-rose-400 pb-2">
-                                                        <Mail size={18} className="text-slate-400" />
-                                                        <input
-                                                            type="email"
-                                                            name="email"
-                                                            value={userForm.email}
-                                                            onChange={handleUserChange}
-                                                            placeholder="Enter email address"
-                                                            className="w-full bg-transparent px-3 py-2 text-sm outline-none"
-                                                        />
+                                                <div className="space-y-5">
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                                            Enter full name
+                                                        </label>
+                                                        <div className="flex items-center border-b-2 border-rose-400 pb-2">
+                                                            <Users size={18} className="text-slate-400" />
+                                                            <input
+                                                                type="text"
+                                                                name="name"
+                                                                value={userForm.name}
+                                                                onChange={handleUserChange}
+                                                                placeholder="Enter full name"
+                                                                className="w-full bg-transparent px-3 py-2 text-sm outline-none"
+                                                            />
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <label className="mb-2 block text-sm font-semibold text-slate-700">
+                                                            Enter email address
+                                                        </label>
+                                                        <div className="flex items-center border-b-2 border-rose-400 pb-2">
+                                                            <Mail size={18} className="text-slate-400" />
+                                                            <input
+                                                                type="email"
+                                                                name="email"
+                                                                value={userForm.email}
+                                                                onChange={handleUserChange}
+                                                                placeholder="Enter email address"
+                                                                className="w-full bg-transparent px-3 py-2 text-sm outline-none"
+                                                            />
+                                                        </div>
                                                     </div>
                                                 </div>
                                             )}
@@ -865,7 +873,7 @@ const Register = () => {
                                                             type="button"
                                                             onClick={handleResendUserOtp}
                                                             disabled={loading || resendTimer > 0}
-                                                            className="font-semibold text-[#87CEEB] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                                                            className="font-semibold text-[#0EA5E9] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
                                                         >
                                                             Resend OTP
                                                         </button>
@@ -917,7 +925,7 @@ const Register = () => {
                                                             type="button"
                                                             onClick={handleResendMrOtp}
                                                             disabled={loading || resendTimer > 0}
-                                                            className="font-semibold text-[#87CEEB] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
+                                                            className="font-semibold text-[#0EA5E9] transition hover:underline disabled:cursor-not-allowed disabled:text-slate-400 disabled:no-underline"
                                                         >
                                                             Resend OTP
                                                         </button>
@@ -928,7 +936,7 @@ const Register = () => {
                                             <button
                                                 type="submit"
                                                 disabled={loading}
-                                                className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#87CEEB] px-5 text-sm font-bold text-white transition hover:bg-[#6EC6E8] disabled:cursor-not-allowed disabled:opacity-70"
+                                                className="mt-3 inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#0EA5E9] px-5 text-sm font-bold text-white transition hover:bg-[#0284C7] disabled:cursor-not-allowed disabled:opacity-70"
                                             >
                                                 {loading
                                                     ? "Please wait..."
@@ -948,7 +956,7 @@ const Register = () => {
                                         Already registered?{" "}
                                         <Link
                                             to="/login"
-                                            className="font-semibold text-[#87CEEB] hover:underline"
+                                            className="font-semibold text-[#0EA5E9] hover:underline"
                                         >
                                             Login
                                         </Link>

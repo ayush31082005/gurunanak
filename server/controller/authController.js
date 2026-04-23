@@ -170,7 +170,8 @@ const applyMrApprovalState = (user, status) => {
 
 export const sendRegisterOtp = async (req, res) => {
     try {
-        const { email, role = "user", isHealthCareExpert = false } = req.body;
+        const { email, role = "user", isHealthCareExpert = false, name = "" } = req.body;
+        const normalizedName = normalizeText(name);
 
         if (String(role).trim().toLowerCase() !== "user") {
             return res.status(400).json({
@@ -179,10 +180,10 @@ export const sendRegisterOtp = async (req, res) => {
             });
         }
 
-        if (!email) {
+        if (!normalizedName || !email) {
             return res.status(400).json({
                 success: false,
-                message: "Email is required",
+                message: "Name and email are required",
             });
         }
 
@@ -213,6 +214,9 @@ export const sendRegisterOtp = async (req, res) => {
             otp,
             purpose: "register",
             isHealthCareExpert: !!isHealthCareExpert,
+            registrationData: {
+                name: normalizedName,
+            },
             expiresAt,
         });
 
@@ -287,6 +291,7 @@ export const verifyRegisterOtp = async (req, res) => {
         }
 
         const user = await User.create({
+            name: normalizeText(otpDoc.registrationData?.name),
             email: normalizedEmail,
             isHealthCareExpert: otpDoc.isHealthCareExpert,
             isVerified: true,

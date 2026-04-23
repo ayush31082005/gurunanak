@@ -8,6 +8,7 @@ import {
 import PageHero from "../components/common/PageHero";
 import Button from "../components/common/Button";
 import API from "../api";
+import { useToast } from "../context/ToastContext";
 import {
   SOCIAL_LINKS,
   SUPPORT_ADDRESS,
@@ -17,13 +18,13 @@ import {
 } from "../utils/constants";
 
 const Contact = () => {
+  const { success: showSuccessToast, error: showErrorToast } = useToast();
   const [form, setForm] = useState({
     name: "",
     email: "",
     message: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedback, setFeedback] = useState({ type: "", text: "" });
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -35,13 +36,9 @@ const Contact = () => {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setFeedback({ type: "", text: "" });
 
     if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      setFeedback({
-        type: "error",
-        text: "Please fill your name, email, and message.",
-      });
+      showErrorToast("Please fill your name, email, and message.");
       return;
     }
 
@@ -53,9 +50,8 @@ const Contact = () => {
         message: form.message.trim(),
       });
 
-      setFeedback({
-        type: "success",
-        text: response.data.message || "Message sent successfully.",
+      showSuccessToast(response.data.message || "Message sent successfully.", {
+        title: "Message Sent",
       });
       setForm({
         name: "",
@@ -63,11 +59,9 @@ const Contact = () => {
         message: "",
       });
     } catch (error) {
-      setFeedback({
-        type: "error",
-        text:
-          error.response?.data?.message || "Failed to send message. Please try again.",
-      });
+      showErrorToast(
+        error.response?.data?.message || "Failed to send message. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -157,15 +151,6 @@ const Contact = () => {
               className="min-h-32 w-full rounded-card border border-gray-200 px-4 py-3 outline-none"
               placeholder="Your Message"
             />
-            {feedback.text ? (
-              <p
-                className={`text-sm ${
-                  feedback.type === "success" ? "text-green-700" : "text-red-600"
-                }`}
-              >
-                {feedback.text}
-              </p>
-            ) : null}
             <Button type="submit">
               {isSubmitting ? "Sending..." : "Send Message"}
             </Button>

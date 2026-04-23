@@ -66,14 +66,14 @@ const ReturnPolicy = () => {
                 <div className="overflow-hidden rounded-[32px] bg-gradient-to-r from-[#F2FBFF] via-white to-[#F7FDFF]">
                     <div className="grid items-center gap-8 px-6 py-10 sm:px-8 lg:grid-cols-2 lg:px-12 lg:py-14">
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full bg-[#EEF9FE] px-4 py-2 text-sm font-semibold text-[#87CEEB]">
+                            <div className="inline-flex items-center gap-2 rounded-full bg-[#E0F2FE] px-4 py-2 text-sm font-semibold text-[#0EA5E9]">
                                 <RotateCcw size={16} />
                                 Return & Refund Policy
                             </div>
 
                             <h1 className="mt-5 text-3xl font-extrabold leading-tight text-slate-900 sm:text-4xl lg:text-5xl">
                                 Return Policy for <br />
-                                <span className="text-[#87CEEB]">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</span>
+                                <span className="text-[#0EA5E9]">𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘</span>
                             </h1>
 
                             <p className="mt-5 max-w-2xl text-sm leading-7 text-slate-600 sm:text-base">
@@ -87,7 +87,7 @@ const ReturnPolicy = () => {
 
                         <div className="grid gap-6 sm:grid-cols-2">
                             <div className="p-2">
-                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
+                                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#0EA5E9]">
                                     <RotateCcw size={22} />
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900">
@@ -122,7 +122,7 @@ const ReturnPolicy = () => {
                             key={index}
                             className="p-2"
                         >
-                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
+                            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#0EA5E9]">
                                 {item.icon}
                             </div>
                             <h2 className="text-lg font-bold text-slate-900">{item.title}</h2>
@@ -138,7 +138,7 @@ const ReturnPolicy = () => {
                     <div className="space-y-6 lg:col-span-2">
                         <div className="p-1 sm:p-2">
                             <div className="mb-4 flex items-center gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#EEF9FE] text-[#87CEEB]">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E0F2FE] text-[#0EA5E9]">
                                     <FileText size={20} />
                                 </div>
                                 <h2 className="text-2xl font-extrabold text-slate-900">
@@ -201,7 +201,7 @@ const ReturnPolicy = () => {
                                 {nonReturnableItems.map((item, index) => (
                                     <div
                                         key={index}
-                                        className="border-l-2 border-[#87CEEB] pl-4 text-sm font-medium text-slate-700"
+                                        className="border-l-2 border-[#0EA5E9] pl-4 text-sm font-medium text-slate-700"
                                     >
                                         {item}
                                     </div>
@@ -223,9 +223,9 @@ const ReturnPolicy = () => {
                                 {returnSteps.map((step, index) => (
                                     <div
                                         key={index}
-                                        className="flex gap-4 border-l-2 border-[#87CEEB] pl-4"
+                                        className="flex gap-4 border-l-2 border-[#0EA5E9] pl-4"
                                     >
-                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#87CEEB] text-sm font-bold text-white">
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#0EA5E9] text-sm font-bold text-white">
                                             {index + 1}
                                         </div>
                                         <p className="text-sm font-medium leading-6 text-slate-700">
@@ -250,7 +250,7 @@ const ReturnPolicy = () => {
                                 {refundPoints.map((point, index) => (
                                     <div
                                         key={index}
-                                        className="border-l-2 border-[#87CEEB] pl-4 text-sm leading-6 text-slate-700"
+                                        className="border-l-2 border-[#0EA5E9] pl-4 text-sm leading-6 text-slate-700"
                                     >
                                         {point}
                                     </div>
@@ -292,14 +292,14 @@ const ReturnPolicy = () => {
 
                             <div className="mt-5 space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <Phone size={18} className="text-[#87CEEB]" />
+                                    <Phone size={18} className="text-[#0EA5E9]" />
                                     <span className="text-sm font-medium text-slate-700">
                                         +91 98765 43210
                                     </span>
                                 </div>
 
                                 <div className="flex items-center gap-3">
-                                    <Mail size={18} className="text-[#87CEEB]" />
+                                    <Mail size={18} className="text-[#0EA5E9]" />
                                     <span className="text-sm font-medium text-slate-700">
                                         support@gurunanakpharmacy.com
                                     </span>

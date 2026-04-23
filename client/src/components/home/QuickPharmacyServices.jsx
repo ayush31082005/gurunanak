@@ -16,8 +16,8 @@ const quickServiceCards = [
       "https://images.unsplash.com/photo-1576671081837-49000212a370?auto=format&fit=crop&w=900&q=80",
   },
   {
-    title: "Medical Dose",
-    to: "/user-dashboard?tab=orders",
+    title: "Medicine Reminder",
+    to: "/reminder",
     border: "border-emerald-100",
     image:
       "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?auto=format&fit=crop&w=900&q=80",

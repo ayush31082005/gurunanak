@@ -8,9 +8,12 @@ import prescriptionRoutes from "./routes/prescriptionRoutes.js";
 import contactRoutes from "./routes/contactRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
-import complaintRoutes from "./routes/complaintRoutes.js";
 import deliveryRoutes from "./routes/deliveryRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import reminderRoutes from "./routes/reminderRoutes.js";
+import returnRoutes from "./routes/returnRoutes.js";
+import bankRoutes from "./routes/bankRoutes.js";
 
 
 
@@ -64,14 +67,15 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api", returnRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/admin", adminRoutes);
-
-app.use("/api/complaints", complaintRoutes);
-
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/reminders", reminderRoutes);
+app.use("/api/banks", bankRoutes);
 
 app.use("/api/delivery", deliveryRoutes);
 

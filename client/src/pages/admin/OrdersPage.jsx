@@ -3,16 +3,78 @@ import { useSearchParams } from "react-router-dom";
 import API from "../../api";
 import StatusBadge from "../../components/admin/StatusBadge";
 
-const adminStatusOptions = [
-    { value: "pending", label: "Pending" },
-    { value: "payment_pending", label: "Payment Pending" },
-    { value: "placed", label: "Placed" },
-    { value: "shipped", label: "Shipped" },
-    { value: "delivered", label: "Delivered" },
-    { value: "cancelled", label: "Cancelled" },
-];
-
 const formatPrice = (value) => `Rs ${Number(value || 0).toLocaleString("en-IN")}`;
+
+const humanize = (value = "") =>
+    String(value)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const isOnlineOrder = (order) => ["card", "upi"].includes(String(order?.paymentMethod || "").toLowerCase());
+
+const hasSuccessfulOnlinePayment = (order) =>
+    Boolean(isOnlineOrder(order) && String(order?.razorpayPaymentId || "").trim());
+
+const isCancelRestricted = (order) =>
+    order?.orderType === "replacement" ||
+    Boolean(order?.isReturnRequested) ||
+    (order?.returnStatus && order.returnStatus !== "not_requested");
+
+const getPaymentBadgeText = (order) => {
+    if (order?.orderType === "replacement") {
+        return "Replacement";
+    }
+
+    if (String(order?.paymentMethod || "").toLowerCase() === "cod") {
+        return "COD";
+    }
+
+    return hasSuccessfulOnlinePayment(order) ? "Razorpay Paid" : "Awaiting Payment";
+};
+
+const getStatusBadgeText = (order) => {
+    if (order?.status === "payment_pending") {
+        return "Awaiting Payment";
+    }
+
+    return humanize(order?.status || "pending");
+};
+
+const getAdminStatusOptions = (order) => {
+    const currentStatus = String(order?.status || "").toLowerCase();
+    const options = [];
+    const cancelRestricted = isCancelRestricted(order);
+    const isReplacementOrder = order?.orderType === "replacement";
+
+    if (currentStatus === "payment_pending") {
+        options.push({ value: "payment_pending", label: "Awaiting Payment" });
+
+        if (isOnlineOrder(order) && !hasSuccessfulOnlinePayment(order) && !cancelRestricted) {
+            options.push({ value: "cancelled", label: "Cancelled" });
+            return options;
+        }
+    }
+
+    const statusOptions = isReplacementOrder
+        ? ["pick_product", "placed", "shipped", "out_for_delivery", "delivered", "cancelled"]
+        : ["placed", "shipped", "out_for_delivery", "delivered", "cancelled"];
+
+    statusOptions.forEach((status) => {
+        if (status === "cancelled" && cancelRestricted) {
+            return;
+        }
+
+        options.push({ value: status, label: humanize(status) });
+    });
+
+    if (currentStatus === "pending") {
+        options.unshift({ value: "pending", label: "Pending" });
+    }
+
+    return options.filter(
+        (option, index, list) => list.findIndex((item) => item.value === option.value) === index
+    );
+};
 
 const OrdersPage = () => {
     const ordersPerPage = 10;
@@ -48,9 +110,11 @@ const OrdersPage = () => {
         return {
             total: orders.length,
             pending: orders.filter((order) =>
-                ["pending", "payment_pending"].includes(order.status)
+                ["pending", "payment_pending", "pick_product"].includes(order.status)
             ).length,
-            shipped: orders.filter((order) => order.status === "shipped").length,
+            shipped: orders.filter((order) =>
+                ["shipped", "out_for_delivery"].includes(order.status)
+            ).length,
             delivered: orders.filter((order) => order.status === "delivered").length,
         };
     }, [orders]);
@@ -178,7 +242,7 @@ const OrdersPage = () => {
                     <button
                         type="button"
                         onClick={fetchOrders}
-                        className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                        className="rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                     >
                         Refresh Orders
                     </button>
@@ -245,7 +309,7 @@ const OrdersPage = () => {
                                             </div>
                                         </td>
                                         <td className="py-4 pr-4">
-                                            <p className="font-semibold text-[#87CEEB]">
+                                            <p className="font-semibold text-[#0EA5E9]">
                                                 {formatPrice(order.total)}
                                             </p>
                                             <p className="mt-1 text-slate-500">
@@ -256,26 +320,40 @@ const OrdersPage = () => {
                                             </p>
                                         </td>
                                         <td className="py-4 pr-4">
-                                            <StatusBadge text={order.paymentMethod} />
+                                            <StatusBadge text={getPaymentBadgeText(order)} />
                                         </td>
                                         <td className="py-4 pr-4">
-                                            <StatusBadge text={order.status} />
+                                            <StatusBadge text={getStatusBadgeText(order)} />
                                         </td>
                                         <td className="py-4 pr-4">
-                                            <select
-                                                value={order.status}
-                                                onChange={(event) =>
-                                                    handleStatusChange(order._id, event.target.value)
-                                                }
-                                                disabled={updatingOrderId === order._id}
-                                                className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-[#87CEEB] disabled:cursor-not-allowed disabled:opacity-60"
-                                            >
-                                                {adminStatusOptions.map((option) => (
-                                                    <option key={option.value} value={option.value}>
-                                                        {option.label}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                            {isCancelRestricted(order) &&
+                                            String(order?.status || "").toLowerCase() === "cancelled" ? (
+                                                <div className="min-w-[180px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
+                                                    Cancelled
+                                                </div>
+                                            ) : (
+                                                <select
+                                                    value={order.status}
+                                                    onChange={(event) =>
+                                                        handleStatusChange(order._id, event.target.value)
+                                                    }
+                                                    disabled={updatingOrderId === order._id}
+                                                    className="min-w-[180px] rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 outline-none transition focus:border-[#0EA5E9] disabled:cursor-not-allowed disabled:opacity-60"
+                                                >
+                                                    {getAdminStatusOptions(order).map((option) => (
+                                                        <option key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            )}
+                                            {order.status === "payment_pending" &&
+                                            isOnlineOrder(order) &&
+                                            !hasSuccessfulOnlinePayment(order) ? (
+                                                <p className="mt-2 max-w-[220px] text-xs leading-5 text-amber-600">
+                                                    Razorpay payment hone ke baad hi order status aage badhega.
+                                                </p>
+                                            ) : null}
                                         </td>
                                         <td className="py-4">
                                             <p className="max-w-[260px] leading-6 text-slate-600">
@@ -317,7 +395,7 @@ const OrdersPage = () => {
                                             onClick={() => setCurrentPage(pageNumber)}
                                             className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                                                 currentPage === pageNumber
-                                                    ? "bg-[#87CEEB] text-white"
+                                                    ? "bg-[#0EA5E9] text-white"
                                                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                                             }`}
                                         >

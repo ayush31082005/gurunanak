@@ -114,7 +114,7 @@ const ProductCard = ({ product, selected = false, onAddToCart, onBuyNow }) => {
 
             <button
               onClick={() => onBuyNow?.(product)}
-              className="inline-flex items-center justify-center gap-1 rounded-full bg-[#87CEEB] px-2 py-1.5 text-[10px] font-semibold text-white transition hover:bg-[#6EC6E8] sm:gap-2 sm:px-3 sm:text-xs"
+              className="inline-flex items-center justify-center gap-1 rounded-full bg-[#0EA5E9] px-2 py-1.5 text-[10px] font-semibold text-white transition hover:bg-[#0284C7] sm:gap-2 sm:px-3 sm:text-xs"
             >
               <Zap size={12} />
               Buy Now

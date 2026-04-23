@@ -8,10 +8,11 @@ import {
     deletePrescription,
 } from "../controller/prescriptionController.js";
 import { optionalProtect, protect, requireAdmin } from "../middleware/authMiddleware.js";
+import { documentMemoryUpload } from "../middleware/upload.js";
 
 const router = express.Router();
 
-router.post("/", optionalProtect, submitPrescription);
+router.post("/", optionalProtect, documentMemoryUpload.single("file"), submitPrescription);
 router.get("/my", protect, getMyPrescriptions);
 router.post("/:id/reorder", protect, reorderPrescription);
 router.get("/admin/all", protect, requireAdmin, getAdminPrescriptions);

@@ -142,7 +142,7 @@ const CustomersPage = () => {
                     <button
                         type="button"
                         onClick={fetchCustomers}
-                        className="rounded-xl bg-[#87CEEB] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                        className="rounded-xl bg-[#0EA5E9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                     >
                         Refresh Customers
                     </button>
@@ -216,7 +216,7 @@ const CustomersPage = () => {
                                             onClick={() => setCurrentPage(pageNumber)}
                                             className={`rounded-xl px-3 py-2 text-sm font-semibold transition ${
                                                 currentPage === pageNumber
-                                                    ? "bg-[#87CEEB] text-white"
+                                                    ? "bg-[#0EA5E9] text-white"
                                                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                                             }`}
                                         >

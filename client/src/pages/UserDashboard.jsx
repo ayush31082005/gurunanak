@@ -9,9 +9,12 @@ import {
     Package,
     Plus,
     ShoppingCart,
-    TriangleAlert,
+    Landmark,
     X,
+    Bell,
+    Trash2,
 } from "lucide-react";
+import Reminder from "./Reminder";
 import API from "../api";
 import Header from "../components/layout/Header";
 
@@ -98,17 +101,142 @@ const mapOrderItemsToCheckoutItems = (items = []) =>
         }))
         .filter((item) => item.name && Number.isFinite(item.price));
 
+const getOrderDeliveredAt = (order) => {
+    if (order?.deliveredAt) {
+        return new Date(order.deliveredAt);
+    }
+
+    const deliveredEntry = [...(order?.tracking || [])]
+        .reverse()
+        .find((entry) => String(entry?.status || "").toLowerCase() === "delivered");
+
+    if (deliveredEntry?.timestamp) {
+        return new Date(deliveredEntry.timestamp);
+    }
+
+    return order?.status === "delivered" && order?.updatedAt
+        ? new Date(order.updatedAt)
+        : null;
+};
+
+const isReturnWindowOpen = (order) => {
+    const deliveredAt = getOrderDeliveredAt(order);
+
+    if (!deliveredAt) {
+        return false;
+    }
+
+    const deadline = new Date(deliveredAt);
+    deadline.setDate(deadline.getDate() + 7);
+
+    return Date.now() <= deadline.getTime();
+};
+
+const canOrderBeReturned = (order) =>
+    order?.orderType !== "replacement" &&
+    String(order?.status || "").toLowerCase() === "delivered" &&
+    !order?.isReturnRequested &&
+    isReturnWindowOpen(order);
+
+const humanize = (value = "") =>
+    String(value)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (char) => char.toUpperCase());
+
 const statusTone = {
     pending: "bg-amber-100 text-amber-700",
+    pick_product: "bg-orange-100 text-orange-700",
     placed: "bg-emerald-100 text-emerald-700",
     shipped: "bg-sky-100 text-sky-700",
+    out_for_delivery: "bg-sky-100 text-sky-700",
     delivered: "bg-emerald-100 text-emerald-700",
     cancelled: "bg-rose-100 text-rose-700",
     payment_pending: "bg-amber-100 text-amber-700",
-    open: "bg-[#E6F7FD] text-[#87CEEB]",
+    open: "bg-[#E0F2FE] text-[#0EA5E9]",
     "in-progress": "bg-blue-100 text-blue-700",
     resolved: "bg-emerald-100 text-emerald-700",
     closed: "bg-slate-200 text-slate-700",
+    approved: "bg-emerald-100 text-emerald-700",
+    rejected: "bg-rose-100 text-rose-700",
+    refund_completed: "bg-emerald-100 text-emerald-700",
+    replacement_created: "bg-sky-100 text-sky-700",
+};
+
+const getNormalizedOrderStatus = (order) => {
+    const rawStatus = String(order?.status || "").toLowerCase();
+    const paymentMethod = String(order?.paymentMethod || "").toLowerCase();
+
+    if (paymentMethod === "cod" && ["pending", "payment_pending"].includes(rawStatus)) {
+        return "placed";
+    }
+
+    return rawStatus || "pending";
+};
+
+const getOrderStatusLabel = (order) => {
+    const normalizedStatus = getNormalizedOrderStatus(order);
+
+    if (normalizedStatus === "payment_pending") {
+        return "Awaiting Payment";
+    }
+
+    return humanize(normalizedStatus);
+};
+
+const getOrderPaymentLabel = (order) => {
+    if (order?.orderType === "replacement") {
+        return "Replacement";
+    }
+
+    const paymentMethod = String(order?.paymentMethod || "").toLowerCase();
+
+    if (paymentMethod === "cod") {
+        return "COD";
+    }
+
+    if (["card", "upi"].includes(paymentMethod)) {
+        return order?.razorpayPaymentId ? "Razorpay Paid" : "Awaiting Payment";
+    }
+
+    return humanize(order?.paymentMethod || "N/A");
+};
+
+const getOrderSortTimestamp = (order) =>
+    new Date(order?.updatedAt || order?.createdAt || 0).getTime();
+
+const getReturnStatusLabel = (order) => {
+    if (!order?.isReturnRequested) {
+        return "";
+    }
+
+    const returnStatus = String(order?.returnStatus || "").toLowerCase();
+    const refundStatus = String(order?.refundStatus || "").toLowerCase();
+
+    if (returnStatus === "replacement_created") {
+        return "Replacement Created";
+    }
+
+    if (returnStatus === "refund_completed" || refundStatus === "manual_completed") {
+        return "Refund Completed";
+    }
+
+    if (refundStatus === "picked_up") {
+        return "Pick Up Product";
+    }
+
+    if (refundStatus === "manual_pending") {
+        return "Refund In Process";
+    }
+
+    if (returnStatus === "approved" || refundStatus === "approved") {
+        return "Return Approved";
+    }
+
+    if (returnStatus === "rejected" || refundStatus === "rejected") {
+        return "Return Rejected";
+    }
+
+    return "Return Requested";
 };
 
 const validDashboardTabs = new Set([
@@ -116,8 +244,31 @@ const validDashboardTabs = new Set([
     "cart",
     "orders",
     "prescription",
-    "complain",
+    "bank",
+    "reminders",
 ]);
+
+const PanelShell = ({ title, subtitle, headerAction = null, children, shellClassName = "" }) => (
+    <div className={`dashboard-panel-card overflow-hidden rounded-none border border-white/60 bg-white/80 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-5 ${shellClassName}`}>
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{title}</h2>
+                {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+            </div>
+            {headerAction ? <div className="flex items-center">{headerAction}</div> : null}
+        </div>
+        {children}
+    </div>
+);
+
+const InfoCard = ({ label, value }) => (
+    <div className="dashboard-panel-card h-fit rounded-none border border-slate-200/70 bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
+        <p className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-bold leading-6 text-slate-800">
+            {value || "Not available"}
+        </p>
+    </div>
+);
 
 const UserDashboard = () => {
     const navigate = useNavigate();
@@ -133,18 +284,24 @@ const UserDashboard = () => {
     const [cancellingOrderId, setCancellingOrderId] = useState("");
     const [activeOrderFilter, setActiveOrderFilter] = useState("all");
     const [ordersPage, setOrdersPage] = useState(1);
-    const [selectedOrderDetails, setSelectedOrderDetails] = useState(null);
     const [prescriptions, setPrescriptions] = useState([]);
     const [prescriptionsLoading, setPrescriptionsLoading] = useState(false);
     const [reorderingPrescriptionId, setReorderingPrescriptionId] = useState("");
-    const [complaints, setComplaints] = useState([]);
-    const [complaintsLoading, setComplaintsLoading] = useState(false);
-
-    const [complainForm, setComplainForm] = useState({
-        subject: "",
-        orderId: "",
-        complaintType: "",
-        message: "",
+    const [reminders, setReminders] = useState([]);
+    const [remindersLoading, setRemindersLoading] = useState(false);
+    const [savedBanks, setSavedBanks] = useState([]);
+    const [banksLoading, setBanksLoading] = useState(false);
+    const [bankSubmitting, setBankSubmitting] = useState(false);
+    const [deletingBankId, setDeletingBankId] = useState("");
+    const [bankForm, setBankForm] = useState({
+        accountHolderName: "",
+        email: "",
+        mobileNumber: "",
+        bankName: "",
+        accountNumber: "",
+        ifscCode: "",
+        branchName: "",
+        upiId: "",
     });
 
     const pageRef = useRef(null);
@@ -156,9 +313,10 @@ const UserDashboard = () => {
 
     useEffect(() => {
         const requestedTab = searchParams.get("tab");
+        const normalizedRequestedTab = requestedTab === "complain" ? "bank" : requestedTab;
         const nextTab =
-            requestedTab && validDashboardTabs.has(requestedTab)
-                ? requestedTab
+            normalizedRequestedTab && validDashboardTabs.has(normalizedRequestedTab)
+                ? normalizedRequestedTab
                 : "home";
 
         setActiveTab(nextTab);
@@ -212,11 +370,15 @@ const UserDashboard = () => {
                 if (isMounted) {
                     setOrdersLoading(true);
                     setPrescriptionsLoading(true);
+                    setRemindersLoading(true);
+                    setBanksLoading(true);
                 }
 
-                const [ordersResponse, prescriptionsResponse] = await Promise.all([
+                const [ordersResponse, prescriptionsResponse, remindersResponse, bankAccountsResponse] = await Promise.all([
                     API.get("/orders/my"),
                     API.get("/prescriptions/my"),
+                    API.get("/reminders/my"),
+                    API.get("/banks/my"),
                 ]);
 
                 if (!isMounted) return;
@@ -234,6 +396,8 @@ const UserDashboard = () => {
 
                 setOrders(nextOrders);
                 setPrescriptions(nextPrescriptions);
+                setReminders(Array.isArray(remindersResponse.data?.reminders) ? remindersResponse.data.reminders : []);
+                setSavedBanks(Array.isArray(bankAccountsResponse.data?.bankAccounts) ? bankAccountsResponse.data.bankAccounts : []);
 
                 if (!nextOrders.length) return;
 
@@ -252,11 +416,14 @@ const UserDashboard = () => {
                 if (isMounted) {
                     setOrders([]);
                     setPrescriptions([]);
+                    setSavedBanks([]);
                 }
             } finally {
                 if (isMounted) {
                     setOrdersLoading(false);
                     setPrescriptionsLoading(false);
+                    setRemindersLoading(false);
+                    setBanksLoading(false);
                 }
             }
         };
@@ -269,12 +436,6 @@ const UserDashboard = () => {
             window.removeEventListener("profiledatachange", loadLatestShippingInfo);
         };
     }, [location.pathname, location.search, navigate]);
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        fetchMyComplaints();
-    }, []);
 
     useEffect(() => {
         const ctx = gsap.context(() => {
@@ -368,7 +529,15 @@ const UserDashboard = () => {
         }, contentRef.current);
 
         return () => ctx.revert();
-    }, [activeTab, orders, prescriptions, complaints]);
+    }, [activeTab, orders, prescriptions, savedBanks]);
+
+    useEffect(() => {
+        setBankForm((currentForm) => ({
+            ...currentForm,
+            email: currentForm.email || userData?.email || "",
+            mobileNumber: currentForm.mobileNumber || userData?.phone || "",
+        }));
+    }, [userData?.email, userData?.phone]);
 
     const handleLogout = () => {
         localStorage.removeItem("token");
@@ -387,57 +556,72 @@ const UserDashboard = () => {
         }
     }, []);
 
-    const fetchMyComplaints = async () => {
+    const fetchMyBanks = async () => {
         try {
-            setComplaintsLoading(true);
-            const { data } = await API.get("/complaints/my");
-
-            if (data.success) {
-                setComplaints(data.complaints || []);
-                return;
-            }
-
-            setComplaints([]);
+            setBanksLoading(true);
+            const { data } = await API.get("/banks/my");
+            setSavedBanks(Array.isArray(data.bankAccounts) ? data.bankAccounts : []);
         } catch {
-            setComplaints([]);
+            setSavedBanks([]);
         } finally {
-            setComplaintsLoading(false);
+            setBanksLoading(false);
         }
     };
 
-    const handleComplaintChange = (e) => {
+    const handleBankChange = (e) => {
         const { name, value } = e.target;
-        setComplainForm((prev) => ({
+        setBankForm((prev) => ({
             ...prev,
             [name]: value,
         }));
     };
 
-    const handleComplaintSubmit = async (e) => {
+    const handleBankSubmit = async (e) => {
         e.preventDefault();
 
         try {
-            const { data } = await API.post("/complaints/create", {
-                subject: complainForm.subject,
-                orderId: complainForm.orderId || "",
-                complaintType: complainForm.complaintType,
-                message: complainForm.message,
+            setBankSubmitting(true);
+            const { data } = await API.post("/banks", {
+                accountHolderName: bankForm.accountHolderName.trim(),
+                email: bankForm.email.trim().toLowerCase(),
+                mobileNumber: bankForm.mobileNumber.trim(),
+                bankName: bankForm.bankName.trim(),
+                accountNumber: bankForm.accountNumber.trim(),
+                ifscCode: bankForm.ifscCode.trim().toUpperCase(),
+                branchName: bankForm.branchName.trim(),
+                upiId: bankForm.upiId.trim(),
             });
 
-            if (data.success) {
-                alert("Complaint submitted successfully");
-
-                setComplainForm({
-                    subject: "",
-                    orderId: "",
-                    complaintType: "",
-                    message: "",
+            if (data?.success && data?.bankAccount) {
+                setSavedBanks((currentBanks) => [data.bankAccount, ...currentBanks]);
+                setBankForm({
+                    accountHolderName: "",
+                    email: userData?.email || "",
+                    mobileNumber: userData?.phone || "",
+                    bankName: "",
+                    accountNumber: "",
+                    ifscCode: "",
+                    branchName: "",
+                    upiId: "",
                 });
-
-                fetchMyComplaints();
+                alert("Bank account added successfully");
             }
         } catch (error) {
-            alert(error?.response?.data?.message || "Failed to submit complaint");
+            alert(error?.response?.data?.message || "Failed to add bank account");
+        } finally {
+            setBankSubmitting(false);
+        }
+    };
+
+    const handleDeleteBank = async (bankId) => {
+        try {
+            setDeletingBankId(bankId);
+            await API.delete(`/banks/${bankId}`);
+            setSavedBanks((currentBanks) => currentBanks.filter((bank) => bank._id !== bankId));
+        } catch (error) {
+            alert(error?.response?.data?.message || "Failed to remove bank account");
+        } finally {
+            setDeletingBankId("");
         }
     };
 
@@ -462,7 +646,11 @@ const UserDashboard = () => {
     };
 
     const handleOrderReturn = (orderId) => {
-        navigate("/returns");
+        navigate(`/returns?orderId=${orderId}`);
+    };
+
+    const handleOrderDetails = (orderId) => {
+        navigate(`/order-details/${orderId}`);
     };
 
     const handleReorder = (order) => {
@@ -508,14 +696,15 @@ const UserDashboard = () => {
         { key: "cart", label: "Cart", icon: ShoppingCart },
         { key: "orders", label: "Orders", icon: Package },
         { key: "prescription", label: "Prescription", icon: FileText },
-        { key: "complain", label: "Complain", icon: TriangleAlert },
+        { key: "bank", label: "Add Bank", icon: Landmark },
+        { key: "reminders", label: "Reminders", icon: Bell },
     ];
 
     const quickStats = [
         {
             label: "Total Orders",
             value: orders.length,
-            bg: "from-[#87CEEB] to-[#87CEEB]",
+            bg: "from-[#0EA5E9] to-[#0EA5E9]",
         },
         {
             label: "Prescriptions",
@@ -523,15 +712,15 @@ const UserDashboard = () => {
             bg: "from-sky-500 to-cyan-400",
         },
         {
-            label: "Complaints",
-            value: complaints.length,
+            label: "Bank Accounts",
+            value: savedBanks.length,
             bg: "from-violet-500 to-fuchsia-400",
         },
     ];
 
     const recentOrders = useMemo(() => {
         return [...orders]
-            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .sort((a, b) => getOrderSortTimestamp(b) - getOrderSortTimestamp(a))
             .slice(0, 3);
     }, [orders]);
 
@@ -547,15 +736,15 @@ const UserDashboard = () => {
 
     const filteredOrders = useMemo(() => {
         return [...orders]
-            .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+            .sort((a, b) => getOrderSortTimestamp(b) - getOrderSortTimestamp(a))
             .filter((order) => {
-                const status = String(order.status || "").toLowerCase();
+                const status = getNormalizedOrderStatus(order);
                 const matchesFilter =
                     activeOrderFilter === "all" ||
                     (activeOrderFilter === "active" &&
-                        ["pending", "payment_pending", "placed", "shipped"].includes(status)) ||
+                        ["pending", "payment_pending", "pick_product", "placed", "shipped", "out_for_delivery"].includes(status)) ||
                     (activeOrderFilter === "pending" &&
-                        ["pending", "payment_pending", "placed"].includes(status)) ||
+                        ["pending", "payment_pending", "pick_product", "placed"].includes(status)) ||
                     (activeOrderFilter === "delivered" && status === "delivered") ||
                     (activeOrderFilter === "cancelled" && status === "cancelled");
 
@@ -600,33 +789,11 @@ const UserDashboard = () => {
         }
     }, [prescriptionsPage, totalPrescriptionPages]);
 
-    const PanelShell = ({ title, subtitle, headerAction = null, children, shellClassName = "" }) => (
-        <div className={`dashboard-panel-card overflow-hidden rounded-none border border-white/60 bg-white/80 p-4 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-xl sm:p-5 ${shellClassName}`}>
-            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h2 className="text-2xl font-extrabold tracking-tight text-slate-900">{title}</h2>
-                    {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
-                </div>
-                {headerAction ? <div className="flex items-center">{headerAction}</div> : null}
-            </div>
-            {children}
-        </div>
-    );
-
-    const InfoCard = ({ label, value }) => (
-        <div className="dashboard-panel-card h-fit rounded-none border border-slate-200/70 bg-white p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-[0_16px_30px_rgba(15,23,42,0.08)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">{label}</p>
-            <p className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-[15px] font-bold leading-6 text-slate-800">
-                {value || "Not available"}
-            </p>
-        </div>
-    );
-
     const renderHome = () => (
         <div className="space-y-6">
             <div
                 ref={heroRef}
-                className="dashboard-panel-card relative overflow-hidden rounded-none border border-white/70 bg-gradient-to-r from-slate-900 via-slate-800 to-[#87CEEB] px-6 py-7 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:px-8 sm:py-8"
+                className="dashboard-panel-card relative overflow-hidden rounded-none border border-white/70 bg-gradient-to-r from-slate-900 via-slate-800 to-[#0EA5E9] px-6 py-7 text-white shadow-[0_28px_80px_rgba(15,23,42,0.18)] sm:px-8 sm:py-8"
             >
                 <div className="absolute right-0 top-0 h-full w-[220px] bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.22),_transparent_62%)]" />
                 <div className="relative flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
@@ -635,7 +802,7 @@ const UserDashboard = () => {
                             Welcome back, {displayName}
                         </h1>
                         {/* <p className="mt-2 max-w-2xl text-sm leading-7 text-white/75 sm:text-base">
-                            Manage orders, prescriptions, cart items and complaints from one modern dashboard.
+                            Manage orders, prescriptions, cart items and bank details from one modern dashboard.
                         </p> */}
                     </div>
 
@@ -694,10 +861,10 @@ const UserDashboard = () => {
                                         </p>
                                     </div>
                                     <span
-                                        className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
+                                        className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold ${statusTone[getNormalizedOrderStatus(order)] || "bg-[#E0F2FE] text-[#0EA5E9]"
                                             }`}
                                     >
-                                        {order.status}
+                                        {getOrderStatusLabel(order)}
                                     </span>
                                 </div>
 
@@ -721,7 +888,7 @@ const UserDashboard = () => {
                                     <p className="text-sm text-slate-500">
                                         {order.items?.length || 0} items
                                     </p>
-                                    <p className="text-lg font-extrabold text-[#87CEEB]">
+                                    <p className="text-lg font-extrabold text-[#0EA5E9]">
                                         Rs. {order.total ?? 0}
                                     </p>
                                 </div>
@@ -742,7 +909,7 @@ const UserDashboard = () => {
                 <button
                     type="button"
                     onClick={() => navigate(cartItems.length ? "/checkout" : "/products")}
-                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#87CEEB] px-5 text-sm font-semibold text-white transition hover:bg-[#6ec6e8]"
+                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#0EA5E9] px-5 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                 >
                     <Plus size={16} />
                     Order Now
@@ -767,7 +934,7 @@ const UserDashboard = () => {
                                     <p className="mt-1 text-sm text-slate-500">Quantity: {item.quantity || 1}</p>
                                 </div>
                             </div>
-                            <p className="text-lg font-extrabold text-[#87CEEB]">₹{item.price || item.salePrice || 0}</p>
+                            <p className="text-lg font-extrabold text-[#0EA5E9]">₹{item.price || item.salePrice || 0}</p>
                         </div>
                     ))}
                 </div>
@@ -783,7 +950,7 @@ const UserDashboard = () => {
                 <button
                     type="button"
                     onClick={() => navigate("/products")}
-                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#87CEEB] px-5 text-sm font-semibold text-white transition hover:bg-[#6ec6e8]"
+                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#0EA5E9] px-5 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                 >
                     <Plus size={16} />
                     New Order
@@ -807,7 +974,7 @@ const UserDashboard = () => {
                                         type="button"
                                         onClick={() => setActiveOrderFilter(tab.key)}
                                         className={`rounded-none px-4 py-2 text-sm font-semibold transition ${isActive
-                                            ? "bg-[#87CEEB] text-white shadow-[0_12px_30px_rgba(135,206,235,0.35)]"
+                                            ? "bg-[#0EA5E9] text-white shadow-[0_12px_30px_rgba(14,165,233,0.35)]"
                                             : "bg-white text-slate-600 hover:bg-slate-100"
                                             }`}
                                     >
@@ -819,7 +986,7 @@ const UserDashboard = () => {
                     </div>
 
                     <div className="overflow-x-auto pt-4">
-                        <table className="w-full min-w-[1120px] border-separate border-spacing-0">
+                        <table className="w-full min-w-[980px] border-separate border-spacing-0">
                             <thead>
                                 <tr className="text-left">
                                     <th className="rounded-l-[20px] bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">Order ID</th>
@@ -832,8 +999,11 @@ const UserDashboard = () => {
                             </thead>
                             <tbody>
                                 {orders.map((order) => {
-                                    const canCancel = ["pending", "payment_pending", "placed"].includes(order.status);
-                                    const canReturn = order.status === "delivered";
+                                    const normalizedStatus = getNormalizedOrderStatus(order);
+                                    const canCancel =
+                                        order.orderType !== "replacement" &&
+                                        ["pending", "payment_pending", "placed"].includes(normalizedStatus);
+                                    const canReturn = canOrderBeReturned(order);
 
                                     return (
                                         <tr
@@ -868,20 +1038,25 @@ const UserDashboard = () => {
                                             </td>
                                             <td className="px-4 py-4">
                                                 <div className="space-y-2 text-sm text-slate-600">
-                                                    <p className="font-semibold text-slate-800">{order.paymentMethod || "N/A"}</p>
+                                                    <p className="font-semibold text-slate-800">{getOrderPaymentLabel(order)}</p>
                                                     <p>Subtotal: Rs. {order.subtotal ?? 0}</p>
                                                     <p>Discount: Rs. {order.discount ?? 0}</p>
+                                                    {order.isReturnRequested ? (
+                                                        <p className="font-semibold text-sky-700">
+                                                            Return: {String(order.returnStatus || "pending").replace(/_/g, " ")}
+                                                        </p>
+                                                    ) : null}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-4">
-                                                <p className="text-lg font-extrabold text-[#87CEEB]">Rs. {order.total ?? 0}</p>
+                                                <p className="text-lg font-extrabold text-[#0EA5E9]">Rs. {order.total ?? 0}</p>
                                             </td>
                                             <td className="px-4 py-4">
                                                 <span
-                                                    className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
+                                                    className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold ${statusTone[normalizedStatus] || "bg-[#E0F2FE] text-[#0EA5E9]"
                                                         }`}
                                                 >
-                                                    {order.status}
+                                                    {getOrderStatusLabel(order)}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-4">
@@ -937,13 +1112,13 @@ const UserDashboard = () => {
                                     </div>
 
                                     <span
-                                        className={`w-fit rounded-none px-3 py-1 text-xs font-semibold ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
+                                        className={`w-fit rounded-none px-3 py-1 text-xs font-semibold ${statusTone[getNormalizedOrderStatus(order)] || "bg-[#E0F2FE] text-[#0EA5E9]"
                                             }`}
                                     >
-                                        {order.status}
+                                        {getOrderStatusLabel(order)}
                                     </span>
                                 </div>
-                                {["pending", "payment_pending", "placed"].includes(order.status) ? (
+                                {["pending", "payment_pending", "placed"].includes(getNormalizedOrderStatus(order)) ? (
                                     <div className="mt-3">
                                         <button
                                             type="button"
@@ -968,12 +1143,12 @@ const UserDashboard = () => {
                                             <p className="mt-1 text-sm text-slate-500">Qty: {item.quantity}</p>
                                             {item.pack ? <p className="text-sm text-slate-500">{item.pack}</p> : null}
                                         </div>
-                                        <p className="text-base font-bold text-[#87CEEB]">₹{item.price}</p>
+                                        <p className="text-base font-bold text-[#0EA5E9]">₹{item.price}</p>
                                     </div>
                                 ))}
 
                                 <div className="grid gap-2 pt-1 text-sm text-slate-600 sm:grid-cols-2 xl:grid-cols-4">
-                                    <div className="rounded-none bg-slate-50 px-4 py-3">Payment: {order.paymentMethod}</div>
+                                    <div className="rounded-none bg-slate-50 px-4 py-3">Payment: {getOrderPaymentLabel(order)}</div>
                                     <div className="rounded-none bg-slate-50 px-4 py-3">Total: ₹{order.total}</div>
                                     <div className="rounded-none bg-slate-50 px-4 py-3">Subtotal: ₹{order.subtotal}</div>
                                     <div className="rounded-none bg-slate-50 px-4 py-3">Discount: ₹{order.discount}</div>
@@ -995,7 +1170,7 @@ const UserDashboard = () => {
                 <button
                     type="button"
                     onClick={() => navigate("/products")}
-                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#87CEEB] px-5 text-sm font-semibold text-white transition hover:bg-[#6ec6e8]"
+                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#0EA5E9] px-5 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                 >
                     <Plus size={16} />
                     New Order
@@ -1023,7 +1198,7 @@ const UserDashboard = () => {
                                         type="button"
                                         onClick={() => setActiveOrderFilter(tab.key)}
                                         className={`rounded-none px-4 py-2 text-sm font-semibold transition ${isActive
-                                            ? "bg-[#87CEEB] text-white shadow-[0_12px_30px_rgba(135,206,235,0.35)]"
+                                            ? "bg-[#0EA5E9] text-white shadow-[0_12px_30px_rgba(14,165,233,0.35)]"
                                             : "bg-white text-slate-600 hover:bg-slate-100"
                                             }`}
                                     >
@@ -1045,9 +1220,6 @@ const UserDashboard = () => {
                                         Product / Item
                                     </th>
                                     <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
-                                        Status
-                                    </th>
-                                    <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
                                         Total
                                     </th>
                                     <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
@@ -1061,8 +1233,11 @@ const UserDashboard = () => {
 
                             <tbody>
                                 {paginatedOrders.map((order) => {
-                                    const canCancel = ["pending", "payment_pending", "placed"].includes(order.status);
-                                    const canReturn = order.status === "delivered";
+                                    const normalizedStatus = getNormalizedOrderStatus(order);
+                                    const canCancel =
+                                        order.orderType !== "replacement" &&
+                                        ["pending", "payment_pending", "placed"].includes(normalizedStatus);
+                                    const canReturn = canOrderBeReturned(order);
                                     const primaryItem = order.items?.[0];
                                     const extraItemsCount = Math.max((order.items?.length || 0) - 1, 0);
 
@@ -1074,8 +1249,13 @@ const UserDashboard = () => {
                                                         #{String(order._id).slice(-8).toUpperCase()}
                                                     </p>
                                                     <p className="mt-2 text-xs text-slate-500">
-                                                        {order.paymentMethod || "N/A"}
+                                                        {getOrderPaymentLabel(order)}
                                                     </p>
+                                                    {order.isReturnRequested ? (
+                                                        <p className="mt-2 text-xs font-semibold text-sky-700">
+                                                            {getReturnStatusLabel(order)}
+                                                        </p>
+                                                    ) : null}
                                                 </td>
 
                                                 <td className="border-b border-slate-100 bg-white px-4 py-4">
@@ -1088,8 +1268,13 @@ const UserDashboard = () => {
                                                                 Qty: {primaryItem.quantity || 1}
                                                                 {primaryItem.pack ? ` | ${primaryItem.pack}` : ""}
                                                             </p>
+                                                            {order.isReturnRequested ? (
+                                                                <p className="mt-2 text-xs font-semibold text-sky-700">
+                                                                    {getReturnStatusLabel(order)}
+                                                                </p>
+                                                            ) : null}
                                                             {extraItemsCount ? (
-                                                                <p className="mt-2 text-xs font-semibold text-[#87CEEB]">
+                                                                <p className="mt-2 text-xs font-semibold text-[#0EA5E9]">
                                                                     +{extraItemsCount} more item{extraItemsCount > 1 ? "s" : ""}
                                                                 </p>
                                                             ) : null}
@@ -1100,16 +1285,7 @@ const UserDashboard = () => {
                                                 </td>
 
                                                 <td className="border-b border-slate-100 bg-white px-4 py-4">
-                                                    <span
-                                                        className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${statusTone[order.status] || "bg-[#E6F7FD] text-[#87CEEB]"
-                                                            }`}
-                                                    >
-                                                        {String(order.status || "pending").replace(/_/g, " ")}
-                                                    </span>
-                                                </td>
-
-                                                <td className="border-b border-slate-100 bg-white px-4 py-4">
-                                                    <p className="text-lg font-extrabold text-[#87CEEB]">
+                                                    <p className="text-lg font-extrabold text-[#0EA5E9]">
                                                         ₹{Number(order.total ?? 0).toFixed(2)}
                                                     </p>
                                                 </td>
@@ -1126,7 +1302,7 @@ const UserDashboard = () => {
                                                     <div className="flex flex-wrap gap-2">
                                                         <button
                                                             type="button"
-                                                            onClick={() => setSelectedOrderDetails(order)}
+                                                            onClick={() => handleOrderDetails(order._id)}
                                                             className="rounded-none border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
                                                         >
                                                             Details
@@ -1170,7 +1346,7 @@ const UserDashboard = () => {
 
                                 {!paginatedOrders.length ? (
                                     <tr>
-                                        <td colSpan={6} className="px-4 py-10 text-center text-sm text-slate-500">
+                                        <td colSpan={5} className="px-4 py-10 text-center text-sm text-slate-500">
                                             No orders match your current search or filter.
                                         </td>
                                     </tr>
@@ -1198,7 +1374,7 @@ const UserDashboard = () => {
                                         type="button"
                                         onClick={() => setOrdersPage(pageNumber)}
                                         className={`rounded-none px-4 py-2 text-sm font-semibold transition ${ordersPage === pageNumber
-                                            ? "bg-[#87CEEB] text-white"
+                                            ? "bg-[#0EA5E9] text-white"
                                             : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                                             }`}
                                     >
@@ -1219,92 +1395,6 @@ const UserDashboard = () => {
                         </div>
                     ) : null}
 
-                    {selectedOrderDetails ? (
-                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4">
-                            <div className="w-full max-w-3xl overflow-hidden rounded-none border border-slate-200 bg-white shadow-2xl">
-                                <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
-                                    <div>
-                                        <h3 className="text-xl font-bold text-slate-900">Order Details</h3>
-                                        <p className="mt-1 text-sm text-slate-500">
-                                            #{String(selectedOrderDetails._id).slice(-8).toUpperCase()} • {new Date(selectedOrderDetails.createdAt).toLocaleDateString("en-IN")}
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedOrderDetails(null)}
-                                        className="rounded-none bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
-                                    >
-                                        Close
-                                    </button>
-                                </div>
-
-                                <div className="space-y-5 px-5 py-5">
-                                    <div className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr]">
-                                        <div className="rounded-none border border-slate-200 bg-slate-50 p-4">
-                                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Items</p>
-                                            <div className="mt-3 space-y-3">
-                                                {selectedOrderDetails.items?.length ? (
-                                                    selectedOrderDetails.items.map((item, index) => (
-                                                        <div key={`modal-item-${index}`} className="flex items-start justify-between gap-3 rounded-none bg-white px-4 py-3">
-                                                            <div>
-                                                                <p className="text-sm font-semibold text-slate-900">{item.name}</p>
-                                                                <p className="mt-1 text-xs text-slate-500">
-                                                                    Qty: {item.quantity || 1}
-                                                                    {item.pack ? ` | ${item.pack}` : ""}
-                                                                </p>
-                                                            </div>
-                                                            <p className="text-sm font-bold text-slate-700">₹{Number(item.price || 0).toFixed(2)}</p>
-                                                        </div>
-                                                    ))
-                                                ) : (
-                                                    <p className="text-sm text-slate-500">No items available</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="rounded-none border border-slate-200 bg-white p-4">
-                                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Shipping</p>
-                                                <div className="mt-3 space-y-2 text-sm text-slate-600">
-                                                    <p className="font-semibold text-slate-900">{selectedOrderDetails.shippingInfo?.fullName || "N/A"}</p>
-                                                    <p>{selectedOrderDetails.shippingInfo?.phone || "N/A"}</p>
-                                                    <p>{selectedOrderDetails.shippingInfo?.email || "N/A"}</p>
-                                                    <p className="leading-6">
-                                                        {selectedOrderDetails.shippingInfo?.address || "N/A"}
-                                                        {selectedOrderDetails.shippingInfo?.city ? `, ${selectedOrderDetails.shippingInfo.city}` : ""}
-                                                        {selectedOrderDetails.shippingInfo?.state ? `, ${selectedOrderDetails.shippingInfo.state}` : ""}
-                                                        {selectedOrderDetails.shippingInfo?.pincode ? ` - ${selectedOrderDetails.shippingInfo.pincode}` : ""}
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <div className="rounded-none border border-slate-200 bg-white p-4">
-                                                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">Payment Summary</p>
-                                                <div className="mt-3 space-y-2 text-sm text-slate-600">
-                                                    <div className="flex items-center justify-between">
-                                                        <span>Subtotal</span>
-                                                        <span>₹{Number(selectedOrderDetails.subtotal ?? 0).toFixed(2)}</span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span>Discount</span>
-                                                        <span>₹{Number(selectedOrderDetails.discount ?? 0).toFixed(2)}</span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between">
-                                                        <span>Payment</span>
-                                                        <span className="font-semibold text-slate-900">{selectedOrderDetails.paymentMethod || "N/A"}</span>
-                                                    </div>
-                                                    <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-base font-bold text-slate-900">
-                                                        <span>Total</span>
-                                                        <span>₹{Number(selectedOrderDetails.total ?? 0).toFixed(2)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : null}
                 </div>
             )}
         </PanelShell>
@@ -1319,7 +1409,7 @@ const UserDashboard = () => {
                 <button
                     type="button"
                     onClick={() => navigate("/upload-prescription")}
-                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#87CEEB] px-5 text-sm font-semibold text-white transition hover:bg-[#6ec6e8]"
+                    className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-none bg-[#0EA5E9] px-5 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                 >
                     <Plus size={16} />
                     New Prescription
@@ -1392,7 +1482,7 @@ const UserDashboard = () => {
 
                                     <td className="border-b border-slate-100 bg-white px-4 py-4">
                                         <span
-                                            className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${statusTone[prescription.status] || "bg-[#E6F7FD] text-[#87CEEB]"}`}
+                                            className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${statusTone[prescription.status] || "bg-[#E0F2FE] text-[#0EA5E9]"}`}
                                         >
                                             {String(prescription.status || "pending").replace(/_/g, " ")}
                                         </span>
@@ -1414,7 +1504,7 @@ const UserDashboard = () => {
                                                     href={prescription.fileUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    className="rounded-none border border-[#87CEEB] bg-[#87CEEB] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#6EC6E8]"
+                                                    className="rounded-none border border-[#0EA5E9] bg-[#0EA5E9] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#0284C7]"
                                                 >
                                                     View File
                                                 </a>
@@ -1447,7 +1537,7 @@ const UserDashboard = () => {
                                         type="button"
                                         onClick={() => setPrescriptionsPage(pageNumber)}
                                         className={`rounded-none px-4 py-2 text-sm font-semibold transition ${prescriptionsPage === pageNumber
-                                            ? "bg-[#87CEEB] text-white"
+                                            ? "bg-[#0EA5E9] text-white"
                                             : "border border-slate-200 text-slate-600 hover:bg-slate-50"
                                             }`}
                                     >
@@ -1470,73 +1560,135 @@ const UserDashboard = () => {
         </PanelShell>
     );
 
-    const renderComplain = () => (
-        <PanelShell title="Register Complaint" subtitle="Submit and track your complaint requests easily." shellClassName="rounded-none">
+    const renderAddBank = () => (
+        <PanelShell
+            title="Add Bank"
+            subtitle="Save your bank account details for future refund and support processes."
+            shellClassName="rounded-none"
+            headerAction={
+                <button
+                    type="button"
+                    onClick={fetchMyBanks}
+                    className="inline-flex rounded-none bg-[#0EA5E9] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
+                >
+                    Refresh Bank Details
+                </button>
+            }
+        >
             <div>
-                <form onSubmit={handleComplaintSubmit} className="dashboard-panel-card rounded-none border border-slate-200 bg-slate-50/70 p-5">
+                <form onSubmit={handleBankSubmit} className="dashboard-panel-card rounded-none border border-slate-200 bg-slate-50/70 p-5">
                     <div className="grid gap-5 md:grid-cols-2">
                         <div>
-                            <label className="mb-2 block text-sm font-semibold text-slate-700">Subject</label>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Account Holder Name</label>
                             <input
                                 type="text"
-                                name="subject"
-                                value={complainForm.subject}
-                                onChange={handleComplaintChange}
-                                placeholder="Enter complaint subject"
-                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
+                                name="accountHolderName"
+                                value={bankForm.accountHolderName}
+                                onChange={handleBankChange}
+                                placeholder="Enter account holder name"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="mb-2 block text-sm font-semibold text-slate-700">Order ID</label>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Email ID</label>
+                            <input
+                                type="email"
+                                name="email"
+                                value={bankForm.email}
+                                onChange={handleBankChange}
+                                placeholder="Enter registered email address"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
+                                required
+                            />
+                            <p className="mt-2 text-xs text-slate-500">
+                                Jo app me register time email diya hai use hi yaha add kare.
+                            </p>
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Mobile Number</label>
                             <input
                                 type="text"
-                                name="orderId"
-                                value={complainForm.orderId}
-                                onChange={handleComplaintChange}
-                                placeholder="Enter related order id"
-                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
+                                name="mobileNumber"
+                                value={bankForm.mobileNumber}
+                                onChange={handleBankChange}
+                                placeholder="Enter mobile number"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
                             />
                         </div>
 
-                        <div className="md:col-span-2">
-                            <label className="mb-2 block text-sm font-semibold text-slate-700">Complaint Type</label>
-                            <select
-                                name="complaintType"
-                                value={complainForm.complaintType}
-                                onChange={handleComplaintChange}
-                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Bank Name</label>
+                            <input
+                                type="text"
+                                name="bankName"
+                                value={bankForm.bankName}
+                                onChange={handleBankChange}
+                                placeholder="Enter bank name"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
                                 required
-                            >
-                                <option value="">Select complaint type</option>
-                                <option value="late-delivery">Late Delivery</option>
-                                <option value="wrong-product">Wrong Product</option>
-                                <option value="damaged-product">Damaged Product</option>
-                                <option value="payment-issue">Payment Issue</option>
-                                <option value="other">Other</option>
-                            </select>
+                            />
                         </div>
 
-                        <div className="md:col-span-2">
-                            <label className="mb-2 block text-sm font-semibold text-slate-700">Complaint Message</label>
-                            <textarea
-                                name="message"
-                                value={complainForm.message}
-                                onChange={handleComplaintChange}
-                                rows="6"
-                                placeholder="Write your complaint here..."
-                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#87CEEB]"
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Account Number</label>
+                            <input
+                                type="text"
+                                name="accountNumber"
+                                value={bankForm.accountNumber}
+                                onChange={handleBankChange}
+                                placeholder="Enter account number"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
                                 required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">IFSC Code</label>
+                            <input
+                                type="text"
+                                name="ifscCode"
+                                value={bankForm.ifscCode}
+                                onChange={handleBankChange}
+                                placeholder="Enter IFSC code"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
+                                required
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">Branch Name</label>
+                            <input
+                                type="text"
+                                name="branchName"
+                                value={bankForm.branchName}
+                                onChange={handleBankChange}
+                                placeholder="Enter branch name"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="mb-2 block text-sm font-semibold text-slate-700">UPI ID</label>
+                            <input
+                                type="text"
+                                name="upiId"
+                                value={bankForm.upiId}
+                                onChange={handleBankChange}
+                                placeholder="Enter UPI id if available"
+                                className="w-full rounded-none border border-slate-200 bg-white px-4 py-3 outline-none transition focus:border-[#0EA5E9]"
                             />
                         </div>
 
                         <div className="md:col-span-2">
                             <button
                                 type="submit"
-                                className="inline-flex rounded-none bg-[#87CEEB] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#6EC6E8]"
+                                disabled={bankSubmitting}
+                                className="inline-flex rounded-none bg-[#0EA5E9] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#0284C7]"
                             >
-                                Submit Complaint
+                                {bankSubmitting ? "Saving..." : "Save Bank Details"}
                             </button>
                         </div>
                     </div>
@@ -1544,49 +1696,46 @@ const UserDashboard = () => {
             </div>
 
             <div className="mt-8 border-t border-slate-200 pt-8">
-                <h3 className="text-xl font-bold text-slate-800">My Complaints</h3>
+                <h3 className="text-xl font-bold text-slate-800">Saved Bank Accounts</h3>
 
-                {complaintsLoading ? (
+                {banksLoading ? (
                     <div className="mt-4 rounded-none bg-slate-50 p-8 text-center text-slate-500">
-                        Loading complaints...
+                        Loading bank accounts...
                     </div>
-                ) : complaints.length === 0 ? (
+                ) : savedBanks.length === 0 ? (
                     <div className="mt-4 rounded-none bg-slate-50 p-8 text-center text-slate-500">
-                        No complaints found.
+                        No bank accounts added yet.
                     </div>
                 ) : (
                     <div className="mt-4 space-y-4">
-                        {complaints.map((complaint) => (
+                        {savedBanks.map((bank) => (
                             <div
-                                key={complaint._id}
+                                key={bank._id}
                                 className="dashboard-panel-card rounded-none border border-slate-200 bg-white p-5"
                             >
                                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                    <h4 className="text-lg font-bold text-slate-800">{complaint.subject}</h4>
-                                    <span
-                                        className={`w-fit rounded-none px-3 py-1 text-xs font-semibold ${statusTone[complaint.status] || "bg-[#E6F7FD] text-[#87CEEB]"
-                                            }`}
+                                    <h4 className="text-lg font-bold text-slate-800">{bank.bankName}</h4>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteBank(bank._id)}
+                                        disabled={deletingBankId === bank._id}
+                                        className="inline-flex items-center gap-2 rounded-none border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-600 transition hover:bg-rose-100"
                                     >
-                                        {complaint.status}
-                                    </span>
+                                        <Trash2 size={14} />
+                                        {deletingBankId === bank._id ? "Removing..." : "Remove"}
+                                    </button>
                                 </div>
 
                                 <div className="mt-3 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
-                                    <p>Type: {complaint.complaintType}</p>
-                                    <p>Date: {new Date(complaint.createdAt).toLocaleDateString()}</p>
-                                    <p>Order ID: {complaint.order?._id || complaint.orderId || "N/A"}</p>
+                                    <p>Account Holder: {bank.accountHolderName}</p>
+                                    <p>Email: {bank.email || userData?.email || "N/A"}</p>
+                                    <p>Mobile Number: {bank.mobileNumber || userData?.phone || "N/A"}</p>
+                                    <p>Account Number: {bank.accountNumber}</p>
+                                    <p>IFSC: {bank.ifscCode}</p>
+                                    <p>Branch: {bank.branchName || "N/A"}</p>
+                                    <p>UPI ID: {bank.upiId || "N/A"}</p>
+                                    <p>Added On: {new Date(bank.createdAt).toLocaleDateString("en-IN")}</p>
                                 </div>
-
-                                <p className="mt-3 rounded-none bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-700">
-                                    {complaint.message}
-                                </p>
-
-                                {complaint.adminReply ? (
-                                    <div className="mt-3 rounded-none border border-emerald-100 bg-emerald-50 px-4 py-4 text-sm text-slate-700">
-                                        <span className="font-semibold text-emerald-700">Admin Reply:</span>{" "}
-                                        {complaint.adminReply}
-                                    </div>
-                                ) : null}
                             </div>
                         ))}
                     </div>
@@ -1594,6 +1743,58 @@ const UserDashboard = () => {
             </div>
         </PanelShell>
     );
+
+    const renderReminderHistory = () => {
+        const history = reminders.flatMap(r => 
+            (r.history || []).map(h => ({
+                ...h,
+                medicineName: r.medicineName,
+                reminderId: r._id
+            }))
+        ).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        return (
+            <PanelShell 
+                title="Reminder History" 
+                subtitle="Track your medication adherence history."
+            >
+                {remindersLoading ? (
+                    <div className="p-8 text-center text-slate-500">Loading history...</div>
+                ) : history.length === 0 ? (
+                    <div className="p-8 text-center text-slate-500">No dose history logged yet.</div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-sm">
+                            <thead>
+                                <tr className="border-b border-slate-200">
+                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Medicine</th>
+                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Date</th>
+                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Time</th>
+                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {history.map((entry, idx) => (
+                                    <tr key={idx} className="border-b border-slate-50 last:border-0">
+                                        <td className="py-4 font-medium text-slate-800">{entry.medicineName}</td>
+                                        <td className="py-4 text-slate-600">{new Date(entry.date).toLocaleDateString()}</td>
+                                        <td className="py-4 text-slate-600">{entry.time}</td>
+                                        <td className="py-4">
+                                            <span className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                                entry.status === 'taken' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
+                                            }`}>
+                                                {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </PanelShell>
+        );
+    };
 
     const renderContent = () => {
         switch (activeTab) {
@@ -1603,8 +1804,10 @@ const UserDashboard = () => {
                 return renderOrdersModern();
             case "prescription":
                 return renderPrescription();
-            case "complain":
-                return renderComplain();
+            case "bank":
+                return renderAddBank();
+            case "reminders":
+                return renderReminderHistory();
             case "home":
             default:
                 return renderHome();
@@ -1669,7 +1872,7 @@ const UserDashboard = () => {
                     </div>
 
                     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6">
-                        <div className="rounded-none bg-gradient-to-br from-[#87CEEB] to-[#6EC6E8] px-4 py-5 text-white shadow-lg shadow-[#87CEEB]/20">
+                        <div className="rounded-none bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] px-4 py-5 text-white shadow-lg shadow-[#0EA5E9]/20">
                             <p className="text-sm font-semibold text-white/80">Logged in as</p>
                             <h2 className="mt-2 text-xl font-bold">{displayName}</h2>
                             <p className="mt-1 break-words text-sm text-white/80">
@@ -1692,7 +1895,7 @@ const UserDashboard = () => {
                                         type="button"
                                         onClick={() => handleMenuItemClick(item.key)}
                                         className={`dashboard-menu-item flex w-full items-center gap-3 rounded-none px-4 py-3 text-left text-sm font-medium transition ${isActive
-                                            ? "bg-[#87CEEB] text-white shadow-lg shadow-[#87CEEB]/25"
+                                            ? "bg-[#0EA5E9] text-white shadow-lg shadow-[#0EA5E9]/25"
                                             : "text-slate-600 hover:bg-slate-100"
                                             }`}
                                     >
@@ -1707,7 +1910,7 @@ const UserDashboard = () => {
                             <button
                                 type="button"
                                 onClick={handleLogout}
-                                className="dashboard-menu-item flex w-full items-center gap-3 rounded-none px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#87CEEB]"
+                                className="dashboard-menu-item flex w-full items-center gap-3 rounded-none px-4 py-3 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-[#0EA5E9]"
                             >
                                 <LogOut size={18} />
                                 Logout
