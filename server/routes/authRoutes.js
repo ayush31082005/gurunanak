@@ -16,7 +16,7 @@ import {
     getAdminCustomers,
     getAdminDashboard,
 } from "../controller/authController.js";
-import { mrDocumentUpload } from "../middleware/upload.js";
+import { documentMemoryUpload } from "../middleware/upload.js";
 import { isAuth, requireAdmin } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -25,7 +25,7 @@ router.post("/register/send-otp", sendRegisterOtp);
 router.post("/register/verify-otp", verifyRegisterOtp);
 router.post(
     "/mr/register/send-otp",
-    mrDocumentUpload.fields([
+    documentMemoryUpload.fields([
         { name: "gstCertificate", maxCount: 1 },
         { name: "drugLicenseDocument", maxCount: 1 },
     ]),

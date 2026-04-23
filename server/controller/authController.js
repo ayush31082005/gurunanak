@@ -10,6 +10,10 @@ import generateOtp from "../utils/generateOtp.js";
 import generateToken from "../utils/generateToken.js";
 import sendEmailOtp from "../utils/sendEmailOtp.js";
 import { sendAccountNotificationEmail } from "../utils/sendEmailOtp.js";
+import {
+    deleteCloudinaryResource,
+    uploadMediaToCloudinary,
+} from "../utils/cloudinary.js";
 
 const MR_PENDING_STATUS = "pending";
 const MR_APPROVED_STATUS = "approved";
@@ -36,8 +40,18 @@ const normalizeLicenseNumber = (value = "") =>
 const normalizeUppercaseIdentifier = (value = "") =>
     normalizeText(value).replace(/\s+/g, "").toUpperCase();
 
-const buildUploadedFilePath = (file) => (file ? `/uploads/${file.filename}` : "");
+const buildUploadedFilePath = (file) => (file?.filename ? `/uploads/${file.filename}` : "");
 const buildUploadedFileName = (file) => (file ? file.originalname || file.filename : "");
+
+const buildCloudinaryFileRef = ({
+    url = "",
+    publicId = "",
+    resourceType = "image",
+} = {}) => ({
+    url,
+    publicId,
+    resourceType,
+});
 
 const resolveUploadedFilePath = (fileUrl = "") => {
     const fileName = String(fileUrl || "")
@@ -55,7 +69,30 @@ const deleteUploadedFiles = async (fileUrls = []) => {
     await Promise.all(
         fileUrls
             .filter(Boolean)
-            .map(async (fileUrl) => {
+            .map(async (fileRef) => {
+                const fileUrl =
+                    typeof fileRef === "string" ? fileRef : fileRef.url || "";
+                const publicId =
+                    typeof fileRef === "string" ? "" : fileRef.publicId || "";
+                const resourceType =
+                    typeof fileRef === "string" ? "image" : fileRef.resourceType || "image";
+
+                if (publicId) {
+                    try {
+                        await deleteCloudinaryResource({ publicId, resourceType });
+                    } catch (error) {
+                        console.error(
+                            `Failed to delete Cloudinary upload ${publicId}:`,
+                            error.message
+                        );
+                    }
+                    return;
+                }
+
+                if (/^https?:\/\//i.test(fileUrl)) {
+                    return;
+                }
+
                 const absolutePath = resolveUploadedFilePath(fileUrl);
 
                 if (!absolutePath) {
@@ -81,8 +118,20 @@ const cleanupMrOtpRecords = async (otpRecords = []) => {
     await Promise.all(
         otpRecords.map((otpRecord) =>
             deleteUploadedFiles([
-                otpRecord?.mrRegistrationData?.gstCertificateUrl,
-                otpRecord?.mrRegistrationData?.drugLicenseDocumentUrl,
+                buildCloudinaryFileRef({
+                    url: otpRecord?.mrRegistrationData?.gstCertificateUrl,
+                    publicId: otpRecord?.mrRegistrationData?.gstCertificatePublicId,
+                    resourceType:
+                        otpRecord?.mrRegistrationData?.gstCertificateResourceType,
+                }),
+                buildCloudinaryFileRef({
+                    url: otpRecord?.mrRegistrationData?.drugLicenseDocumentUrl,
+                    publicId:
+                        otpRecord?.mrRegistrationData?.drugLicenseDocumentPublicId,
+                    resourceType:
+                        otpRecord?.mrRegistrationData
+                            ?.drugLicenseDocumentResourceType,
+                }),
             ])
         )
     );
@@ -92,6 +141,22 @@ const cleanupMrOtpRecords = async (otpRecords = []) => {
             $in: otpRecords.map((otpRecord) => otpRecord._id),
         },
     });
+};
+
+const uploadMrDocumentToCloudinary = async (file, label) => {
+    const uploadResult = await uploadMediaToCloudinary({
+        fileBuffer: file.buffer,
+        fileName: file.originalname || `${label}.pdf`,
+        fileType: file.mimetype || "application/pdf",
+        folder: "gurunanak/mr-documents",
+    });
+
+    return {
+        url: uploadResult.secure_url || uploadResult.url || "",
+        name: file.originalname || uploadResult.original_filename || label,
+        publicId: uploadResult.public_id || "",
+        resourceType: uploadResult.resource_type || "image",
+    };
 };
 
 const formatDisplayName = (user = {}) => {
@@ -320,6 +385,8 @@ export const verifyRegisterOtp = async (req, res) => {
 };
 
 export const sendMrRegisterOtp = async (req, res) => {
+    let uploadedMrDocuments = [];
+
     try {
         const requiredFields = [
             "name",
@@ -456,6 +523,17 @@ export const sendMrRegisterOtp = async (req, res) => {
 
         await cleanupMrOtpRecords(existingMrOtpRecords);
 
+        const [uploadedGstCertificate, uploadedDrugLicenseDocument] =
+            await Promise.all([
+                uploadMrDocumentToCloudinary(gstCertificateFile, "gst-certificate"),
+                uploadMrDocumentToCloudinary(drugLicenseFile, "drug-license"),
+            ]);
+
+        uploadedMrDocuments = [
+            uploadedGstCertificate,
+            uploadedDrugLicenseDocument,
+        ];
+
         const otp = generateOtp();
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -475,10 +553,20 @@ export const sendMrRegisterOtp = async (req, res) => {
                 gstNumber: normalizedGstNumber,
                 panNumber: normalizedPanNumber,
                 drugLicenseNumber: normalizedLicenseNumber,
-                gstCertificateUrl: buildUploadedFilePath(gstCertificateFile),
-                gstCertificateName: buildUploadedFileName(gstCertificateFile),
-                drugLicenseDocumentUrl: buildUploadedFilePath(drugLicenseFile),
-                drugLicenseDocumentName: buildUploadedFileName(drugLicenseFile),
+                gstCertificateUrl: uploadedGstCertificate.url,
+                gstCertificateName:
+                    uploadedGstCertificate.name ||
+                    buildUploadedFileName(gstCertificateFile),
+                gstCertificatePublicId: uploadedGstCertificate.publicId,
+                gstCertificateResourceType: uploadedGstCertificate.resourceType,
+                drugLicenseDocumentUrl: uploadedDrugLicenseDocument.url,
+                drugLicenseDocumentName:
+                    uploadedDrugLicenseDocument.name ||
+                    buildUploadedFileName(drugLicenseFile),
+                drugLicenseDocumentPublicId:
+                    uploadedDrugLicenseDocument.publicId,
+                drugLicenseDocumentResourceType:
+                    uploadedDrugLicenseDocument.resourceType,
             },
         });
 
@@ -490,6 +578,13 @@ export const sendMrRegisterOtp = async (req, res) => {
         });
     } catch (error) {
         await deleteUploadedFiles([
+            ...uploadedMrDocuments.map((document) =>
+                buildCloudinaryFileRef({
+                    url: document.url,
+                    publicId: document.publicId,
+                    resourceType: document.resourceType,
+                })
+            ),
             buildUploadedFilePath(req.files?.gstCertificate?.[0]),
             buildUploadedFilePath(req.files?.drugLicenseDocument?.[0]),
         ]);
@@ -603,7 +698,13 @@ export const verifyMrRegisterOtp = async (req, res) => {
             panNumber: mrRegistrationData.panNumber,
             drugLicenseNumber: mrRegistrationData.drugLicenseNumber,
             gstCertificateUrl: mrRegistrationData.gstCertificateUrl,
+            gstCertificatePublicId: mrRegistrationData.gstCertificatePublicId,
+            gstCertificateResourceType: mrRegistrationData.gstCertificateResourceType,
             drugLicenseDocumentUrl: mrRegistrationData.drugLicenseDocumentUrl,
+            drugLicenseDocumentPublicId:
+                mrRegistrationData.drugLicenseDocumentPublicId,
+            drugLicenseDocumentResourceType:
+                mrRegistrationData.drugLicenseDocumentResourceType,
             isHealthCareExpert: true,
             mrApprovalStatus: MR_PENDING_STATUS,
             isVerified: false,
@@ -1119,8 +1220,16 @@ export const deleteMrRequest = async (req, res) => {
 
         await Promise.all([
             deleteUploadedFiles([
-                user.gstCertificateUrl,
-                user.drugLicenseDocumentUrl,
+                buildCloudinaryFileRef({
+                    url: user.gstCertificateUrl,
+                    publicId: user.gstCertificatePublicId,
+                    resourceType: user.gstCertificateResourceType,
+                }),
+                buildCloudinaryFileRef({
+                    url: user.drugLicenseDocumentUrl,
+                    publicId: user.drugLicenseDocumentPublicId,
+                    resourceType: user.drugLicenseDocumentResourceType,
+                }),
             ]),
             Product.deleteMany({
                 createdBy: user._id,

@@ -57,10 +57,30 @@ const userSchema = new mongoose.Schema(
             trim: true,
             default: "",
         },
+        gstCertificatePublicId: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        gstCertificateResourceType: {
+            type: String,
+            trim: true,
+            default: "image",
+        },
         drugLicenseDocumentUrl: {
             type: String,
             trim: true,
             default: "",
+        },
+        drugLicenseDocumentPublicId: {
+            type: String,
+            trim: true,
+            default: "",
+        },
+        drugLicenseDocumentResourceType: {
+            type: String,
+            trim: true,
+            default: "image",
         },
         isHealthCareExpert: {
             type: Boolean,

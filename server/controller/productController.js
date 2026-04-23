@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import Product from "../models/Product.js";
 import Category from "../models/Category.js";
 import sendEmail from "../utils/sendEmail.js";
+import { uploadMediaToCloudinary } from "../utils/cloudinary.js";
 
 const PRODUCT_APPROVAL_PENDING = "pending";
 const PRODUCT_APPROVAL_APPROVED = "approved";
@@ -66,9 +67,16 @@ const resolveCategory = async (categoryValue) => {
     });
 };
 
-const buildImagePath = (req, existingImage = "") => {
-    if (req.file?.filename) {
-        return `/uploads/${req.file.filename}`;
+const buildImagePath = async (req, existingImage = "") => {
+    if (req.file?.buffer) {
+        const uploadResult = await uploadMediaToCloudinary({
+            fileBuffer: req.file.buffer,
+            fileName: req.file.originalname || "product-image.jpg",
+            fileType: req.file.mimetype || "image/jpeg",
+            folder: "gurunanak/products",
+        });
+
+        return uploadResult.secure_url || uploadResult.url || "";
     }
 
     if (typeof req.body.image === "string" && req.body.image.trim()) {
@@ -111,7 +119,7 @@ const buildProductPayload = async (req, existingProduct = null) => {
             stock,
             status: deriveStockStatus(stock),
             description: req.body.description?.trim() || "",
-            image: buildImagePath(req, existingProduct?.image || ""),
+            image: await buildImagePath(req, existingProduct?.image || ""),
         },
         meta: {
             categoryName: categoryDocument.name,
