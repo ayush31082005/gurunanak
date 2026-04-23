@@ -15,6 +15,10 @@ const slides = [
       "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?auto=format&fit=crop&w=1200&q=80",
     cardTitle: "Fast Delivery",
     cardText: "Medicines at your doorstep",
+    actions: [
+      { label: "Products", to: "/products", variant: "light" },
+      { label: "Reorder", to: "/user-dashboard?tab=orders", variant: "outline" },
+    ],
   },
   {
     badge: "Prescription Care",
@@ -27,6 +31,14 @@ const slides = [
       "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=1200&q=80",
     cardTitle: "Trusted Medicines",
     cardText: "Authentic & safe pharmacy products",
+    actions: [
+      {
+        label: "Re-Prescription",
+        to: "/user-dashboard?tab=prescription",
+        variant: "light",
+      },
+      { label: "Medicine Reminder", to: "/reminder", variant: "outline" },
+    ],
   },
   {
     badge: "Lab Tests",
@@ -39,6 +51,10 @@ const slides = [
       "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80",
     cardTitle: "Health Packages",
     cardText: "Affordable lab test bookings",
+    actions: [
+      { label: "Return Medicine", to: "/returns", variant: "light" },
+      { label: "Products", to: "/products", variant: "outline" },
+    ],
   },
 ];
 
@@ -96,25 +112,21 @@ const HeroBanner = () => {
 
             {/* Buttons */}
             <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row lg:items-start">
-              <Link to="/products">
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="!rounded-full !bg-white !px-7 !py-3 !text-slate-900 hover:!bg-slate-100"
-                >
-                  Products
-                </Button>
-              </Link>
-
-              <Link to="/user-dashboard?tab=orders">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="!rounded-full !border !border-white !bg-transparent !px-7 !py-3 !text-white hover:!bg-white/10"
-                >
-                  Reorder
-                </Button>
-              </Link>
+              {slide.actions.map((action) => (
+                <Link key={`${slide.badge}-${action.label}`} to={action.to}>
+                  <Button
+                    variant={action.variant === "light" ? "primary" : "outline"}
+                    size="lg"
+                    className={
+                      action.variant === "light"
+                        ? "!rounded-full !bg-white !px-7 !py-3 !text-slate-900 hover:!bg-slate-100"
+                        : "!rounded-full !border !border-white !bg-transparent !px-7 !py-3 !text-white hover:!bg-white/10"
+                    }
+                  >
+                    {action.label}
+                  </Button>
+                </Link>
+              ))}
             </div>
 
             {/* Features */}
