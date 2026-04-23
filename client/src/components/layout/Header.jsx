@@ -467,9 +467,9 @@ const Header = () => {
       <div className="mx-auto w-full max-w-[1280px] px-3 sm:px-4 lg:px-6">
         <div className="flex min-h-[64px] items-center justify-between gap-3 py-2">
           <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-            <Link to="/" className="flex shrink-0 items-center gap-2">
-              <h1 className="text-[20px] font-extrabold leading-none text-slate-800 sm:text-[22px]">
-                𝐆𝐔𝐑𝐔𝐍𝐀𝐍𝐀𝐊 𝐏𝐇𝐀𝐑𝐌𝐀𝐂𝐘
+            <Link to="/" className="flex min-w-0 items-center gap-2">
+              <h1 className="whitespace-nowrap text-[11px] font-extrabold leading-none tracking-[0.01em] text-slate-800 min-[380px]:text-[12px] sm:text-[22px]">
+                GURUNANAK PHARMACY
               </h1>
             </Link>
 
