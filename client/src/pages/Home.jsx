@@ -131,7 +131,7 @@ const Home = () => {
   return (
     <>
       <HeroBanner />
-      <QuickPharmacyServices />
+      {/* <QuickPharmacyServices /> */}
       <HealthConcerns />
       <FeaturedBrands />
 
