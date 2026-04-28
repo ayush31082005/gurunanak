@@ -79,6 +79,11 @@ const Login = () => {
     const location = useLocation();
     const { success: showSuccessToast } = useToast();
     const OTP_RESEND_SECONDS = 60;
+    const hasExplicitLoginIntent = Boolean(
+        location.state?.message ||
+        location.state?.redirectTo ||
+        location.state?.from
+    );
 
     const [otpSent, setOtpSent] = useState(false);
     const [activeSlide, setActiveSlide] = useState(0);
@@ -95,6 +100,16 @@ const Login = () => {
     useEffect(() => {
         const token = localStorage.getItem("token");
         const storedUser = localStorage.getItem("user");
+        const isFreshMobileLoginOpen =
+            !token &&
+            !hasExplicitLoginIntent &&
+            location.key === "default" &&
+            window.innerWidth < 768;
+
+        if (isFreshMobileLoginOpen) {
+            navigate("/", { replace: true });
+            return;
+        }
 
         if (!token) {
             return;
@@ -111,7 +126,7 @@ const Login = () => {
         } catch (error) {
             navigate("/user-dashboard", { replace: true });
         }
-    }, [location.state, navigate]);
+    }, [hasExplicitLoginIntent, location.key, location.state, navigate]);
 
     useEffect(() => {
         setMessage(location.state?.message || "");
