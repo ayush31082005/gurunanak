@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 import CallBanner from "../home/CallBanner";
+import WhatsAppChatBox from "../common/WhatsAppChatBox";
 
 const MainLayout = () => {
   const location = useLocation();
@@ -19,6 +20,7 @@ const MainLayout = () => {
       </main>
       <Footer />
       <CallBanner />
+      <WhatsAppChatBox />
     </div>
   );
 };

@@ -12,13 +12,23 @@ import {
     Landmark,
     X,
     Bell,
+    Pencil,
+    CheckCircle,
+    XCircle,
     Trash2,
 } from "lucide-react";
-import Reminder from "./Reminder";
 import API from "../api";
+import {
+    deleteReminder as deleteReminderRequest,
+    logDoseStatus,
+    toggleReminderStatus,
+} from "../api/reminderApi";
+import { getApiOrigin } from "../config/apiBaseUrl";
 import Header from "../components/layout/Header";
+import WhatsAppChatBox from "../components/common/WhatsAppChatBox";
 
 const CHECKOUT_ADDRESS_STORAGE_KEY = "checkoutAddress";
+const REMINDER_API_ROOT = getApiOrigin();
 
 const getStoredCheckoutAddress = () => {
     try {
@@ -100,6 +110,42 @@ const mapOrderItemsToCheckoutItems = (items = []) =>
             quantity: Number(item.quantity) || 1,
         }))
         .filter((item) => item.name && Number.isFinite(item.price));
+
+const getTodayDate = () => {
+    const today = new Date();
+    const timezoneOffset = today.getTimezoneOffset() * 60000;
+    return new Date(today.getTime() - timezoneOffset).toISOString().slice(0, 10);
+};
+
+const formatReminderTime = (value = "") => {
+    if (!value) return "N/A";
+
+    const [hours, minutes] = String(value).split(":");
+    const parsedHours = Number(hours);
+    const parsedMinutes = Number(minutes);
+
+    if (
+        Number.isNaN(parsedHours) ||
+        Number.isNaN(parsedMinutes) ||
+        parsedHours < 0 ||
+        parsedHours > 23 ||
+        parsedMinutes < 0 ||
+        parsedMinutes > 59
+    ) {
+        return value;
+    }
+
+    return new Date(2000, 0, 1, parsedHours, parsedMinutes).toLocaleTimeString("en-IN", {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+};
+
+const getReminderImageUrl = (imagePath = "") => {
+    if (!imagePath) return "";
+    if (/^https?:\/\//i.test(imagePath)) return imagePath;
+    return `${REMINDER_API_ROOT}${imagePath.startsWith("/") ? imagePath : `/${imagePath}`}`;
+};
 
 const getOrderDeliveredAt = (order) => {
     if (order?.deliveredAt) {
@@ -289,6 +335,9 @@ const UserDashboard = () => {
     const [reorderingPrescriptionId, setReorderingPrescriptionId] = useState("");
     const [reminders, setReminders] = useState([]);
     const [remindersLoading, setRemindersLoading] = useState(false);
+    const [remindersPage, setRemindersPage] = useState(1);
+    const [reminderHistoryPage, setReminderHistoryPage] = useState(1);
+    const [reminderActionId, setReminderActionId] = useState("");
     const [savedBanks, setSavedBanks] = useState([]);
     const [banksLoading, setBanksLoading] = useState(false);
     const [bankSubmitting, setBankSubmitting] = useState(false);
@@ -308,6 +357,7 @@ const UserDashboard = () => {
     const sidebarRef = useRef(null);
     const heroRef = useRef(null);
     const contentRef = useRef(null);
+    const recentOrdersScrollRef = useRef(null);
     const floatingBlobOneRef = useRef(null);
     const floatingBlobTwoRef = useRef(null);
 
@@ -625,6 +675,93 @@ const UserDashboard = () => {
         }
     };
 
+    const getReminderDoseStatus = (reminder, time) => {
+        if (!reminder?.history?.length) return null;
+
+        const today = getTodayDate();
+
+        const matchedEntry = reminder.history.find((entry) => {
+            try {
+                const entryDate = new Date(entry.date);
+                const yyyy = entryDate.getFullYear();
+                const mm = String(entryDate.getMonth() + 1).padStart(2, "0");
+                const dd = String(entryDate.getDate()).padStart(2, "0");
+                return `${yyyy}-${mm}-${dd}` === today && entry.time === time;
+            } catch {
+                return false;
+            }
+        });
+
+        return matchedEntry?.status || null;
+    };
+
+    const handleReminderEdit = (reminderId) => {
+        navigate(`/reminder?edit=${reminderId}`);
+    };
+
+    const handleNewReminder = () => {
+        navigate("/reminder");
+    };
+
+    const handleReminderToggle = async (reminderId) => {
+        try {
+            setReminderActionId(reminderId);
+            const { data } = await toggleReminderStatus(reminderId);
+            const nextReminder = data?.reminder;
+
+            setReminders((currentReminders) =>
+                currentReminders.map((reminder) =>
+                    reminder._id === reminderId ? nextReminder || reminder : reminder
+                )
+            );
+        } catch (error) {
+            alert(error?.response?.data?.message || "Failed to update reminder");
+        } finally {
+            setReminderActionId("");
+        }
+    };
+
+    const handleReminderDelete = async (reminderId) => {
+        const confirmed = window.confirm("Delete this reminder?");
+        if (!confirmed) return;
+
+        try {
+            setReminderActionId(reminderId);
+            await deleteReminderRequest(reminderId);
+            setReminders((currentReminders) =>
+                currentReminders.filter((reminder) => reminder._id !== reminderId)
+            );
+        } catch (error) {
+            alert(error?.response?.data?.message || "Failed to delete reminder");
+        } finally {
+            setReminderActionId("");
+        }
+    };
+
+    const handleReminderLogStatus = async (reminderId, time, status) => {
+        try {
+            setReminderActionId(`${reminderId}-${time}`);
+            const payload = {
+                date: getTodayDate(),
+                time,
+                status,
+            };
+
+            const { data } = await logDoseStatus(reminderId, payload);
+            const nextReminder = data?.reminder;
+
+            setReminders((currentReminders) =>
+                currentReminders.map((reminder) =>
+                    reminder._id === reminderId ? nextReminder || reminder : reminder
+                )
+            );
+        } catch (error) {
+            alert(error?.response?.data?.message || "Failed to log dose status");
+        } finally {
+            setReminderActionId("");
+        }
+    };
+
     const handleOrderCancel = async (orderId) => {
         try {
             setCancellingOrderId(orderId);
@@ -719,9 +856,7 @@ const UserDashboard = () => {
     ];
 
     const recentOrders = useMemo(() => {
-        return [...orders]
-            .sort((a, b) => getOrderSortTimestamp(b) - getOrderSortTimestamp(a))
-            .slice(0, 3);
+        return [...orders].sort((a, b) => getOrderSortTimestamp(b) - getOrderSortTimestamp(a));
     }, [orders]);
 
     const orderTabs = useMemo(
@@ -769,9 +904,82 @@ const UserDashboard = () => {
         return prescriptions.slice(startIndex, startIndex + prescriptionsPerPage);
     }, [prescriptions, prescriptionsPage]);
 
+    const remindersPerPage = 3;
+    const totalReminderPages = Math.max(1, Math.ceil(reminders.length / remindersPerPage));
+
+    const paginatedReminders = useMemo(() => {
+        const startIndex = (remindersPage - 1) * remindersPerPage;
+        return reminders.slice(startIndex, startIndex + remindersPerPage);
+    }, [reminders, remindersPage]);
+
+    const reminderHistoryEntries = useMemo(
+        () =>
+            reminders
+                .flatMap((reminder) =>
+                    (reminder.history || []).map((entry) => ({
+                        ...entry,
+                        medicineName: reminder.medicineName,
+                        reminderId: reminder._id,
+                    }))
+                )
+                .sort((leftEntry, rightEntry) => {
+                    const leftDate = new Date(leftEntry.date);
+                    const rightDate = new Date(rightEntry.date);
+
+                    const [leftHours = "0", leftMinutes = "0"] = String(leftEntry.time || "00:00").split(":");
+                    const [rightHours = "0", rightMinutes = "0"] = String(rightEntry.time || "00:00").split(":");
+
+                    leftDate.setHours(Number(leftHours) || 0, Number(leftMinutes) || 0, 0, 0);
+                    rightDate.setHours(Number(rightHours) || 0, Number(rightMinutes) || 0, 0, 0);
+
+                    return rightDate - leftDate;
+                }),
+        [reminders]
+    );
+
+    const reminderHistoryPerPage = 6;
+    const totalReminderHistoryPages = Math.max(
+        1,
+        Math.ceil(reminderHistoryEntries.length / reminderHistoryPerPage)
+    );
+
+    const paginatedReminderHistory = useMemo(() => {
+        const startIndex = (reminderHistoryPage - 1) * reminderHistoryPerPage;
+        return reminderHistoryEntries.slice(startIndex, startIndex + reminderHistoryPerPage);
+    }, [reminderHistoryEntries, reminderHistoryPage]);
+
     useEffect(() => {
         setOrdersPage(1);
     }, [activeOrderFilter]);
+
+    useEffect(() => {
+        const container = recentOrdersScrollRef.current;
+
+        if (!container || recentOrders.length <= 1) {
+            return undefined;
+        }
+
+        let direction = 1;
+        const step = 1.2;
+
+        const intervalId = window.setInterval(() => {
+            const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
+            if (maxScrollLeft <= 0) {
+                return;
+            }
+
+            if (container.scrollLeft >= maxScrollLeft) {
+                direction = -1;
+            } else if (container.scrollLeft <= 0) {
+                direction = 1;
+            }
+
+            container.scrollLeft += step * direction;
+        }, 20);
+
+        return () => window.clearInterval(intervalId);
+    }, [recentOrders]);
 
     useEffect(() => {
         if (ordersPage > totalOrderPages) {
@@ -788,6 +996,23 @@ const UserDashboard = () => {
             setPrescriptionsPage(totalPrescriptionPages);
         }
     }, [prescriptionsPage, totalPrescriptionPages]);
+
+    useEffect(() => {
+        setRemindersPage(1);
+        setReminderHistoryPage(1);
+    }, [reminders]);
+
+    useEffect(() => {
+        if (remindersPage > totalReminderPages) {
+            setRemindersPage(totalReminderPages);
+        }
+    }, [remindersPage, totalReminderPages]);
+
+    useEffect(() => {
+        if (reminderHistoryPage > totalReminderHistoryPages) {
+            setReminderHistoryPage(totalReminderHistoryPages);
+        }
+    }, [reminderHistoryPage, totalReminderHistoryPages]);
 
     const renderHome = () => (
         <div className="space-y-6">
@@ -845,11 +1070,12 @@ const UserDashboard = () => {
                         No recent orders found.
                     </div>
                 ) : (
-                    <div className="grid gap-4 xl:grid-cols-3">
-                        {recentOrders.map((order) => (
+                    <div ref={recentOrdersScrollRef} className="overflow-x-auto pb-2">
+                        <div className="flex min-w-max gap-4">
+                            {recentOrders.map((order) => (
                             <div
                                 key={order._id}
-                                className="dashboard-panel-card rounded-none border border-slate-200 bg-white p-5"
+                                className="dashboard-panel-card w-[320px] shrink-0 rounded-none border border-slate-200 bg-white p-5"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
@@ -894,6 +1120,7 @@ const UserDashboard = () => {
                                 </div>
                             </div>
                         ))}
+                        </div>
                     </div>
                 )}
             </PanelShell>
@@ -1745,51 +1972,330 @@ const UserDashboard = () => {
     );
 
     const renderReminderHistory = () => {
-        const history = reminders.flatMap(r => 
-            (r.history || []).map(h => ({
-                ...h,
-                medicineName: r.medicineName,
-                reminderId: r._id
-            }))
-        ).sort((a, b) => new Date(b.date) - new Date(a.date));
+        const today = getTodayDate();
 
         return (
-            <PanelShell 
-                title="Reminder History" 
-                subtitle="Track your medication adherence history."
+            <PanelShell
+                title="Reminders"
+                subtitle="View saved reminders and dose history."
             >
                 {remindersLoading ? (
-                    <div className="p-8 text-center text-slate-500">Loading history...</div>
-                ) : history.length === 0 ? (
-                    <div className="p-8 text-center text-slate-500">No dose history logged yet.</div>
+                    <div className="p-8 text-center text-slate-500">Loading reminders...</div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full border-collapse text-left text-sm">
-                            <thead>
-                                <tr className="border-b border-slate-200">
-                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Medicine</th>
-                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Date</th>
-                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Time</th>
-                                    <th className="pb-4 pt-2 font-semibold text-slate-900">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {history.map((entry, idx) => (
-                                    <tr key={idx} className="border-b border-slate-50 last:border-0">
-                                        <td className="py-4 font-medium text-slate-800">{entry.medicineName}</td>
-                                        <td className="py-4 text-slate-600">{new Date(entry.date).toLocaleDateString()}</td>
-                                        <td className="py-4 text-slate-600">{entry.time}</td>
-                                        <td className="py-4">
-                                            <span className={`rounded-full px-3 py-1 text-xs font-bold ${
-                                                entry.status === 'taken' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'
-                                            }`}>
-                                                {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div className="space-y-6">
+                        <div className="rounded-none border border-slate-200 bg-white p-5 shadow-sm">
+                            <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Saved Reminders</h3>
+                                    <p className="text-sm text-slate-500">
+                                        Reminder set karte hi yahan dikh jayega.
+                                    </p>
+                                </div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="w-fit rounded-none bg-sky-100 px-3 py-1 text-xs font-semibold text-sky-700">
+                                        Total: {reminders.length}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={handleNewReminder}
+                                        className="inline-flex items-center gap-2 rounded-none border border-[#0EA5E9] bg-[#0EA5E9] px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-600"
+                                    >
+                                        <Plus size={16} />
+                                        New Reminder
+                                    </button>
+                                </div>
+                            </div>
+
+                            {reminders.length === 0 ? (
+                                <div className="p-8 text-center text-slate-500">No reminders created yet.</div>
+                            ) : (
+                                <div className="mt-4 grid gap-4">
+                                    {paginatedReminders.map((reminder) => {
+                                        const isInSchedule =
+                                            today >= String(reminder.startDate || "").slice(0, 10) &&
+                                            today <= String(reminder.endDate || "").slice(0, 10);
+
+                                        return (
+                                            <div
+                                                key={reminder._id}
+                                                className="rounded-none border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-sm"
+                                            >
+                                                <div className="flex flex-col gap-4">
+                                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                                                        <div>
+                                                            <div className="flex flex-wrap items-center gap-2">
+                                                                <h4 className="text-lg font-bold text-slate-900">
+                                                                    {reminder.medicineName}
+                                                                </h4>
+                                                                <span
+                                                                    className={`rounded-none px-3 py-1 text-xs font-bold ${
+                                                                        reminder.isActive
+                                                                            ? "bg-emerald-100 text-emerald-700"
+                                                                            : "bg-slate-200 text-slate-700"
+                                                                    }`}
+                                                                >
+                                                                    {reminder.isActive ? "Active" : "Paused"}
+                                                                </span>
+                                                                <span
+                                                                    className={`rounded-none px-3 py-1 text-xs font-bold ${
+                                                                        isInSchedule
+                                                                            ? "bg-sky-100 text-sky-700"
+                                                                            : "bg-amber-100 text-amber-700"
+                                                                    }`}
+                                                                >
+                                                                    {isInSchedule ? "In schedule" : "Out of schedule"}
+                                                                </span>
+                                                            </div>
+                                                            <p className="mt-2 text-sm text-slate-600">
+                                                                {reminder.dose || "Dose not added"} - {String(reminder.frequency || "").toLowerCase() || "Frequency not added"}
+                                                            </p>
+                                                            <p className="mt-1 text-sm text-slate-500">
+                                                                {new Date(reminder.startDate).toLocaleDateString("en-IN")} to{" "}
+                                                                {new Date(reminder.endDate).toLocaleDateString("en-IN")}
+                                                            </p>
+                                                        </div>
+
+                                                        {reminder.image ? (
+                                                            <img
+                                                                src={getReminderImageUrl(reminder.image)}
+                                                                alt={reminder.medicineName}
+                                                                className="h-20 w-20 rounded-none border border-slate-200 object-cover"
+                                                            />
+                                                        ) : null}
+                                                    </div>
+
+                                                    <div className="space-y-3">
+                                                        {(reminder.times || []).map((time) => {
+                                                            const actionKey = `${reminder._id}-${time}`;
+                                                            const doseStatus = getReminderDoseStatus(reminder, time);
+
+                                                            return (
+                                                                <div
+                                                                    key={actionKey}
+                                                                    className="rounded-none border border-slate-200 bg-white p-4"
+                                                                >
+                                                                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                                                                        <div>
+                                                                            <p className="text-base font-bold text-slate-900">
+                                                                                Dose time: {formatReminderTime(time)}
+                                                                            </p>
+                                                                            <p className="mt-1 text-sm text-slate-500">
+                                                                                Today&apos;s status: {doseStatus ? humanize(doseStatus) : "Not logged yet"}
+                                                                            </p>
+                                                                        </div>
+
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleReminderLogStatus(reminder._id, time, "taken")}
+                                                                                disabled={reminderActionId === actionKey}
+                                                                                className={`inline-flex items-center gap-2 rounded-none px-4 py-2 text-sm font-semibold transition ${
+                                                                                    doseStatus === "taken"
+                                                                                        ? "bg-emerald-600 text-white"
+                                                                                        : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                                                                } disabled:cursor-not-allowed disabled:opacity-70`}
+                                                                            >
+                                                                                {reminderActionId === actionKey ? (
+                                                                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                                                                                ) : (
+                                                                                    <CheckCircle size={16} />
+                                                                                )}
+                                                                                Taken
+                                                                            </button>
+                                                                            <button
+                                                                                type="button"
+                                                                                onClick={() => handleReminderLogStatus(reminder._id, time, "skipped")}
+                                                                                disabled={reminderActionId === actionKey}
+                                                                                className={`inline-flex items-center gap-2 rounded-none px-4 py-2 text-sm font-semibold transition ${
+                                                                                    doseStatus === "skipped"
+                                                                                        ? "bg-rose-600 text-white"
+                                                                                        : "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                                                                } disabled:cursor-not-allowed disabled:opacity-70`}
+                                                                            >
+                                                                                {reminderActionId === actionKey ? (
+                                                                                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
+                                                                                ) : (
+                                                                                    <XCircle size={16} />
+                                                                                )}
+                                                                                Skipped
+                                                                            </button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+
+                                                    <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-4">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleReminderEdit(reminder._id)}
+                                                            className="inline-flex items-center gap-2 rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                                        >
+                                                            <Pencil size={16} />
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleReminderToggle(reminder._id)}
+                                                            disabled={reminderActionId === reminder._id}
+                                                            className="inline-flex items-center gap-2 rounded-none border border-sky-200 px-4 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-70"
+                                                        >
+                                                            <Bell size={16} />
+                                                            {reminderActionId === reminder._id
+                                                                ? "Updating..."
+                                                                : reminder.isActive
+                                                                    ? "Pause"
+                                                                    : "Activate"}
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleReminderDelete(reminder._id)}
+                                                            disabled={reminderActionId === reminder._id}
+                                                            className="inline-flex items-center gap-2 rounded-none border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                            {reminderActionId === reminder._id ? "Deleting..." : "Delete"}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+
+                                    {totalReminderPages > 1 ? (
+                                        <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <p className="text-sm text-slate-500">
+                                                Page {remindersPage} of {totalReminderPages}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRemindersPage((page) => Math.max(page - 1, 1))}
+                                                    disabled={remindersPage === 1}
+                                                    className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    Prev
+                                                </button>
+                                                {Array.from({ length: totalReminderPages }, (_, index) => index + 1).map((pageNumber) => (
+                                                    <button
+                                                        key={pageNumber}
+                                                        type="button"
+                                                        onClick={() => setRemindersPage(pageNumber)}
+                                                        className={`rounded-none px-4 py-2 text-sm font-semibold transition ${remindersPage === pageNumber
+                                                            ? "bg-[#0EA5E9] text-white"
+                                                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                            }`}
+                                                    >
+                                                        {pageNumber}
+                                                    </button>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setRemindersPage((page) => Math.min(page + 1, totalReminderPages))}
+                                                    disabled={remindersPage === totalReminderPages}
+                                                    className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="rounded-none border border-slate-200 bg-white p-5 shadow-sm">
+                            <div className="flex flex-col gap-2 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">Reminder History</h3>
+                                    <p className="text-sm text-slate-500">
+                                        Dose history tab banegi jab dose `Taken` ya `Skipped` mark hogi.
+                                    </p>
+                                </div>
+                                <span className="w-fit rounded-none bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                                    Logged doses: {reminderHistoryEntries.length}
+                                </span>
+                            </div>
+
+                            {reminderHistoryEntries.length === 0 ? (
+                                <div className="p-8 text-center text-slate-500">No dose history logged yet.</div>
+                            ) : (
+                                <div className="mt-4 overflow-x-auto">
+                                    <table className="w-full border-collapse text-left text-sm">
+                                        <thead>
+                                            <tr className="border-b border-slate-200">
+                                                <th className="pb-4 pt-2 font-semibold text-slate-900">Medicine</th>
+                                                <th className="pb-4 pt-2 font-semibold text-slate-900">Date</th>
+                                                <th className="pb-4 pt-2 font-semibold text-slate-900">Time</th>
+                                                <th className="pb-4 pt-2 font-semibold text-slate-900">Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {paginatedReminderHistory.map((entry, idx) => (
+                                                <tr key={`${entry.reminderId}-${entry.time}-${entry.date}-${idx}`} className="border-b border-slate-50 last:border-0">
+                                                    <td className="py-4 font-medium text-slate-800">{entry.medicineName}</td>
+                                                    <td className="py-4 text-slate-600">
+                                                        {new Date(entry.date).toLocaleDateString("en-IN")}
+                                                    </td>
+                                                    <td className="py-4 text-slate-600">{entry.time}</td>
+                                                    <td className="py-4">
+                                                        <span
+                                                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                                                entry.status === "taken"
+                                                                    ? "bg-emerald-100 text-emerald-700"
+                                                                    : "bg-rose-100 text-rose-700"
+                                                            }`}
+                                                        >
+                                                            {entry.status === "taken" ? "Taken" : "Skipped"}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+
+                                    {totalReminderHistoryPages > 1 ? (
+                                        <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
+                                            <p className="text-sm text-slate-500">
+                                                Page {reminderHistoryPage} of {totalReminderHistoryPages}
+                                            </p>
+                                            <div className="flex flex-wrap gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReminderHistoryPage((page) => Math.max(page - 1, 1))}
+                                                    disabled={reminderHistoryPage === 1}
+                                                    className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    Prev
+                                                </button>
+                                                {Array.from({ length: totalReminderHistoryPages }, (_, index) => index + 1).map((pageNumber) => (
+                                                    <button
+                                                        key={pageNumber}
+                                                        type="button"
+                                                        onClick={() => setReminderHistoryPage(pageNumber)}
+                                                        className={`rounded-none px-4 py-2 text-sm font-semibold transition ${reminderHistoryPage === pageNumber
+                                                            ? "bg-[#0EA5E9] text-white"
+                                                            : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                            }`}
+                                                    >
+                                                        {pageNumber}
+                                                    </button>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setReminderHistoryPage((page) => Math.min(page + 1, totalReminderHistoryPages))}
+                                                    disabled={reminderHistoryPage === totalReminderHistoryPages}
+                                                    className="rounded-none border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                                >
+                                                    Next
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </PanelShell>
@@ -1938,6 +2444,7 @@ const UserDashboard = () => {
                     </div>
                 </div>
             </section>
+            <WhatsAppChatBox bottomOffsetClassName="bottom-6 sm:bottom-6" />
         </>
     );
 };

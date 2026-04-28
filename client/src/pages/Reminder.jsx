@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   Bell,
   CalendarDays,
@@ -52,6 +53,7 @@ const createInitialFormState = () => ({
 });
 
 const API_ROOT = getApiOrigin();
+const FIXED_REMINDER_VISUAL = "/Respiratory.jpg";
 
 const getImageUrl = (imagePath = "") => {
   if (!imagePath) return "";
@@ -73,7 +75,48 @@ const formatDate = (value) => {
   }
 };
 
+const formatTime = (value) => {
+  if (!value) return "N/A";
+
+  const [hours, minutes] = String(value).split(":");
+  const parsedHours = Number(hours);
+  const parsedMinutes = Number(minutes);
+
+  if (
+    Number.isNaN(parsedHours) ||
+    Number.isNaN(parsedMinutes) ||
+    parsedHours < 0 ||
+    parsedHours > 23 ||
+    parsedMinutes < 0 ||
+    parsedMinutes > 59
+  ) {
+    return value;
+  }
+
+  return new Date(2000, 0, 1, parsedHours, parsedMinutes).toLocaleTimeString("en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+};
+
+const getHistoryTimestamp = (entry = {}) => {
+  try {
+    const baseDate = new Date(entry.date);
+
+    if (Number.isNaN(baseDate.getTime())) {
+      return 0;
+    }
+
+    const [hours = "0", minutes = "0"] = String(entry.time || "00:00").split(":");
+    baseDate.setHours(Number(hours) || 0, Number(minutes) || 0, 0, 0);
+    return baseDate.getTime();
+  } catch {
+    return 0;
+  }
+};
+
 const Reminder = ({ isDashboardView = false }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [form, setForm] = useState(createInitialFormState);
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -87,6 +130,36 @@ const Reminder = ({ isDashboardView = false }) => {
   useEffect(() => {
     loadReminders();
   }, []);
+
+  useEffect(() => {
+    if (loadingReminders) return;
+
+    const editReminderId = searchParams.get("edit");
+
+    if (!editReminderId) return;
+
+    const reminderToEdit = reminders.find((reminder) => reminder._id === editReminderId);
+
+    if (!reminderToEdit) return;
+
+    setEditingId(reminderToEdit._id);
+    setSelectedFile(null);
+    setForm({
+      medicineName: reminderToEdit.medicineName || "",
+      dose: reminderToEdit.dose || "",
+      frequency: reminderToEdit.frequency || "",
+      times: reminderToEdit.times?.length ? reminderToEdit.times : [""],
+      startDate: reminderToEdit.startDate ? String(reminderToEdit.startDate).slice(0, 10) : getTodayDate(),
+      endDate: reminderToEdit.endDate ? String(reminderToEdit.endDate).slice(0, 10) : getFutureDate(7),
+      rawScanText: reminderToEdit.rawScanText || "",
+      image: reminderToEdit.image || "",
+    });
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.delete("edit");
+    setSearchParams(nextSearchParams, { replace: true });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [loadingReminders, reminders, searchParams, setSearchParams]);
 
   useEffect(() => {
     if (!selectedFile) {
@@ -340,48 +413,61 @@ const Reminder = ({ isDashboardView = false }) => {
     return entry?.status;
   };
 
+  const historyEntries = reminders
+    .flatMap((reminder) =>
+      (reminder.history || []).map((entry) => ({
+        ...entry,
+        medicineName: reminder.medicineName,
+        reminderId: reminder._id,
+      }))
+    )
+    .sort((leftEntry, rightEntry) => getHistoryTimestamp(rightEntry) - getHistoryTimestamp(leftEntry));
+
+  const activeReminderCount = reminders.filter((reminder) => reminder.isActive).length;
+  const today = getTodayDate();
+
   return (
     <div className={isDashboardView ? "" : "min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(125,211,252,0.35),_transparent_28%),radial-gradient(circle_at_bottom_right,_rgba(253,224,71,0.2),_transparent_24%),linear-gradient(180deg,#f8fbff_0%,#eef6ff_45%,#f8fafc_100%)] py-3 sm:py-4"}>
       <div className={isDashboardView ? "" : "mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"}>
         <div className={`overflow-hidden ${isDashboardView ? "" : "rounded-[24px] border border-white/70 bg-white/90 shadow-[0_20px_60px_rgba(15,23,42,0.1)] backdrop-blur"}`}>
           {!isDashboardView && (
             <div className="relative overflow-hidden border-b border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_30%,#0ea5e9_100%)] px-5 py-6 text-white sm:px-6 sm:py-8">
-            <div className="absolute inset-y-0 right-[-10%] w-[280px] rounded-full bg-white/10 blur-3xl" />
-            <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-2xl">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-sky-100">
-                  <Bell size={14} />
-                  Smart Reminder Care
+              <div className="absolute inset-y-0 right-[-10%] w-[280px] rounded-full bg-white/10 blur-3xl" />
+              <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="max-w-2xl">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-sky-100">
+                    <Bell size={14} />
+                    Smart Reminder Care
+                  </div>
+                  <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                    Medicine reminders with OCR auto scan
+                  </h1>
+                  <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base">
+                    Upload a strip, box, or prescription image, let Tesseract pull out the details,
+                    fine-tune anything manually, and keep daily reminder emails running on time.
+                  </p>
                 </div>
-                <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
-                  Medicine reminders with OCR auto scan
-                </h1>
-                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-200 sm:text-base">
-                  Upload a strip, box, or prescription image, let Tesseract pull out the details,
-                  fine-tune anything manually, and keep daily reminder emails running on time.
-                </p>
-              </div>
 
-              <div className="grid gap-3 sm:grid-cols-3">
-                {[
-                  { icon: ImagePlus, label: "Upload & preview" },
-                  { icon: Sparkles, label: "OCR auto-fill" },
-                  { icon: Clock3, label: "Email schedule" },
-                ].map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <div
-                      key={item.label}
-                      className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-sm text-white/90"
-                    >
-                      <Icon size={18} className="text-sky-200" />
-                      <p className="mt-3 font-semibold">{item.label}</p>
-                    </div>
-                  );
-                })}
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {[
+                    { icon: ImagePlus, label: "Upload & preview" },
+                    { icon: Sparkles, label: "OCR auto-fill" },
+                    { icon: Clock3, label: "Email schedule" },
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <div
+                        key={item.label}
+                        className="rounded-2xl border border-white/15 bg-white/10 px-4 py-4 text-sm text-white/90"
+                      >
+                        <Icon size={18} className="text-sky-200" />
+                        <p className="mt-3 font-semibold">{item.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
           )}
 
           <div className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1.1fr_0.9fr] lg:p-6">
@@ -600,93 +686,341 @@ const Reminder = ({ isDashboardView = false }) => {
               </div>
             </form>
 
-            <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] sm:p-5">
-              <div className="mb-6 rounded-[24px] border border-sky-100 bg-[linear-gradient(180deg,#f8fdff_0%,#eef8ff_100%)] p-5 shadow-sm">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-600">
-                    <Info size={20} />
+            <div className="space-y-4">
+              <div className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] sm:p-5">
+                <div className="mb-6 rounded-[24px] border border-sky-100 bg-[linear-gradient(180deg,#f8fdff_0%,#eef8ff_100%)] p-5 shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-sky-100 text-sky-600">
+                      <Info size={20} />
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600">
+                        Dose Guide
+                      </p>
+                      <h3 className="mt-1 text-xl font-bold text-slate-900">
+                        What OD / BD / TDS / HS means
+                      </h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
+                        If OCR or a doctor note shows short forms, users can understand them here.
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600">
-                      Dose Guide
-                    </p>
-                    <h3 className="mt-1 text-xl font-bold text-slate-900">
-                      What OD / BD / TDS / HS means
-                    </h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-600">
-                      If OCR or a doctor note shows short forms, users can understand them here.
-                    </p>
-                  </div>
-                </div>
+                  <div className="mt-4 space-y-2">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-start gap-3">
+                        <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
+                          OD
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-900">Once Daily</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Take the medicine <strong>once a day</strong>.
+                            Suggested time: <strong>07:00 AM</strong>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
 
-                <div className="mt-4 space-y-2">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                    <div className="flex items-start gap-3">
-                      <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700">
-                        OD
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-900">Once Daily</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          Take the medicine <strong>once a day</strong>.
-                          Suggested time: <strong>07:00 AM</strong>
-                        </p>
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-start gap-3">
+                        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                          BD
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-900">Twice Daily</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Take the medicine <strong>two times a day</strong>.
+                            Suggested times: <strong>07:00 AM</strong> and <strong>07:00 PM</strong>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-start gap-3">
+                        <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+                          TDS
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-900">Three Times Daily</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Take the medicine <strong>three times a day</strong>.
+                            Suggested times: <strong>07:00 AM</strong>, <strong>12:00 PM</strong>, and <strong>07:00 PM</strong>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-3">
+                      <div className="flex items-start gap-3">
+                        <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">
+                          HS
+                        </span>
+                        <div>
+                          <p className="font-semibold text-slate-900">At Bedtime</p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            Take the medicine <strong>before going to bed</strong>.
+                            Suggested time: <strong>10:00 PM</strong>
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                    <div className="flex items-start gap-3">
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-                        BD
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-900">Twice Daily</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          Take the medicine <strong>two times a day</strong>.
-                          Suggested times: <strong>07:00 AM</strong> and <strong>07:00 PM</strong>
-                        </p>
-                      </div>
-                    </div>
+                  <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-800">
+                    Note: If the doctor has not written an exact time, the app can auto-fill suggested reminder times based on these abbreviations.
                   </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                    <div className="flex items-start gap-3">
-                      <span className="rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                        TDS
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-900">Three Times Daily</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          Take the medicine <strong>three times a day</strong>.
-                          Suggested times: <strong>07:00 AM</strong>, <strong>12:00 PM</strong>, and <strong>07:00 PM</strong>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-slate-200 bg-white p-3">
-                    <div className="flex items-start gap-3">
-                      <span className="rounded-full bg-rose-100 px-3 py-1 text-xs font-bold text-rose-700">
-                        HS
-                      </span>
-                      <div>
-                        <p className="font-semibold text-slate-900">At Bedtime</p>
-                        <p className="mt-1 text-sm leading-6 text-slate-600">
-                          Take the medicine <strong>before going to bed</strong>.
-                          Suggested time: <strong>10:00 PM</strong>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-6 text-amber-800">
-                  Note: If the doctor has not written an exact time, the app can auto-fill suggested reminder times based on these abbreviations.
                 </div>
               </div>
 
+              <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] shadow-[0_15px_40px_rgba(15,23,42,0.05)]">
+                <div className="relative bg-[radial-gradient(circle_at_top_right,_rgba(14,165,233,0.16),_transparent_30%),linear-gradient(180deg,#f8fbff_0%,#eef6ff_100%)] p-5">
+                  <div className="absolute left-5 top-5 h-16 w-16 rounded-full bg-sky-100/70 blur-2xl" />
+                  <div className="absolute bottom-5 right-5 h-20 w-20 rounded-full bg-amber-100/80 blur-2xl" />
+
+                  <div className="relative flex min-h-[280px] items-center justify-center">
+                    <img
+                      src={FIXED_REMINDER_VISUAL}
+                      alt="Pharmacy product reference"
+                      className="max-h-[260px] w-full object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] sm:p-5">
+                <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600">
+                      Saved Reminders
+                    </p>
+                    <h3 className="mt-1 text-xl font-bold text-slate-900">
+                      Log today&apos;s doses from here
+                    </h3>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 text-xs font-semibold">
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+                      Total: {reminders.length}
+                    </span>
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
+                      Active: {activeReminderCount}
+                    </span>
+                  </div>
+                </div>
+
+                {loadingReminders ? (
+                  <div className="py-8 text-center text-sm text-slate-500">Loading reminders...</div>
+                ) : !reminders.length ? (
+                  <div className="py-8 text-center text-sm text-slate-500">
+                    No reminders saved yet. Create one from the form to start tracking doses.
+                  </div>
+                ) : (
+                  <div className="mt-4 space-y-4">
+                    {reminders.map((reminder) => {
+                      const isWithinSchedule =
+                        today >= String(reminder.startDate || "").slice(0, 10) &&
+                        today <= String(reminder.endDate || "").slice(0, 10);
+
+                      return (
+                        <div
+                          key={reminder._id}
+                          className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4"
+                        >
+                          <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                              <div>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <h4 className="text-lg font-bold text-slate-900">
+                                    {reminder.medicineName}
+                                  </h4>
+                                  <span
+                                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                      reminder.isActive
+                                        ? "bg-emerald-100 text-emerald-700"
+                                        : "bg-slate-200 text-slate-700"
+                                    }`}
+                                  >
+                                    {reminder.isActive ? "Active" : "Paused"}
+                                  </span>
+                                  <span
+                                    className={`rounded-full px-3 py-1 text-xs font-bold ${
+                                      isWithinSchedule
+                                        ? "bg-sky-100 text-sky-700"
+                                        : "bg-amber-100 text-amber-700"
+                                    }`}
+                                  >
+                                    {isWithinSchedule ? "In schedule" : "Outside schedule"}
+                                  </span>
+                                </div>
+
+                                <p className="mt-2 text-sm text-slate-600">
+                                  {reminder.dose || "Dose not added"} - {reminder.frequency || "Frequency not added"}
+                                </p>
+                                <p className="mt-1 text-xs text-slate-500">
+                                  {formatDate(reminder.startDate)} to {formatDate(reminder.endDate)}
+                                </p>
+                              </div>
+
+                              {reminder.image ? (
+                                <img
+                                  src={getImageUrl(reminder.image)}
+                                  alt={reminder.medicineName}
+                                  className="h-20 w-20 rounded-2xl border border-slate-200 object-cover"
+                                />
+                              ) : null}
+                            </div>
+
+                            <div className="space-y-3">
+                              {(reminder.times || []).map((time) => {
+                                const doseStatus = getDoseStatus(reminder, time);
+                                const actionKey = `${reminder._id}-${time}`;
+
+                                return (
+                                  <div
+                                    key={`${reminder._id}-${time}`}
+                                    className="rounded-2xl border border-slate-200 bg-white p-3"
+                                  >
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                      <div>
+                                        <p className="text-sm font-semibold text-slate-900">
+                                          Dose time: {formatTime(time)}
+                                        </p>
+                                        <p className="mt-1 text-xs text-slate-500">
+                                          Today&apos;s status: {doseStatus ? doseStatus : "Not logged yet"}
+                                        </p>
+                                      </div>
+
+                                      <div className="flex flex-wrap gap-2">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleLogStatus(reminder._id, time, "taken")}
+                                          disabled={actionId === actionKey}
+                                          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                                            doseStatus === "taken"
+                                              ? "bg-emerald-600 text-white"
+                                              : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                                          } disabled:cursor-not-allowed disabled:opacity-70`}
+                                        >
+                                          {actionId === actionKey ? (
+                                            <Loader2 size={16} className="animate-spin" />
+                                          ) : (
+                                            <CheckCircle size={16} />
+                                          )}
+                                          Taken
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => handleLogStatus(reminder._id, time, "skipped")}
+                                          disabled={actionId === actionKey}
+                                          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                                            doseStatus === "skipped"
+                                              ? "bg-rose-600 text-white"
+                                              : "border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
+                                          } disabled:cursor-not-allowed disabled:opacity-70`}
+                                        >
+                                          {actionId === actionKey ? (
+                                            <Loader2 size={16} className="animate-spin" />
+                                          ) : (
+                                            <XCircle size={16} />
+                                          )}
+                                          Skipped
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+
+                            <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-4">
+                              <button
+                                type="button"
+                                onClick={() => handleEdit(reminder)}
+                                className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                              >
+                                <Pencil size={16} />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleToggle(reminder._id)}
+                                disabled={actionId === reminder._id}
+                                className="inline-flex items-center gap-2 rounded-full border border-sky-200 px-4 py-2 text-sm font-semibold text-sky-700 transition hover:bg-sky-50 disabled:cursor-not-allowed disabled:opacity-70"
+                              >
+                                <Bell size={16} />
+                                {reminder.isActive ? "Pause" : "Activate"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(reminder._id)}
+                                disabled={actionId === reminder._id}
+                                className="inline-flex items-center gap-2 rounded-full border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-70"
+                              >
+                                <Trash2 size={16} />
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {isDashboardView ? (
+                <div className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_15px_40px_rgba(15,23,42,0.05)] sm:p-5">
+                  <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-600">
+                        Reminder History
+                      </p>
+                      <h3 className="mt-1 text-xl font-bold text-slate-900">
+                        Recent dose activity
+                      </h3>
+                    </div>
+
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                      Logged doses: {historyEntries.length}
+                    </span>
+                  </div>
+
+                  {!historyEntries.length ? (
+                    <div className="py-8 text-center text-sm text-slate-500">
+                      No dose history logged yet. Use the Taken or Skipped buttons above to add entries.
+                    </div>
+                  ) : (
+                    <div className="mt-4 space-y-3">
+                      {historyEntries.slice(0, 12).map((entry, index) => (
+                        <div
+                          key={`${entry.reminderId}-${entry.time}-${entry.date}-${index}`}
+                          className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_100%)] p-4 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <p className="font-semibold text-slate-900">{entry.medicineName}</p>
+                            <p className="mt-1 text-sm text-slate-500">
+                              {formatDate(entry.date)} at {formatTime(entry.time)}
+                            </p>
+                          </div>
+
+                          <span
+                            className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${
+                              entry.status === "taken"
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-rose-100 text-rose-700"
+                            }`}
+                          >
+                            {entry.status === "taken" ? "Taken" : "Skipped"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : null} */}
             </div>
           </div>
         </div>

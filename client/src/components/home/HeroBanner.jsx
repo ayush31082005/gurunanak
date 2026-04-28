@@ -16,7 +16,7 @@ const slides = [
     cardTitle: "Fast Delivery",
     cardText: "Medicines at your doorstep",
     actions: [
-      { label: "Products", to: "/products", variant: "light" },
+      { label: "Product", to: "/products", variant: "light" },
       { label: "Reorder", to: "/user-dashboard?tab=orders", variant: "outline" },
     ],
   },
@@ -52,8 +52,8 @@ const slides = [
     cardTitle: "Health Packages",
     cardText: "Affordable lab test bookings",
     actions: [
-      { label: "Return Medicine", to: "/returns", variant: "light" },
-      { label: "Products", to: "/products", variant: "outline" },
+      { label: "Prescription", to: "/user-dashboard?tab=prescription", variant: "light" },
+      { label: "Shop", to: "/products", variant: "outline" },
     ],
   },
 ];

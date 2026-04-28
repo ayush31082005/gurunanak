@@ -63,17 +63,73 @@ const getUploadedFilePayload = (req) => {
 const cloneOrderItemsForReturn = (items = []) =>
     items.map((item) => ({
         productId: item.productId || "",
-        name: item.name,
+        name:
+            item.name ||
+            item.title ||
+            item.productName ||
+            item.medicineName ||
+            item.product?.name ||
+            "Product",
         image: item.image || "",
         pack: item.pack || "",
         price: Number(item.price) || 0,
         quantity: Number(item.quantity) || 1,
     }));
 
+const parseSelectedItems = (selectedItemsInput = []) => {
+    if (Array.isArray(selectedItemsInput)) {
+        return selectedItemsInput;
+    }
+
+    if (typeof selectedItemsInput === "string" && selectedItemsInput.trim()) {
+        try {
+            const parsedItems = JSON.parse(selectedItemsInput);
+            return Array.isArray(parsedItems) ? parsedItems : [];
+        } catch {
+            return [];
+        }
+    }
+
+    return [];
+};
+
+const getSelectedOrderItems = (orderItems = [], selectedItemsInput = []) => {
+    const parsedSelectedItems = parseSelectedItems(selectedItemsInput);
+
+    if (!parsedSelectedItems.length) {
+        return [];
+    }
+
+    return parsedSelectedItems
+        .map((entry) => {
+            const itemIndex = Number(entry?.index);
+            const requestedQuantity = Number(entry?.quantity) || 1;
+
+            if (!Number.isInteger(itemIndex) || itemIndex < 0 || itemIndex >= orderItems.length) {
+                return null;
+            }
+
+            const sourceItem = orderItems[itemIndex];
+            const maxQuantity = Math.max(Number(sourceItem?.quantity) || 1, 1);
+
+            return {
+                ...sourceItem,
+                quantity: Math.min(Math.max(requestedQuantity, 1), maxQuantity),
+            };
+        })
+        .filter(Boolean);
+};
+
 const cloneOrderItemsForReplacement = (items = []) =>
     items.map((item) => ({
         productId: item.productId || "",
-        name: item.name,
+        name:
+            item.name ||
+            item.title ||
+            item.productName ||
+            item.medicineName ||
+            item.product?.name ||
+            "Product",
         image: item.image || "",
         pack: item.pack || "",
         price: Number(item.price) || 0,
@@ -128,12 +184,12 @@ const getRefundableAmount = (order) => {
     return orderTotal > 0 ? orderTotal : itemsTotal;
 };
 
-const buildReplacementOrderPayload = (originalOrder) => {
-    const subtotal = Number(originalOrder.subtotal) || 0;
+const buildReplacementOrderPayload = (originalOrder, replacementItems = []) => {
+    const subtotal = getItemsTotal(replacementItems);
 
     return {
         user: originalOrder.user,
-        items: cloneOrderItemsForReplacement(originalOrder.items),
+        items: cloneOrderItemsForReplacement(replacementItems),
         shippingInfo: { ...(originalOrder.shippingInfo || {}) },
         paymentMethod: "replacement",
         subtotal,
@@ -158,7 +214,7 @@ const buildReplacementOrderPayload = (originalOrder) => {
 
 export const createReturnRequest = async (req, res) => {
     try {
-        const { orderId, reason, type } = req.body;
+        const { orderId, reason, type, selectedItems } = req.body;
 
         if (!orderId || !reason || !type) {
             return res.status(400).json({
@@ -240,20 +296,28 @@ export const createReturnRequest = async (req, res) => {
             fileType,
         });
 
-        const refundableAmount = getRefundableAmount(order);
+        const selectedOrderItems = getSelectedOrderItems(order.items, selectedItems);
+
+        if (!selectedOrderItems.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Select at least one product for the return request",
+            });
+        }
+
+        const refundableAmount = getItemsTotal(selectedOrderItems);
         const snapshotSubtotal =
             order?.orderType === "replacement"
                 ? refundableAmount
-                : Number(order.subtotal) || refundableAmount;
-        const snapshotDiscount =
-            order?.orderType === "replacement" ? 0 : Number(order.discount) || 0;
+                : refundableAmount;
+        const snapshotDiscount = 0;
 
         const returnRequest = await Return.create({
             user: req.user._id,
             order: order._id,
             type,
             reason: String(reason).trim(),
-            items: cloneOrderItemsForReturn(order.items),
+            items: cloneOrderItemsForReturn(selectedOrderItems),
             orderSnapshot: {
                 orderId: String(order._id),
                 subtotal: snapshotSubtotal,
@@ -554,11 +618,22 @@ export const updateReturnRequest = async (req, res) => {
                 });
             }
 
-            await adjustInventoryForItems(order.items, "decrement");
-            replacementStockReserved = true;
-            replacementStockItems = order.items;
+            const replacementItems = Array.isArray(returnRequest.items) ? returnRequest.items : [];
 
-            replacementOrder = await Order.create(buildReplacementOrderPayload(order));
+            if (!replacementItems.length) {
+                return res.status(400).json({
+                    success: false,
+                    message: "No selected return items found for this replacement request",
+                });
+            }
+
+            await adjustInventoryForItems(replacementItems, "decrement");
+            replacementStockReserved = true;
+            replacementStockItems = replacementItems;
+
+            replacementOrder = await Order.create(
+                buildReplacementOrderPayload(order, replacementItems)
+            );
 
             returnRequest.status = "replacement_created";
             returnRequest.replacementOrder = replacementOrder._id;

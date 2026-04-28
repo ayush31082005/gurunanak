@@ -24,9 +24,8 @@ const Cart = () => {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
           <div
-            className={`grid grid-cols-1 lg:items-start lg:grid-cols-[1.15fr_0.85fr] ${
-              cartItems.length === 0 ? "min-h-[650px]" : ""
-            }`}
+            className={`grid grid-cols-1 lg:items-start lg:grid-cols-[1.15fr_0.85fr] ${cartItems.length === 0 ? "min-h-[650px]" : ""
+              }`}
           >
             {/* Left Side */}
             <div className="border-b border-slate-200 bg-[#fafafa] px-4 py-5 sm:px-6 sm:py-6 lg:border-b-0 lg:border-r lg:px-8 lg:py-8">
@@ -193,7 +192,7 @@ const Cart = () => {
                     Continue Shopping
                   </Link>
 
-                  <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {/* <div className="mt-6 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
                     <div className="flex items-center gap-2 font-semibold">
                       <ShieldCheck size={16} />
                       <span>Safe & Secure Checkout</span>
@@ -201,10 +200,10 @@ const Cart = () => {
                     <p className="mt-1 text-xs leading-6 text-emerald-700/90">
                       Your order details and payment information are protected.
                     </p>
-                  </div>
+                  </div> */}
                 </div>
 
-                <div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+                {/* {<div className="mt-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
                   <h3 className="text-base font-bold text-slate-900">
                     Why shop with Gurunanak?
                   </h3>
@@ -213,7 +212,7 @@ const Cart = () => {
                     <li>• Fast delivery and easy checkout</li>
                     <li>• Trusted support for your pharmacy needs</li>
                   </ul>
-                </div>
+                </div>/*  */}
               </div>
             </div>
           </div>

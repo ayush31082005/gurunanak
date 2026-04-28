@@ -4,7 +4,6 @@ import {
     MapPin,
     Phone,
     Mail,
-    Tag,
     ShieldCheck,
     ChevronRight,
 } from "lucide-react";
@@ -262,7 +261,7 @@ const Checkout = () => {
         return (
             <section className="min-h-screen bg-[#f6f7fb] py-6 sm:py-10">
                 <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-                    <div className="rounded-[28px] border border-slate-200 bg-white p-8 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-12">
+                    <div className="rounded-none border border-slate-200 bg-white p-8 text-center shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-12">
                         <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
                             Your checkout is empty
                         </h1>
@@ -271,7 +270,7 @@ const Checkout = () => {
                         </p>
                         <Link
                             to="/products"
-                            className="mt-6 inline-flex rounded-xl bg-[#0EA5E9] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#0284C7]"
+                            className="mt-6 inline-flex rounded-none bg-[#0EA5E9] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#0284C7]"
                         >
                             Browse Products
                         </Link>
@@ -295,9 +294,9 @@ const Checkout = () => {
 
                 <div className="grid gap-6 lg:grid-cols-3">
                     <div className="space-y-6 lg:col-span-2">
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="rounded-none border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <div className="mb-5 flex items-center gap-3">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-[#0EA5E9]">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-none bg-rose-50 text-[#0EA5E9]">
                                     <MapPin size={20} />
                                 </div>
                                 <div>
@@ -321,7 +320,7 @@ const Checkout = () => {
                                         value={address.fullName}
                                         onChange={handleChange}
                                         placeholder="Enter full name"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
+                                        className="h-12 w-full rounded-none border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -340,7 +339,7 @@ const Checkout = () => {
                                             }))
                                         }
                                         placeholder="Enter mobile number"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
+                                        className="h-12 w-full rounded-none border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -354,7 +353,7 @@ const Checkout = () => {
                                         value={address.email}
                                         onChange={handleChange}
                                         placeholder="Enter email address"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
+                                        className="h-12 w-full rounded-none border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                 </div>
 
@@ -368,7 +367,7 @@ const Checkout = () => {
                                         value={address.pincode}
                                         onChange={handlePincodeChange}
                                         placeholder="Enter pincode"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
+                                        className="h-12 w-full rounded-none border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
                                     {isFetchingPincode ? (
                                         <p className="mt-2 text-xs text-slate-500">
@@ -392,7 +391,7 @@ const Checkout = () => {
                                         value={address.state}
                                         readOnly
                                         placeholder="State auto filled"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none"
+                                        className="h-12 w-full rounded-none border border-slate-200 bg-slate-50 px-4 outline-none"
                                     />
                                 </div>
 
@@ -406,7 +405,7 @@ const Checkout = () => {
                                         value={address.city}
                                         readOnly
                                         placeholder="City auto filled"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 outline-none"
+                                        className="h-12 w-full rounded-none border border-slate-200 bg-slate-50 px-4 outline-none"
                                     />
                                 </div>
 
@@ -419,7 +418,7 @@ const Checkout = () => {
                                             name="area"
                                             value={address.area}
                                             onChange={handleChange}
-                                            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 outline-none focus:border-[#0EA5E9]"
+                                            className="h-12 w-full rounded-none border border-slate-200 bg-white px-4 outline-none focus:border-[#0EA5E9]"
                                         >
                                             <option value="">Select area</option>
                                             {availableAreas.map((areaName, index) => (
@@ -435,7 +434,7 @@ const Checkout = () => {
                                             value={address.area}
                                             onChange={handleChange}
                                             placeholder="Area, street, sector, landmark"
-                                            className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
+                                            className="h-12 w-full rounded-none border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                         />
                                     )}
                                 </div>
@@ -450,8 +449,106 @@ const Checkout = () => {
                                         value={address.house}
                                         onChange={handleChange}
                                         placeholder="Flat, house number, building name"
-                                        className="h-12 w-full rounded-2xl border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
+                                        className="h-12 w-full rounded-none border border-slate-200 px-4 outline-none focus:border-[#0EA5E9]"
                                     />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="rounded-none border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                            <div className="mb-5 flex items-center gap-3">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-none bg-sky-50 text-[#0EA5E9]">
+                                    <MapPin size={20} />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-900">
+                                        Delivery Address Preview
+                                    </h2>
+                                    <p className="text-sm text-slate-500">
+                                        This address will be used for your order delivery.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="rounded-none border border-slate-200 bg-slate-50 p-4">
+                                <div className="grid gap-4 sm:grid-cols-2">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            Full Name
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {address.fullName || "Not added yet"}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex items-start gap-3">
+                                        <Phone size={16} className="mt-0.5 text-[#0EA5E9]" />
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                                Mobile Number
+                                            </p>
+                                            <p className="mt-1 text-sm font-semibold text-slate-900">
+                                                {address.phone || "Not added yet"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-2 flex items-start gap-3">
+                                        <Mail size={16} className="mt-0.5 text-[#0EA5E9]" />
+                                        <div>
+                                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                                Email Address
+                                            </p>
+                                            <p className="mt-1 break-all text-sm font-semibold text-slate-900">
+                                                {address.email || "Not added yet"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            Area / Locality
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {address.area || "Not added yet"}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            Pincode
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {address.pincode || "Not added yet"}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            City
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {address.city || "Not added yet"}
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            State
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {address.state || "Not added yet"}
+                                        </p>
+                                    </div>
+
+                                    <div className="sm:col-span-2">
+                                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                            House No. / Flat / Building
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-slate-900">
+                                            {address.house || "Not added yet"}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -491,7 +588,7 @@ const Checkout = () => {
                             </div>
                         </div> */}
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="rounded-none border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <h2 className="text-lg font-bold text-slate-900">Order Summary</h2>
 
                             <div className="mt-5 space-y-4">
@@ -500,7 +597,7 @@ const Checkout = () => {
                                         <img
                                             src={item.image}
                                             alt={item.name}
-                                            className="h-16 w-16 rounded-2xl object-cover"
+                                            className="h-16 w-16 rounded-none object-cover"
                                         />
                                         <div className="min-w-0 flex-1">
                                             <h3 className="line-clamp-1 font-semibold text-slate-800">
@@ -521,7 +618,7 @@ const Checkout = () => {
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                        <div className="rounded-none border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
                             <h2 className="text-lg font-bold text-slate-900">Price Details</h2>
 
                             <div className="mt-5 space-y-3 text-sm">
@@ -550,7 +647,7 @@ const Checkout = () => {
                             <button
                                 type="button"
                                 onClick={handleProceedToPayment}
-                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#0EA5E9] px-5 text-sm font-bold text-white transition hover:bg-[#0284C7]"
+                                className="mt-6 inline-flex h-12 w-full items-center justify-center gap-2 rounded-none bg-[#0EA5E9] px-5 text-sm font-bold text-white transition hover:bg-[#0284C7]"
                             >
                                 Proceed to Payment
                                 <ChevronRight size={18} />

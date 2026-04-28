@@ -26,6 +26,7 @@ import {
 } from "../../api/productApi";
 import AdminProductModal from "../../components/admin/AdminProductModal";
 import AdminProductViewModal from "../../components/admin/AdminProductViewModal";
+import WhatsAppChatBox from "../../components/common/WhatsAppChatBox";
 import StatusBadge from "../../components/admin/StatusBadge";
 import { featuredBrands, ayurvedaBrands } from "../../data/brands";
 import { adminProductPages } from "../../data/adminProductPages";
@@ -397,7 +398,7 @@ const ProductsSection = ({
         } catch (requestError) {
             window.alert(
                 requestError?.response?.data?.message ||
-                    "Failed to delete product."
+                "Failed to delete product."
             );
         }
     };
@@ -434,79 +435,123 @@ const ProductsSection = ({
                 </div>
             ) : (
                 <div>
-                    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                        {paginatedProducts.map((product) => (
-                            <div
-                                key={product.id}
-                                className="overflow-hidden border border-slate-200 bg-white shadow-sm"
-                            >
-                                <img
-                                    src={product.image}
-                                    alt={product.name}
-                                    className="h-52 w-full object-cover"
-                                />
+                    <div className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full text-left">
+                                <thead className="bg-slate-50">
+                                    <tr>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Product
+                                        </th>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Category
+                                        </th>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Price
+                                        </th>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Stock
+                                        </th>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Stock Status
+                                        </th>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Approval
+                                        </th>
+                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
 
-                                <div className="p-5">
-                                    <div className="mb-3 flex items-center justify-between gap-2">
-                                        <span className="bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                                            {product.categoryName}
-                                        </span>
-
-                                        <StatusBadge text={product.approvalStatus} />
-                                    </div>
-
-                                    <h3 className="text-lg font-bold text-slate-900">
-                                        {product.name}
-                                    </h3>
-
-                                    <p className="mt-2 line-clamp-2 text-sm text-slate-500">
-                                        {product.description || "No description available."}
-                                    </p>
-
-                                    <div className="mt-3 flex items-center justify-between text-sm text-slate-500">
-                                        <span>Stock: {product.stock} items</span>
-                                        <StatusBadge text={product.status} />
-                                    </div>
-
-                                    <div className="mt-4 flex items-center justify-between">
-                                        <span className="text-xl font-bold text-slate-900">
-                                            {formatCurrency(product.price)}
-                                        </span>
-                                    </div>
-
-                                    <div className="mt-4 grid grid-cols-3 gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => openViewModal(product)}
-                                            className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                <tbody>
+                                    {paginatedProducts.map((product) => (
+                                        <tr
+                                            key={product.id}
+                                            className="border-t border-slate-200 align-top"
                                         >
-                                            <Eye size={15} />
-                                            View
-                                        </button>
+                                            <td className="px-5 py-4">
+                                                <div className="flex min-w-[240px] items-start gap-4">
+                                                    <img
+                                                        src={product.image}
+                                                        alt={product.name}
+                                                        className="h-16 w-16 border border-slate-200 object-cover"
+                                                    />
 
-                                        <button
-                                            type="button"
-                                            onClick={() => openEditModal(product)}
-                                            className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
-                                        >
-                                            <Pencil size={15} />
-                                            Edit
-                                        </button>
+                                                    <div>
+                                                        <p className="text-base font-bold text-slate-900">
+                                                            {product.name}
+                                                        </p>
+                                                        <p className="mt-1 max-w-xs text-sm text-slate-500">
+                                                            {product.description ||
+                                                                "No description available."}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </td>
 
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                handleDeleteProduct(product.id, product.name)
-                                            }
-                                            className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
-                                        >
-                                            <Trash2 size={15} />
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+                                            <td className="px-5 py-4 text-sm text-slate-700">
+                                                <span className="inline-flex bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
+                                                    {product.categoryName}
+                                                </span>
+                                            </td>
+
+                                            <td className="px-5 py-4 text-sm font-semibold text-slate-900">
+                                                {formatCurrency(product.price)}
+                                            </td>
+
+                                            <td className="px-5 py-4 text-sm text-slate-700">
+                                                {product.stock} items
+                                            </td>
+
+                                            <td className="px-5 py-4">
+                                                <StatusBadge text={product.status} />
+                                            </td>
+
+                                            <td className="px-5 py-4">
+                                                <StatusBadge text={product.approvalStatus} />
+                                            </td>
+
+                                            <td className="px-5 py-4">
+                                                <div className="flex min-w-[220px] flex-wrap gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openViewModal(product)}
+                                                        className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                                    >
+                                                        <Eye size={15} />
+                                                        View
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => openEditModal(product)}
+                                                        className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                                                    >
+                                                        <Pencil size={15} />
+                                                        Edit
+                                                    </button>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() =>
+                                                            handleDeleteProduct(
+                                                                product.id,
+                                                                product.name
+                                                            )
+                                                        }
+                                                        className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                                                    >
+                                                        <Trash2 size={15} />
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <PaginationControls
@@ -660,8 +705,18 @@ const OrdersSection = ({ orders, loading, error }) => {
 
 const EarningsSection = ({ products }) => {
     const totalProducts = products.length;
+    const earningsPerPage = 6;
+    const [earningsPage, setEarningsPage] = useState(1);
     const totalBalance = useMemo(() => calculateProductsBalance(products), [products]);
     const averageProductPrice = totalProducts > 0 ? totalBalance / totalProducts : 0;
+    const totalEarningsPages = Math.max(
+        1,
+        Math.ceil(products.length / earningsPerPage)
+    );
+    const paginatedProducts = products.slice(
+        (earningsPage - 1) * earningsPerPage,
+        earningsPage * earningsPerPage
+    );
     const highestValueProduct = useMemo(() => {
         if (!products.length) {
             return null;
@@ -675,6 +730,10 @@ const EarningsSection = ({ products }) => {
             return highestProduct;
         }, products[0]);
     }, [products]);
+
+    useEffect(() => {
+        setEarningsPage((currentPage) => Math.min(currentPage, totalEarningsPages));
+    }, [totalEarningsPages]);
 
     return (
         <div>
@@ -711,7 +770,7 @@ const EarningsSection = ({ products }) => {
 
                 {products.length > 0 ? (
                     <div className="space-y-4">
-                        {products.map((product) => (
+                        {paginatedProducts.map((product) => (
                             <div
                                 key={product.id}
                                 className="flex flex-col gap-3 border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
@@ -736,6 +795,20 @@ const EarningsSection = ({ products }) => {
                         No products added yet, so balance is {formatCurrency(0)}.
                     </div>
                 )}
+
+                <PaginationControls
+                    currentPage={earningsPage}
+                    totalPages={totalEarningsPages}
+                    onPrevious={() =>
+                        setEarningsPage((currentPage) => Math.max(currentPage - 1, 1))
+                    }
+                    onNext={() =>
+                        setEarningsPage((currentPage) =>
+                            Math.min(currentPage + 1, totalEarningsPages)
+                        )
+                    }
+                    label="Earnings page"
+                />
 
                 {highestValueProduct ? (
                     <div className="mt-5 bg-slate-50 p-4 text-sm text-slate-700">
@@ -853,8 +926,8 @@ const MrDashboard = () => {
             setCategories([]);
             setProductsError(
                 requestError?.response?.data?.message ||
-                    requestError?.message ||
-                    "Failed to load your products."
+                requestError?.message ||
+                "Failed to load your products."
             );
         } finally {
             setProductsLoading(false);
@@ -872,8 +945,8 @@ const MrDashboard = () => {
             setMrOrders([]);
             setOrdersError(
                 requestError?.response?.data?.message ||
-                    requestError?.message ||
-                    "Failed to load your orders."
+                requestError?.message ||
+                "Failed to load your orders."
             );
         } finally {
             setOrdersLoading(false);
@@ -888,7 +961,7 @@ const MrDashboard = () => {
             setMrNotifications(notifications);
             setUnreadNotificationCount(
                 Number(response?.data?.unreadCount) ||
-                    notifications.filter((notification) => !notification?.isRead).length
+                notifications.filter((notification) => !notification?.isRead).length
             );
         } catch (_requestError) {
             setMrNotifications([]);
@@ -962,16 +1035,15 @@ const MrDashboard = () => {
                 )}
 
                 <aside
-                    className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-lg transition-transform duration-300 lg:translate-x-0 ${
-                        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                    }`}
+                    className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-lg transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                        }`}
                 >
                     <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
                         <div>
                             <h1 className="text-2xl font-extrabold text-slate-900">
                                 MR Panel
                             </h1>
-                            <p className="text-sm text-slate-500">User Dashboard</p>
+                            {/* <p className="text-sm text-slate-500">User Dashboard</p> */}
                         </div>
 
                         <button
@@ -995,11 +1067,10 @@ const MrDashboard = () => {
                                             setActiveTab(item.id);
                                             setSidebarOpen(false);
                                         }}
-                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${
-                                            isActive
+                                        className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${isActive
                                                 ? "bg-indigo-600 text-white shadow-md"
                                                 : "text-slate-700 hover:bg-slate-100"
-                                        }`}
+                                            }`}
                                     >
                                         <Icon size={20} />
                                         {item.label}
@@ -1053,10 +1124,10 @@ const MrDashboard = () => {
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <div className="hidden items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 sm:flex">
+                                {/* <div className="hidden items-center gap-2 border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 sm:flex">
                                     <Bell size={16} />
                                     <span>{unreadNotificationCount} unread</span>
-                                </div>
+                                </div> */}
 
                                 <div className="hidden text-right sm:block">
                                     <p className="text-sm font-semibold text-slate-900">
@@ -1075,9 +1146,9 @@ const MrDashboard = () => {
                     <main className="p-4 sm:p-6 lg:p-8">{renderContent()}</main>
                 </div>
             </div>
+            <WhatsAppChatBox bottomOffsetClassName="bottom-6 sm:bottom-6" />
         </div>
     );
 };
 
 export default MrDashboard;
-
