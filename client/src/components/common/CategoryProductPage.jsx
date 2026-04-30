@@ -465,7 +465,7 @@ const CategoryProductPage = ({
                         </div>
 
                         {isLoading ? (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
                                 {Array.from({ length: 10 }).map((_, index) => (
                                     <article
                                         key={`category-skeleton-${index}`}
@@ -489,7 +489,7 @@ const CategoryProductPage = ({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
                                 {paginatedProducts.map((item) => {
                                     const discount = item.originalPrice
                                         ? Math.round(
