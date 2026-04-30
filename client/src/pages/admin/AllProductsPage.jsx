@@ -436,177 +436,193 @@ const AllProductsPage = ({
                     {error}
                 </div>
             ) : (
-                <div className="mt-6 overflow-x-auto">
-                    <table className="min-w-full">
-                        <thead>
-                            <tr className="border-b border-slate-200 text-left text-sm text-slate-500">
-                                <th className="pb-3 font-semibold">Product</th>
-                                <th className="pb-3 font-semibold">Category</th>
-                                <th className="pb-3 font-semibold">Owner</th>
-                                <th className="pb-3 font-semibold">Price</th>
-                                <th className="pb-3 font-semibold">Stock</th>
-                                <th className="pb-3 font-semibold">Approval</th>
-                                <th className="pb-3 font-semibold">Action</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            {paginatedProducts.map((product) => {
-                                const pendingAction = actionState[product.id];
-                                const showModerationActions =
-                                    product.createdByRole === "mr" &&
-                                    product.approvalStatus === "pending";
-
-                                return (
-                                    <tr
-                                        key={product.id}
-                                        className="border-b border-slate-100 text-sm"
-                                    >
-                                        <td className="py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-slate-100">
-                                                    {product.image ? (
-                                                        <img
-                                                            src={product.image}
-                                                            alt={product.name}
-                                                            className="h-full w-full object-cover"
-                                                        />
-                                                    ) : (
-                                                        <span className="text-xs font-semibold text-slate-400">
-                                                            N/A
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div>
-                                                    <p className="font-semibold text-slate-900">
-                                                        {product.name}
-                                                    </p>
-                                                    <p className="mt-1 line-clamp-1 text-xs text-slate-500">
-                                                        {product.qty ||
-                                                            product.description ||
-                                                            "No description"}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </td>
-
-                                        <td className="py-4 text-slate-600">
-                                            {product.categoryName}
-                                        </td>
-
-                                        <td className="py-4 text-slate-600">
-                                            <p className="font-medium text-slate-900">
-                                                {product.createdBy?.name ||
-                                                    product.createdBy?.email ||
-                                                    "N/A"}
-                                            </p>
-                                            <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
-                                                {product.createdByRole || "admin"}
-                                            </p>
-                                        </td>
-
-                                        <td className="py-4 text-slate-600">
-                                            <div>
-                                                <p className="font-semibold text-slate-900">
-                                                    Rs {product.price}
-                                                </p>
-                                                {product.oldPrice ? (
-                                                    <p className="text-xs text-slate-400 line-through">
-                                                        Rs {product.oldPrice}
-                                                    </p>
-                                                ) : null}
-                                            </div>
-                                        </td>
-
-                                        <td className="py-4">
-                                            <div className="space-y-2">
-                                                <p className="text-slate-600">{product.stock}</p>
-                                                <StatusBadge text={product.status} />
-                                            </div>
-                                        </td>
-
-                                        <td className="py-4">
-                                            {renderApprovalCell(product)}
-                                        </td>
-
-                                        <td className="py-4">
-                                            <div className="flex flex-wrap gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleEdit(product)}
-                                                    className="rounded-xl bg-slate-100 px-3 py-2 font-medium text-slate-700"
-                                                >
-                                                    Edit
-                                                </button>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleView(product)}
-                                                    className="rounded-xl bg-[#0EA5E9] px-3 py-2 font-medium text-white"
-                                                >
-                                                    View
-                                                </button>
-
-                                                {showModerationActions ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleApprovalAction(
-                                                                    product.id,
-                                                                    "approve"
-                                                                )
-                                                            }
-                                                            disabled={!!pendingAction}
-                                                            className="rounded-xl bg-emerald-500 px-3 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-                                                        >
-                                                            {pendingAction === "approve"
-                                                                ? "Approving..."
-                                                                : "Approve"}
-                                                        </button>
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() =>
-                                                                handleApprovalAction(
-                                                                    product.id,
-                                                                    "reject"
-                                                                )
-                                                            }
-                                                            disabled={!!pendingAction}
-                                                            className="rounded-xl bg-amber-500 px-3 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-60"
-                                                        >
-                                                            {pendingAction === "reject"
-                                                                ? "Rejecting..."
-                                                                : "Reject"}
-                                                        </button>
-                                                    </>
-                                                ) : null}
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDelete(product)}
-                                                    className="inline-flex items-center gap-1 rounded-xl bg-rose-100 px-3 py-2 font-medium text-rose-700"
-                                                >
-                                                    <Trash2 size={14} />
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-
+                <div className="mt-6 overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,0.06)]">
                     {normalizedProducts.length === 0 ? (
-                        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
+                        <div className="border border-dashed border-slate-200 bg-slate-50 px-6 py-10 text-center">
                             <p className="text-sm font-semibold text-slate-700">
                                 No products found for the selected filter.
                             </p>
                         </div>
-                    ) : null}
+                    ) : (
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full table-auto border-separate border-spacing-0">
+                                <colgroup>
+                                    <col className="w-[30%]" />
+                                    <col className="w-[18%]" />
+                                    <col className="w-[18%]" />
+                                    <col className="w-[10%]" />
+                                    <col className="w-[10%]" />
+                                    <col className="w-[8%]" />
+                                    <col className="w-[16%]" />
+                                </colgroup>
+
+                                <thead className="bg-slate-100">
+                                    <tr className="text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">Product</th>
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">Category</th>
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">Owner</th>
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">Price</th>
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">Stock</th>
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">Approval</th>
+                                        <th className="border-b border-slate-200 px-5 py-4 font-semibold">Action</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody>
+                                    {paginatedProducts.map((product) => {
+                                        const pendingAction = actionState[product.id];
+                                        const showModerationActions =
+                                            product.createdByRole === "mr" &&
+                                            product.approvalStatus === "pending";
+
+                                        return (
+                                            <tr
+                                                key={product.id}
+                                                className="text-sm transition hover:bg-slate-50/70"
+                                            >
+                                                <td className="border-b border-r border-slate-200 px-5 py-5 align-top">
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
+                                                            {product.image ? (
+                                                                <img
+                                                                    src={product.image}
+                                                                    alt={product.name}
+                                                                    className="h-full w-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                <span className="text-xs font-semibold text-slate-400">
+                                                                    N/A
+                                                                </span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="min-w-0">
+                                                            <p className="truncate font-semibold text-slate-900">
+                                                                {product.name}
+                                                            </p>
+                                                            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                                                                {product.qty ||
+                                                                    product.description ||
+                                                                    "No description"}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </td>
+
+                                                <td className="border-b border-r border-slate-200 px-5 py-5 align-top text-slate-600">
+                                                    <p className="leading-6">
+                                                        {product.categoryName}
+                                                    </p>
+                                                </td>
+
+                                                <td className="border-b border-r border-slate-200 px-5 py-5 align-top text-slate-600">
+                                                    <p className="font-medium text-slate-900">
+                                                        {product.createdBy?.name ||
+                                                            product.createdBy?.email ||
+                                                            "N/A"}
+                                                    </p>
+                                                    <p className="mt-1 text-xs uppercase tracking-wide text-slate-400">
+                                                        {product.createdByRole || "admin"}
+                                                    </p>
+                                                </td>
+
+                                                <td className="border-b border-r border-slate-200 px-5 py-5 align-top text-slate-600">
+                                                    <div className="space-y-1">
+                                                        <p className="font-semibold text-slate-900">
+                                                            Rs {product.price}
+                                                        </p>
+                                                        {product.oldPrice ? (
+                                                            <p className="text-xs text-slate-400 line-through">
+                                                                Rs {product.oldPrice}
+                                                            </p>
+                                                        ) : null}
+                                                    </div>
+                                                </td>
+
+                                                <td className="border-b border-r border-slate-200 px-5 py-5 align-middle whitespace-nowrap">
+                                                    <div className="flex items-center gap-3">
+                                                        <p className="font-medium text-slate-700">
+                                                            {product.stock}
+                                                        </p>
+                                                        <StatusBadge text={product.status} />
+                                                    </div>
+                                                </td>
+
+                                                <td className="border-b border-r border-slate-200 px-5 py-5 align-middle whitespace-nowrap">
+                                                    {renderApprovalCell(product)}
+                                                </td>
+
+                                                <td className="border-b border-slate-200 px-5 py-5 align-middle whitespace-nowrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleEdit(product)}
+                                                            className="inline-flex shrink-0 items-center justify-center rounded-xl bg-slate-100 px-3 py-2 font-medium text-slate-700 transition hover:bg-slate-200"
+                                                        >
+                                                            Edit
+                                                        </button>
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleView(product)}
+                                                            className="inline-flex shrink-0 items-center justify-center rounded-xl bg-[#0EA5E9] px-3 py-2 font-medium text-white transition hover:bg-sky-600"
+                                                        >
+                                                            View
+                                                        </button>
+
+                                                        {showModerationActions ? (
+                                                            <>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleApprovalAction(
+                                                                            product.id,
+                                                                            "approve"
+                                                                        )
+                                                                    }
+                                                                    disabled={!!pendingAction}
+                                                                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-emerald-500 px-3 py-2 font-medium text-white transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                >
+                                                                    {pendingAction === "approve"
+                                                                        ? "Approving..."
+                                                                        : "Approve"}
+                                                                </button>
+
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        handleApprovalAction(
+                                                                            product.id,
+                                                                            "reject"
+                                                                        )
+                                                                    }
+                                                                    disabled={!!pendingAction}
+                                                                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-500 px-3 py-2 font-medium text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                                                >
+                                                                    {pendingAction === "reject"
+                                                                        ? "Rejecting..."
+                                                                        : "Reject"}
+                                                                </button>
+                                                            </>
+                                                        ) : null}
+
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleDelete(product)}
+                                                            className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-rose-100 px-3 py-2 font-medium text-rose-700 transition hover:bg-rose-200"
+                                                        >
+                                                            <Trash2 size={14} />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
 
                     {normalizedProducts.length > 0 ? (
                         <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">

@@ -161,37 +161,39 @@ const CustomersPage = () => {
                         No customers found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-left text-sm text-slate-500">
-                                    <th className="pb-3 font-semibold">Customer</th>
-                                    <th className="pb-3 font-semibold">Email</th>
-                                    <th className="pb-3 font-semibold">Phone</th>
-                                    <th className="pb-3 font-semibold">City</th>
-                                    <th className="pb-3 font-semibold">Orders</th>
-                                    <th className="pb-3 font-semibold">Joined</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedCustomers.map((customer) => (
-                                    <tr key={customer._id} className="border-b border-slate-100 text-sm">
-                                        <td className="py-4 font-semibold text-slate-900">
-                                            {customer.name}
-                                        </td>
-                                        <td className="py-4 text-slate-600">{customer.email}</td>
-                                        <td className="py-4 text-slate-600">{customer.phone}</td>
-                                        <td className="py-4 text-slate-600">{customer.city}</td>
-                                        <td className="py-4 text-slate-600">{customer.orders}</td>
-                                        <td className="py-4 text-slate-600">
-                                            {customer.joined
-                                                ? new Date(customer.joined).toLocaleDateString()
-                                                : "N/A"}
-                                        </td>
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-full table-auto border-separate border-spacing-0">
+                                <thead className="bg-slate-100">
+                                    <tr className="text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Customer</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Email</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Phone</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">City</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Orders</th>
+                                        <th className="border-b border-slate-200 px-4 py-4 font-semibold">Joined</th>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    {paginatedCustomers.map((customer) => (
+                                        <tr key={customer._id} className="text-sm transition hover:bg-slate-50/70">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 font-semibold text-slate-900">
+                                                {customer.name}
+                                            </td>
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{customer.email}</td>
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{customer.phone}</td>
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{customer.city}</td>
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{customer.orders}</td>
+                                            <td className="border-b border-slate-200 px-4 py-4 text-slate-600">
+                                                {customer.joined
+                                                    ? new Date(customer.joined).toLocaleDateString()
+                                                    : "N/A"}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
                             <p className="text-sm text-slate-500">

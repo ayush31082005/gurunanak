@@ -1436,23 +1436,24 @@ const UserDashboard = () => {
                         </div>
                     </div>
 
-                    <div className="overflow-x-auto px-0 py-3 sm:py-5">
+                    <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto px-0 py-3 sm:py-5">
                         <table className="w-full min-w-[1120px] border-separate border-spacing-0">
-                            <thead>
-                                <tr className="text-left">
-                                    <th className="rounded-none bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                            <thead className="bg-slate-100">
+                                <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">
                                         Order ID
                                     </th>
-                                    <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">
                                         Product / Item
                                     </th>
-                                    <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">
                                         Total
                                     </th>
-                                    <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">
                                         Date
                                     </th>
-                                    <th className="rounded-none bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                    <th className="border-b border-slate-200 px-4 py-4">
                                         Action
                                     </th>
                                 </tr>
@@ -1470,8 +1471,8 @@ const UserDashboard = () => {
 
                                     return (
                                         <React.Fragment key={`modern-${order._id}`}>
-                                            <tr className="align-top">
-                                                <td className="border-b border-slate-100 bg-white px-4 py-4 text-sm font-semibold text-slate-800">
+                                            <tr className="align-top text-sm transition hover:bg-slate-50/70">
+                                                <td className="border-b border-r border-slate-200 bg-white px-4 py-4 font-semibold text-slate-800">
                                                     <p className="font-mono text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
                                                         #{String(order._id).slice(-8).toUpperCase()}
                                                     </p>
@@ -1485,7 +1486,7 @@ const UserDashboard = () => {
                                                     ) : null}
                                                 </td>
 
-                                                <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                                <td className="border-b border-r border-slate-200 bg-white px-4 py-4">
                                                     {primaryItem ? (
                                                         <div>
                                                             <p className="text-sm font-bold text-slate-900">
@@ -1511,13 +1512,13 @@ const UserDashboard = () => {
                                                     )}
                                                 </td>
 
-                                                <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                                <td className="border-b border-r border-slate-200 bg-white px-4 py-4">
                                                     <p className="text-lg font-extrabold text-[#0EA5E9]">
                                                         ₹{Number(order.total ?? 0).toFixed(2)}
                                                     </p>
                                                 </td>
 
-                                                <td className="border-b border-slate-100 bg-white px-4 py-4 text-sm text-slate-600">
+                                                <td className="border-b border-r border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">
                                                     {new Date(order.createdAt).toLocaleDateString("en-IN", {
                                                         day: "numeric",
                                                         month: "short",
@@ -1525,7 +1526,7 @@ const UserDashboard = () => {
                                                     })}
                                                 </td>
 
-                                                <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                                <td className="border-b border-slate-200 bg-white px-4 py-4 whitespace-nowrap">
                                                     <div className="flex flex-wrap gap-2">
                                                         <button
                                                             type="button"
@@ -1580,6 +1581,7 @@ const UserDashboard = () => {
                                 ) : null}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                     {filteredOrders.length > ordersPerPage ? (
                         <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1652,34 +1654,35 @@ const UserDashboard = () => {
                     No prescriptions found.
                 </div>
             ) : (
-                <div className="overflow-x-auto px-0 py-3 sm:py-5">
+                <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                    <div className="overflow-x-auto px-0 py-3 sm:py-5">
                     <table className="w-full min-w-[1120px] border-separate border-spacing-0">
-                        <thead>
-                            <tr className="text-left">
-                                <th className="rounded-none bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                        <thead className="bg-slate-100">
+                            <tr className="text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                <th className="border-b border-r border-slate-200 px-4 py-4">
                                     Prescription
                                 </th>
-                                <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                <th className="border-b border-r border-slate-200 px-4 py-4">
                                     Patient
                                 </th>
-                                <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                <th className="border-b border-r border-slate-200 px-4 py-4">
                                     Contact
                                 </th>
-                                <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                <th className="border-b border-r border-slate-200 px-4 py-4">
                                     Address
                                 </th>
-                                <th className="bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                <th className="border-b border-r border-slate-200 px-4 py-4">
                                     Status
                                 </th>
-                                <th className="rounded-none bg-slate-900 px-4 py-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-200">
+                                <th className="border-b border-slate-200 px-4 py-4">
                                     Action
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             {paginatedPrescriptions.map((prescription) => (
-                                <tr key={prescription._id} className="align-top">
-                                    <td className="border-b border-slate-100 bg-white px-4 py-4 text-sm font-semibold text-slate-800">
+                                <tr key={prescription._id} className="align-top text-sm transition hover:bg-slate-50/70">
+                                    <td className="border-b border-r border-slate-200 bg-white px-4 py-4 font-semibold text-slate-800">
                                         <p className="font-mono text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
                                             #{String(prescription._id).slice(-8).toUpperCase()}
                                         </p>
@@ -1693,21 +1696,21 @@ const UserDashboard = () => {
                                         <p className="mt-2 text-sm text-slate-700">{prescription.fileName || "No file name"}</p>
                                     </td>
 
-                                    <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                    <td className="border-b border-r border-slate-200 bg-white px-4 py-4">
                                         <p className="text-sm font-semibold text-slate-900">{prescription.name || "N/A"}</p>
                                         <p className="mt-1 text-xs text-slate-500">Patient</p>
                                     </td>
 
-                                    <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                    <td className="border-b border-r border-slate-200 bg-white px-4 py-4">
                                         <p className="text-sm text-slate-700">{prescription.email || "N/A"}</p>
                                         <p className="mt-1 text-xs text-slate-500">{prescription.mobile || "N/A"}</p>
                                     </td>
 
-                                    <td className="border-b border-slate-100 bg-white px-4 py-4 text-sm text-slate-600">
+                                    <td className="border-b border-r border-slate-200 bg-white px-4 py-4 text-sm text-slate-600">
                                         {prescription.address || "N/A"}
                                     </td>
 
-                                    <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                    <td className="border-b border-r border-slate-200 bg-white px-4 py-4">
                                         <span
                                             className={`inline-flex rounded-none px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] ${statusTone[prescription.status] || "bg-[#E0F2FE] text-[#0EA5E9]"}`}
                                         >
@@ -1715,7 +1718,7 @@ const UserDashboard = () => {
                                         </span>
                                     </td>
 
-                                    <td className="border-b border-slate-100 bg-white px-4 py-4">
+                                    <td className="border-b border-slate-200 bg-white px-4 py-4 whitespace-nowrap">
                                         <div className="flex flex-wrap gap-2">
                                             <button
                                                 type="button"
@@ -1744,6 +1747,7 @@ const UserDashboard = () => {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                     {totalPrescriptionPages > 1 ? (
                         <div className="flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm text-slate-500">

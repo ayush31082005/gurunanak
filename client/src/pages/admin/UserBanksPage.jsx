@@ -151,37 +151,38 @@ const UserBanksPage = () => {
                         No bank details found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="min-w-[1180px] w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-left text-sm text-slate-500">
-                                    <th className="pb-3 font-semibold">Customer</th>
-                                    <th className="pb-3 font-semibold">Email</th>
-                                    <th className="pb-3 font-semibold">Mobile</th>
-                                    <th className="pb-3 font-semibold">Account Holder</th>
-                                    <th className="pb-3 font-semibold">Bank</th>
-                                    <th className="pb-3 font-semibold">Account Number</th>
-                                    <th className="pb-3 font-semibold">IFSC</th>
-                                    <th className="pb-3 font-semibold">Branch</th>
-                                    <th className="pb-3 font-semibold">UPI ID</th>
-                                    <th className="pb-3 font-semibold">Added</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filteredBankAccounts.map((bank) => (
-                                    <tr key={bank._id} className="border-b border-slate-100 text-sm">
-                                        <td className="py-4 font-semibold text-slate-900">
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-[1180px] w-full table-auto border-separate border-spacing-0">
+                                <thead className="bg-slate-100">
+                                    <tr className="text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Customer</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Email</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Mobile</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Account Holder</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Bank</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Account Number</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">IFSC</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Branch</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">UPI ID</th>
+                                        <th className="border-b border-slate-200 px-4 py-4 font-semibold">Added</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {filteredBankAccounts.map((bank) => (
+                                        <tr key={bank._id} className="text-sm transition hover:bg-slate-50/70">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 font-semibold text-slate-900">
                                             {getCustomerDisplayName(bank)}
                                         </td>
-                                        <td className="py-4 text-slate-600">{bank.email || bank.user?.email || "N/A"}</td>
-                                        <td className="py-4 text-slate-600">{bank.mobileNumber || bank.user?.phone || "N/A"}</td>
-                                        <td className="py-4 text-slate-600">{bank.accountHolderName}</td>
-                                        <td className="py-4 text-slate-600">{bank.bankName}</td>
-                                        <td className="py-4 font-medium text-slate-700">{bank.accountNumber}</td>
-                                        <td className="py-4 text-slate-600">{bank.ifscCode}</td>
-                                        <td className="py-4 text-slate-600">{bank.branchName || "N/A"}</td>
-                                        <td className="py-4 text-slate-600">{bank.upiId || "N/A"}</td>
-                                        <td className="py-4 text-slate-600">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.email || bank.user?.email || "N/A"}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.mobileNumber || bank.user?.phone || "N/A"}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.accountHolderName}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.bankName}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 font-medium text-slate-700">{bank.accountNumber}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.ifscCode}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.branchName || "N/A"}</td>
+                                        <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">{bank.upiId || "N/A"}</td>
+                                        <td className="border-b border-slate-200 px-4 py-4 text-slate-600">
                                             {bank.createdAt
                                                 ? new Date(bank.createdAt).toLocaleDateString("en-IN")
                                                 : "N/A"}
@@ -190,6 +191,7 @@ const UserBanksPage = () => {
                                 ))}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 )}
             </div>

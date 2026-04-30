@@ -24,6 +24,9 @@ const MR_REQUEST_STATUSES = [
     MR_APPROVED_STATUS,
     MR_REJECTED_STATUS,
 ];
+const SOLD_ORDER_STATUS = "delivered";
+const DASHBOARD_TREND_DAYS = 7;
+const DASHBOARD_TIMEZONE = "Asia/Kolkata";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDirectory = path.join(__dirname, "..", "uploads");
@@ -63,6 +66,84 @@ const resolveUploadedFilePath = (fileUrl = "") => {
     }
 
     return path.join(uploadsDirectory, fileName);
+};
+
+const getDashboardTrendBuckets = (days = DASHBOARD_TREND_DAYS) => {
+    const today = new Date();
+    const baseDate = new Date(
+        Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+    );
+    const formatter = new Intl.DateTimeFormat("en-IN", {
+        timeZone: DASHBOARD_TIMEZONE,
+        day: "2-digit",
+        month: "short",
+    });
+
+    return Array.from({ length: days }, (_, index) => {
+        const date = new Date(baseDate);
+        date.setUTCDate(baseDate.getUTCDate() - (days - index - 1));
+
+        const year = date.getUTCFullYear();
+        const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(date.getUTCDate()).padStart(2, "0");
+
+        return {
+            key: `${year}-${month}-${day}`,
+            label: formatter.format(date),
+        };
+    });
+};
+
+const buildTrendSeries = (buckets, aggregateRows = []) => {
+    const aggregateMap = new Map(
+        aggregateRows.map((row) => [String(row._id), Number(row.value) || 0])
+    );
+
+    return buckets.map((bucket) => ({
+        label: bucket.label,
+        value: aggregateMap.get(bucket.key) || 0,
+    }));
+};
+
+const aggregateDashboardSeries = async ({
+    model,
+    match = {},
+    valueExpression = 1,
+    buckets,
+}) => {
+    const startKey = buckets[0]?.key;
+
+    if (!startKey) {
+        return [];
+    }
+
+    const startDate = new Date(`${startKey}T00:00:00.000Z`);
+
+    return model.aggregate([
+        {
+            $match: {
+                ...match,
+                createdAt: { $gte: startDate },
+            },
+        },
+        {
+            $group: {
+                _id: {
+                    $dateToString: {
+                        format: "%Y-%m-%d",
+                        date: "$createdAt",
+                        timezone: DASHBOARD_TIMEZONE,
+                    },
+                },
+                value: {
+                    $sum: valueExpression,
+                },
+            },
+        },
+        {
+            $sort: { _id: 1 },
+        },
+    ]);
 };
 
 const deleteUploadedFiles = async (fileUrls = []) => {
@@ -1311,14 +1392,27 @@ export const getAdminCustomers = async (req, res) => {
 
 export const getAdminDashboard = async (req, res) => {
     try {
-        const [orders, totalUsers, pendingMrRequests, lowStockItems, prescriptionCount] =
+        const trendBuckets = getDashboardTrendBuckets();
+
+        const [
+            totalUsers,
+            totalMrAccounts,
+            totalProducts,
+            pendingMrRequests,
+            lowStockItems,
+            prescriptionCount,
+            activeOrders,
+            salesSummary,
+            salesTrendRows,
+            ordersTrendRows,
+            usersTrendRows,
+            activeOrdersTrendRows,
+            mrTrendRows,
+        ] =
             await Promise.all([
-                Order.find({})
-                    .sort({ createdAt: -1 })
-                    .limit(5)
-                    .populate("user", "email")
-                    .lean(),
                 User.countDocuments({ role: "user" }),
+                User.countDocuments({ role: "mr" }),
+                Product.countDocuments({}),
                 User.countDocuments({
                     role: "mr",
                     mrApprovalStatus: MR_PENDING_STATUS,
@@ -1330,49 +1424,74 @@ export const getAdminDashboard = async (req, res) => {
                     ],
                 }),
                 PrescriptionRequest.countDocuments({}),
+                Order.countDocuments({
+                    status: { $nin: ["delivered", "cancelled"] },
+                }),
+                Order.aggregate([
+                    {
+                        $match: {
+                            status: SOLD_ORDER_STATUS,
+                        },
+                    },
+                    {
+                        $group: {
+                            _id: null,
+                            totalSales: { $sum: "$total" },
+                            totalOrders: { $sum: 1 },
+                        },
+                    },
+                ]),
+                aggregateDashboardSeries({
+                    model: Order,
+                    match: { status: SOLD_ORDER_STATUS },
+                    valueExpression: "$total",
+                    buckets: trendBuckets,
+                }),
+                aggregateDashboardSeries({
+                    model: Order,
+                    match: { status: { $ne: "cancelled" } },
+                    buckets: trendBuckets,
+                }),
+                aggregateDashboardSeries({
+                    model: User,
+                    match: { role: "user" },
+                    buckets: trendBuckets,
+                }),
+                aggregateDashboardSeries({
+                    model: Order,
+                    match: { status: { $nin: ["delivered", "cancelled"] } },
+                    buckets: trendBuckets,
+                }),
+                aggregateDashboardSeries({
+                    model: User,
+                    match: { role: "mr" },
+                    buckets: trendBuckets,
+                }),
             ]);
 
-        const salesSummary = await Order.aggregate([
-            {
-                $match: {
-                    status: { $ne: "cancelled" },
-                },
-            },
-            {
-                $group: {
-                    _id: null,
-                    totalSales: { $sum: "$total" },
-                    totalOrders: { $sum: 1 },
-                },
-            },
-        ]);
-
         const totals = salesSummary[0] || { totalSales: 0, totalOrders: 0 };
-
-        const recentOrders = orders.map((order) => ({
-            _id: order._id,
-            customer:
-                order.shippingInfo?.fullName ||
-                order.user?.email ||
-                order.shippingInfo?.email ||
-                "N/A",
-            amount: order.total || 0,
-            status: order.status,
-            payment: order.paymentMethod,
-            createdAt: order.createdAt,
-        }));
 
         return res.status(200).json({
             success: true,
             stats: {
                 totalSales: totals.totalSales || 0,
                 totalOrders: totals.totalOrders || 0,
+                activeOrders,
+                totalUsers,
+                totalMrAccounts,
+                totalProducts,
                 activeCustomers: totalUsers,
                 pendingMrRequests,
                 lowStockItems,
                 prescriptions: prescriptionCount,
             },
-            recentOrders,
+            trends: {
+                sales: buildTrendSeries(trendBuckets, salesTrendRows),
+                orders: buildTrendSeries(trendBuckets, ordersTrendRows),
+                users: buildTrendSeries(trendBuckets, usersTrendRows),
+                activeOrders: buildTrendSeries(trendBuckets, activeOrdersTrendRows),
+                mr: buildTrendSeries(trendBuckets, mrTrendRows),
+            },
         });
     } catch (error) {
         return res.status(500).json({

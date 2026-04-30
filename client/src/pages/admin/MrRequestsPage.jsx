@@ -374,18 +374,19 @@ const MrRequestsPage = () => {
                         No pending MR requests found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="min-w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-left text-sm text-slate-500">
-                                    <th className="pb-3 font-semibold">MR Details</th>
-                                    <th className="pb-3 font-semibold">Contact</th>
-                                    <th className="pb-3 font-semibold">Store</th>
-                                    <th className="pb-3 font-semibold">Compliance</th>
-                                    <th className="pb-3 font-semibold">Documents</th>
-                                    <th className="pb-3 font-semibold">Status</th>
-                                    <th className="pb-3 font-semibold">Requested</th>
-                                    <th className="pb-3 font-semibold text-right">Actions</th>
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto">
+                        <table className="min-w-full table-auto border-separate border-spacing-0">
+                            <thead className="bg-slate-100">
+                                <tr className="text-left text-xs uppercase tracking-[0.14em] text-slate-500">
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">MR Details</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Contact</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Store</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Compliance</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Documents</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Status</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4 font-semibold">Requested</th>
+                                    <th className="border-b border-slate-200 px-4 py-4 font-semibold text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -395,9 +396,9 @@ const MrRequestsPage = () => {
                                     return (
                                         <tr
                                             key={request._id}
-                                            className="border-b border-slate-100 align-top text-sm"
+                                            className="align-top text-sm transition hover:bg-slate-50/70"
                                         >
-                                            <td className="py-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <p className="font-semibold text-slate-900">
                                                     {request.name}
                                                 </p>
@@ -405,21 +406,21 @@ const MrRequestsPage = () => {
                                                     {request.city}, {request.state}
                                                 </p>
                                             </td>
-                                            <td className="py-4 text-slate-600">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">
                                                 <p>{request.email}</p>
                                                 <p className="mt-1">{request.phone}</p>
                                             </td>
-                                            <td className="py-4 text-slate-600">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">
                                                 {request.medicalStoreName}
                                             </td>
-                                            <td className="py-4 text-slate-600">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">
                                                 <p>GST: {request.gstNumber || "N/A"}</p>
                                                 <p className="mt-1">PAN: {request.panNumber || "N/A"}</p>
                                                 <p className="mt-1">
                                                     License: {request.drugLicenseNumber || "N/A"}
                                                 </p>
                                             </td>
-                                            <td className="py-4 text-slate-600">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">
                                                 <div className="flex flex-col gap-2">
                                                     {request.gstCertificateUrl ? (
                                                         <a
@@ -449,7 +450,7 @@ const MrRequestsPage = () => {
                                                     )}
                                                 </div>
                                             </td>
-                                            <td className="py-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <span
                                                     className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
                                                         request.mrApprovalStatus === "approved"
@@ -462,14 +463,14 @@ const MrRequestsPage = () => {
                                                     {request.mrApprovalStatus}
                                                 </span>
                                             </td>
-                                            <td className="py-4 text-slate-600">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4 text-slate-600">
                                                 {request.createdAt
                                                     ? new Date(
                                                           request.createdAt
                                                       ).toLocaleDateString()
                                                     : "N/A"}
                                             </td>
-                                            <td className="py-4">
+                                            <td className="border-b border-slate-200 px-4 py-4 whitespace-nowrap">
                                                 <div className="flex justify-end gap-2">
                                                     <button
                                                         type="button"
@@ -534,6 +535,7 @@ const MrRequestsPage = () => {
                                 })}
                             </tbody>
                         </table>
+                        </div>
 
                         <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
                             <p className="text-sm text-slate-500">

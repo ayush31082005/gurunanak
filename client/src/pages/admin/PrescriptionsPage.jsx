@@ -208,45 +208,46 @@ const PrescriptionsPage = () => {
                         No prescriptions found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="min-w-[1180px] w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                    <th className="pb-3 pr-4">Customer</th>
-                                    <th className="pb-3 pr-4">Contact</th>
-                                    <th className="pb-3 pr-4">File</th>
-                                    <th className="pb-3 pr-4">Address</th>
-                                    <th className="pb-3 pr-4">Status</th>
-                                    <th className="pb-3 pr-4">Update</th>
-                                    <th className="pb-3">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedPrescriptions.map((item) => (
-                                    <tr key={item._id} className="border-b border-slate-100 align-top text-sm">
-                                        <td className="py-4 pr-4">
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-[1180px] w-full table-auto border-separate border-spacing-0">
+                                <thead className="bg-slate-100">
+                                    <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Customer</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Contact</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">File</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Address</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Status</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Update</th>
+                                        <th className="border-b border-slate-200 px-4 py-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedPrescriptions.map((item) => (
+                                        <tr key={item._id} className="align-top text-sm transition hover:bg-slate-50/70">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="font-semibold text-slate-900">{item.name}</p>
                                             <p className="mt-1 text-slate-500">
                                                 {new Date(item.createdAt).toLocaleDateString()}
                                             </p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="text-slate-700">{item.email}</p>
                                             <p className="mt-1 text-slate-500">{item.mobile}</p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="font-medium text-slate-800">{item.fileName}</p>
                                             <p className="mt-1 text-slate-500">{item.fileType}</p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="max-w-[260px] leading-6 text-slate-600">
                                                 {item.address}
                                             </p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <StatusBadge text={item.status} />
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <select
                                                 value={item.status}
                                                 onChange={(event) =>
@@ -262,7 +263,7 @@ const PrescriptionsPage = () => {
                                                 ))}
                                             </select>
                                         </td>
-                                        <td className="py-4">
+                                        <td className="border-b border-slate-200 px-4 py-4 whitespace-nowrap">
                                             <div className="flex gap-2">
                                                 <a
                                                     href={item.fileUrl}
@@ -283,9 +284,10 @@ const PrescriptionsPage = () => {
                                             </div>
                                         </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
                             <p className="text-sm text-slate-500">

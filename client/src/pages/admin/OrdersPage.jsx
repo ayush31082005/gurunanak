@@ -261,30 +261,31 @@ const OrdersPage = () => {
                         No orders found{searchQuery ? " for this search." : "."}
                     </div>
                 ) : (
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="min-w-[1200px] w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                    <th className="pb-3 pr-4">Order</th>
-                                    <th className="pb-3 pr-4">Customer</th>
-                                    <th className="pb-3 pr-4">Items</th>
-                                    <th className="pb-3 pr-4">Amount</th>
-                                    <th className="pb-3 pr-4">Payment</th>
-                                    <th className="pb-3 pr-4">Status</th>
-                                    <th className="pb-3 pr-4">Update</th>
-                                    <th className="pb-3">Address</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {paginatedOrders.map((order) => (
-                                    <tr key={order._id} className="border-b border-slate-100 align-top text-sm">
-                                        <td className="py-4 pr-4">
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto">
+                            <table className="min-w-[1200px] w-full table-auto border-separate border-spacing-0">
+                                <thead className="bg-slate-100">
+                                    <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Order</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Customer</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Items</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Amount</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Payment</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Status</th>
+                                        <th className="border-b border-r border-slate-200 px-4 py-4">Update</th>
+                                        <th className="border-b border-slate-200 px-4 py-4">Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedOrders.map((order) => (
+                                        <tr key={order._id} className="align-top text-sm transition hover:bg-slate-50/70">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="font-semibold text-slate-900">{order._id}</p>
                                             <p className="mt-1 text-slate-500">
                                                 {new Date(order.createdAt).toLocaleDateString()}
                                             </p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="font-medium text-slate-800">
                                                 {order.shippingInfo?.fullName || "N/A"}
                                             </p>
@@ -295,7 +296,7 @@ const OrdersPage = () => {
                                                 {order.shippingInfo?.phone || "N/A"}
                                             </p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <div className="space-y-2">
                                                 {(order.items || []).map((item, index) => (
                                                     <div key={`${order._id}-${item.productId || index}`}>
@@ -308,7 +309,7 @@ const OrdersPage = () => {
                                                 ))}
                                             </div>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <p className="font-semibold text-[#0EA5E9]">
                                                 {formatPrice(order.total)}
                                             </p>
@@ -319,13 +320,13 @@ const OrdersPage = () => {
                                                 Discount: {formatPrice(order.discount)}
                                             </p>
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <StatusBadge text={getPaymentBadgeText(order)} />
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             <StatusBadge text={getStatusBadgeText(order)} />
                                         </td>
-                                        <td className="py-4 pr-4">
+                                        <td className="border-b border-r border-slate-200 px-4 py-4">
                                             {isCancelRestricted(order) &&
                                             String(order?.status || "").toLowerCase() === "cancelled" ? (
                                                 <div className="min-w-[180px] rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-500">
@@ -355,7 +356,7 @@ const OrdersPage = () => {
                                                 </p>
                                             ) : null}
                                         </td>
-                                        <td className="py-4">
+                                        <td className="border-b border-slate-200 px-4 py-4">
                                             <p className="max-w-[260px] leading-6 text-slate-600">
                                                 {[
                                                     order.shippingInfo?.address,
@@ -368,9 +369,10 @@ const OrdersPage = () => {
                                             </p>
                                         </td>
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div className="mt-6 flex flex-col gap-4 border-t border-slate-200 pt-4 md:flex-row md:items-center md:justify-between">
                             <p className="text-sm text-slate-500">

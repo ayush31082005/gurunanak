@@ -146,17 +146,17 @@ const PaginationControls = ({
     }
 
     return (
-        <div className="mt-5 flex items-center justify-between border-t border-slate-200 pt-4">
+        <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-slate-500">
                 {label} {currentPage} of {totalPages}
             </p>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
                 <button
                     type="button"
                     onClick={onPrevious}
                     disabled={currentPage === 1}
-                    className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-w-[88px] border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     Prev
                 </button>
@@ -165,7 +165,7 @@ const PaginationControls = ({
                     type="button"
                     onClick={onNext}
                     disabled={currentPage === totalPages}
-                    className="border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="min-w-[88px] border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     Next
                 </button>
@@ -176,15 +176,15 @@ const PaginationControls = ({
 
 const StatCard = ({ title, value, subtitle, icon: Icon }) => {
     return (
-        <div className="border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
             <div className="flex items-start justify-between gap-4">
                 <div>
                     <p className="text-sm font-medium text-slate-500">{title}</p>
-                    <h3 className="mt-2 text-2xl font-bold text-slate-900">{value}</h3>
+                    <h3 className="mt-2 text-xl font-bold text-slate-900 sm:text-2xl">{value}</h3>
                     <p className="mt-1 text-sm text-slate-500">{subtitle}</p>
                 </div>
 
-                <div className="flex h-12 w-12 items-center justify-center bg-indigo-50 text-indigo-600">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-indigo-50 text-indigo-600 sm:h-12 sm:w-12">
                     <Icon size={22} />
                 </div>
             </div>
@@ -260,8 +260,8 @@ const DashboardHome = ({
             </div>
 
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-                <div className="xl:col-span-2 border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="mb-5 flex items-center justify-between">
+                <div className="border border-slate-200 bg-white p-4 shadow-sm sm:p-5 xl:col-span-2">
+                    <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <h3 className="text-lg font-semibold text-slate-900">
                             Product Sales
                         </h3>
@@ -316,7 +316,7 @@ const DashboardHome = ({
                     )}
                 </div>
 
-                <div className="border border-slate-200 bg-white p-5 shadow-sm">
+                <div className="border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                     <h3 className="mb-5 text-lg font-semibold text-slate-900">
                         Earnings Summary
                     </h3>
@@ -414,7 +414,7 @@ const ProductsSection = ({
                 <button
                     type="button"
                     onClick={() => setIsAddModalOpen(true)}
-                    className="inline-flex items-center justify-center gap-2 bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
+                    className="inline-flex w-full items-center justify-center gap-2 bg-indigo-600 px-4 py-3 text-sm font-semibold text-white hover:bg-indigo-700 sm:w-auto"
                 >
                     <Plus size={18} />
                     Add Product
@@ -435,30 +435,121 @@ const ProductsSection = ({
                 </div>
             ) : (
                 <div>
-                    <div className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+                    <div className="space-y-4 md:hidden">
+                        {paginatedProducts.map((product) => (
+                            <article
+                                key={`mobile-${product.id}`}
+                                className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <img
+                                        src={product.image}
+                                        alt={product.name}
+                                        className="h-16 w-16 shrink-0 rounded-xl border border-slate-200 object-cover"
+                                    />
+
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-base font-bold text-slate-900">
+                                            {product.name}
+                                        </p>
+                                        <p className="mt-1 text-sm text-slate-500">
+                                            {product.description || "No description available."}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                            Category
+                                        </p>
+                                        <p className="mt-1 font-medium text-slate-700">
+                                            {product.categoryName}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                            Price
+                                        </p>
+                                        <p className="mt-1 font-semibold text-slate-900">
+                                            {formatCurrency(product.price)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                            Stock
+                                        </p>
+                                        <p className="mt-1 font-medium text-slate-700">
+                                            {product.stock} items
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                            Status
+                                        </p>
+                                        <div className="mt-1 flex flex-wrap gap-2">
+                                            <StatusBadge text={product.status} />
+                                            <StatusBadge text={product.approvalStatus} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="mt-4 flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => openViewModal(product)}
+                                        className="inline-flex flex-1 items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                    >
+                                        <Eye size={15} />
+                                        View
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => openEditModal(product)}
+                                        className="inline-flex flex-1 items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                                    >
+                                        <Pencil size={15} />
+                                        Edit
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => handleDeleteProduct(product.id, product.name)}
+                                        className="inline-flex w-full items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                                    >
+                                        <Trash2 size={15} />
+                                        Delete
+                                    </button>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+
+                    <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)] md:block">
                         <div className="overflow-x-auto">
-                            <table className="min-w-full text-left">
-                                <thead className="bg-slate-50">
-                                    <tr>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                            <table className="min-w-full border-separate border-spacing-0 text-left">
+                                <thead className="bg-slate-100">
+                                    <tr className="text-xs uppercase tracking-[0.14em] text-slate-500">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">
                                             Product
                                         </th>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">
                                             Category
                                         </th>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">
                                             Price
                                         </th>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">
                                             Stock
                                         </th>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">
                                             Stock Status
                                         </th>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                        <th className="border-b border-r border-slate-200 px-5 py-4 font-semibold">
                                             Approval
                                         </th>
-                                        <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                        <th className="border-b border-slate-200 px-5 py-4 font-semibold">
                                             Actions
                                         </th>
                                     </tr>
@@ -468,9 +559,9 @@ const ProductsSection = ({
                                     {paginatedProducts.map((product) => (
                                         <tr
                                             key={product.id}
-                                            className="border-t border-slate-200 align-top"
+                                            className="align-top text-sm transition hover:bg-slate-50/70"
                                         >
-                                            <td className="px-5 py-4">
+                                            <td className="border-b border-r border-slate-200 px-5 py-4">
                                                 <div className="flex min-w-[240px] items-start gap-4">
                                                     <img
                                                         src={product.image}
@@ -490,34 +581,34 @@ const ProductsSection = ({
                                                 </div>
                                             </td>
 
-                                            <td className="px-5 py-4 text-sm text-slate-700">
+                                            <td className="border-b border-r border-slate-200 px-5 py-4 text-sm text-slate-700">
                                                 <span className="inline-flex bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
                                                     {product.categoryName}
                                                 </span>
                                             </td>
 
-                                            <td className="px-5 py-4 text-sm font-semibold text-slate-900">
+                                            <td className="border-b border-r border-slate-200 px-5 py-4 text-sm font-semibold text-slate-900">
                                                 {formatCurrency(product.price)}
                                             </td>
 
-                                            <td className="px-5 py-4 text-sm text-slate-700">
+                                            <td className="border-b border-r border-slate-200 px-5 py-4 text-sm text-slate-700">
                                                 {product.stock} items
                                             </td>
 
-                                            <td className="px-5 py-4">
+                                            <td className="border-b border-r border-slate-200 px-5 py-4 whitespace-nowrap">
                                                 <StatusBadge text={product.status} />
                                             </td>
 
-                                            <td className="px-5 py-4">
+                                            <td className="border-b border-r border-slate-200 px-5 py-4 whitespace-nowrap">
                                                 <StatusBadge text={product.approvalStatus} />
                                             </td>
 
-                                            <td className="px-5 py-4">
+                                            <td className="border-b border-slate-200 px-5 py-4 whitespace-nowrap">
                                                 <div className="flex min-w-[220px] flex-wrap gap-2">
                                                     <button
                                                         type="button"
                                                         onClick={() => openViewModal(product)}
-                                                        className="flex items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                                                        className="inline-flex shrink-0 items-center justify-center gap-2 border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100"
                                                     >
                                                         <Eye size={15} />
                                                         View
@@ -526,7 +617,7 @@ const ProductsSection = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => openEditModal(product)}
-                                                        className="flex items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                                                        className="inline-flex shrink-0 items-center justify-center gap-2 bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
                                                     >
                                                         <Pencil size={15} />
                                                         Edit
@@ -540,7 +631,7 @@ const ProductsSection = ({
                                                                 product.name
                                                             )
                                                         }
-                                                        className="flex items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
+                                                        className="inline-flex shrink-0 items-center justify-center gap-2 bg-rose-600 px-3 py-2 text-xs font-semibold text-white hover:bg-rose-700"
                                                     >
                                                         <Trash2 size={15} />
                                                         Delete
@@ -624,15 +715,53 @@ const OrdersSection = ({ orders, loading, error }) => {
                 subtitle="See which of your products sold and how many units sold."
             />
 
-            <div className="overflow-hidden border border-slate-200 bg-white shadow-sm">
+            <div className="space-y-4 md:hidden">
+                {loading ? (
+                    <div className="rounded-[24px] border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+                        Loading orders...
+                    </div>
+                ) : error ? (
+                    <div className="rounded-[24px] border border-rose-200 bg-rose-50 p-8 text-center text-sm text-rose-600 shadow-sm">
+                        {error}
+                    </div>
+                ) : paginatedOrders.length > 0 ? (
+                    paginatedOrders.map((order) => (
+                        <article
+                            key={`mobile-order-${order.id}`}
+                            className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_32px_rgba(15,23,42,0.05)]"
+                        >
+                            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                Product Name
+                            </p>
+                            <p className="mt-1 text-base font-bold text-slate-900">
+                                {order.productName}
+                            </p>
+                            <div className="mt-4">
+                                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                    Quantity Sold
+                                </p>
+                                <p className="mt-1 text-lg font-bold text-slate-900">
+                                    {order.quantity}
+                                </p>
+                            </div>
+                        </article>
+                    ))
+                ) : (
+                    <div className="rounded-[24px] border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-sm">
+                        No MR-linked product sales found yet.
+                    </div>
+                )}
+            </div>
+
+            <div className="hidden overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)] md:block">
                 <div className="overflow-x-auto">
-                    <table className="min-w-full text-left">
-                        <thead className="bg-slate-50">
+                    <table className="min-w-full border-separate border-spacing-0 text-left">
+                        <thead className="bg-slate-100">
                             <tr>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                <th className="border-b border-r border-slate-200 px-5 py-4 text-sm font-semibold text-slate-700">
                                     Product Name
                                 </th>
-                                <th className="px-5 py-4 text-sm font-semibold text-slate-700">
+                                <th className="border-b border-slate-200 px-5 py-4 text-sm font-semibold text-slate-700">
                                     Quantity Sold
                                 </th>
                             </tr>
@@ -661,12 +790,12 @@ const OrdersSection = ({ orders, loading, error }) => {
                                 paginatedOrders.map((order) => (
                                     <tr
                                         key={order.id}
-                                        className="border-t border-slate-200"
+                                        className="transition hover:bg-slate-50/70"
                                     >
-                                        <td className="px-5 py-4 text-sm text-slate-600">
+                                        <td className="border-b border-r border-slate-200 px-5 py-4 text-sm text-slate-600">
                                             {order.productName}
                                         </td>
-                                        <td className="px-5 py-4 text-sm font-semibold text-slate-900">
+                                        <td className="border-b border-slate-200 px-5 py-4 text-sm font-semibold text-slate-900">
                                             {order.quantity}
                                         </td>
                                     </tr>
@@ -1035,7 +1164,7 @@ const MrDashboard = () => {
                 )}
 
                 <aside
-                    className={`fixed left-0 top-0 z-50 flex h-screen w-72 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-lg transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                    className={`fixed left-0 top-0 z-50 flex h-screen w-[88vw] max-w-72 flex-col overflow-hidden border-r border-slate-200 bg-white shadow-lg transition-transform duration-300 lg:w-72 lg:translate-x-0 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
                         }`}
                 >
                     <div className="flex items-center justify-between border-b border-slate-200 px-5 py-5">
@@ -1068,8 +1197,8 @@ const MrDashboard = () => {
                                             setSidebarOpen(false);
                                         }}
                                         className={`flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-semibold transition ${isActive
-                                                ? "bg-indigo-600 text-white shadow-md"
-                                                : "text-slate-700 hover:bg-slate-100"
+                                            ? "bg-indigo-600 text-white shadow-md"
+                                            : "text-slate-700 hover:bg-slate-100"
                                             }`}
                                     >
                                         <Icon size={20} />
@@ -1136,6 +1265,8 @@ const MrDashboard = () => {
                                     <p className="text-xs text-slate-500">MR User</p>
                                 </div>
 
+
+
                                 <div className="flex h-11 w-11 items-center justify-center bg-indigo-600 text-sm font-bold text-white">
                                     {userInitials || "MR"}
                                 </div>
@@ -1143,7 +1274,7 @@ const MrDashboard = () => {
                         </div>
                     </header>
 
-                    <main className="p-4 sm:p-6 lg:p-8">{renderContent()}</main>
+                    <main className="p-3 sm:p-6 lg:p-8">{renderContent()}</main>
                 </div>
             </div>
             <WhatsAppChatBox bottomOffsetClassName="bottom-6 sm:bottom-6" />

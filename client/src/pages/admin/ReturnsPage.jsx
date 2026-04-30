@@ -171,17 +171,18 @@ const ReturnsPage = () => {
                         No return requests found.
                     </div>
                 ) : (
-                    <div className="mt-6 overflow-x-auto">
-                        <table className="min-w-[1450px] w-full">
-                            <thead>
-                                <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-                                    <th className="pb-3 pr-4">Request</th>
-                                    <th className="pb-3 pr-4">Customer</th>
-                                    <th className="pb-3 pr-4">Items</th>
-                                    <th className="pb-3 pr-4">Reason</th>
-                                    <th className="pb-3 pr-4">Proof</th>
-                                    <th className="pb-3 pr-4">Statuses</th>
-                                    <th className="pb-3">Actions</th>
+                    <div className="mt-6 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_12px_32px_rgba(15,23,42,0.05)]">
+                        <div className="overflow-x-auto">
+                        <table className="min-w-[1450px] w-full table-auto border-separate border-spacing-0">
+                            <thead className="bg-slate-100">
+                                <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">Request</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">Customer</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">Items</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">Reason</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">Proof</th>
+                                    <th className="border-b border-r border-slate-200 px-4 py-4">Statuses</th>
+                                    <th className="border-b border-slate-200 px-4 py-4">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -204,8 +205,8 @@ const ReturnsPage = () => {
                                         request.refundStatus === "manual_pending";
 
                                     return (
-                                        <tr key={request._id} className="border-b border-slate-100 align-top text-sm">
-                                            <td className="py-4 pr-4">
+                                        <tr key={request._id} className="align-top text-sm transition hover:bg-slate-50/70">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <p className="font-semibold text-slate-900">
                                                     #{String(request.order?._id || request.orderSnapshot?.orderId || "").slice(-8).toUpperCase()}
                                                 </p>
@@ -220,7 +221,7 @@ const ReturnsPage = () => {
                                                 </p>
                                             </td>
 
-                                            <td className="py-4 pr-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <p className="font-medium text-slate-800">
                                                     {request.user?.name || request.order?.shippingInfo?.fullName || "N/A"}
                                                 </p>
@@ -234,7 +235,7 @@ const ReturnsPage = () => {
                                                 ) : null}
                                             </td>
 
-                                            <td className="py-4 pr-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <div className="space-y-2">
                                                     {(request.items || []).map((item, index) => (
                                                         <div key={`${request._id}-${item.productId || index}`}>
@@ -249,7 +250,7 @@ const ReturnsPage = () => {
                                                 </div>
                                             </td>
 
-                                            <td className="py-4 pr-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <p className="max-w-[260px] leading-6 text-slate-600">
                                                     {request.reason}
                                                 </p>
@@ -260,7 +261,7 @@ const ReturnsPage = () => {
                                                 ) : null}
                                             </td>
 
-                                            <td className="py-4 pr-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 {request.proofImage?.url ? (
                                                     <a
                                                         href={request.proofImage.url}
@@ -275,7 +276,7 @@ const ReturnsPage = () => {
                                                 )}
                                             </td>
 
-                                            <td className="py-4 pr-4">
+                                            <td className="border-b border-r border-slate-200 px-4 py-4">
                                                 <div className="space-y-2">
                                                     <StatusBadge text={getCurrentReturnStatus(request)} />
                                                     <p className="text-xs font-medium text-slate-400">
@@ -284,7 +285,7 @@ const ReturnsPage = () => {
                                                 </div>
                                             </td>
 
-                                            <td className="py-4">
+                                            <td className="border-b border-slate-200 px-4 py-4">
                                                 <div className="flex max-w-[320px] flex-wrap gap-2">
                                                     {canApproveRefund ? (
                                                         <button
@@ -369,6 +370,7 @@ const ReturnsPage = () => {
                                 })}
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 )}
             </div>

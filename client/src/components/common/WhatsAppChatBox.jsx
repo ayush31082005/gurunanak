@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 
-const WHATSAPP_NUMBER = "919876543210";
+const WHATSAPP_NUMBER = "918423573070";
 const DEFAULT_MESSAGE =
     "Hello Gurunanak Pharmacy, I need help with my order and medicines.";
 
