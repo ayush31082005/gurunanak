@@ -15,8 +15,6 @@ import reminderRoutes from "./routes/reminderRoutes.js";
 import returnRoutes from "./routes/returnRoutes.js";
 import bankRoutes from "./routes/bankRoutes.js";
 
-
-
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,24 +27,59 @@ const configuredOrigins = [
         .filter(Boolean),
 ].filter(Boolean);
 
+const normalizeOrigin = (origin = "") => origin.trim().replace(/\/+$/, "");
+
+const defaultOrigins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "https://gurunanak-ten.vercel.app",
+];
+
 const allowedOrigins = new Set(
-    configuredOrigins.length
-        ? configuredOrigins
-        : [
-              "http://localhost:5173",
-              "http://localhost:5174",
-              "http://127.0.0.1:5173",
-              "http://127.0.0.1:5174",
-              "https://gurunanak-ten.vercel.app",
-          ]
+    (configuredOrigins.length ? configuredOrigins : defaultOrigins).map(normalizeOrigin)
 );
 
 const isLocalDevOrigin = (origin = "") =>
     /^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin);
 
+const shouldAllowVercelPreviewOrigin = () => {
+    if (String(process.env.ALLOW_VERCEL_PREVIEWS || "").toLowerCase() === "true") {
+        return true;
+    }
+
+    return Array.from(allowedOrigins).some((origin) => {
+        try {
+            return new URL(origin).hostname.endsWith(".vercel.app");
+        } catch {
+            return false;
+        }
+    });
+};
+
+const isAllowedOrigin = (origin = "") => {
+    const normalizedOrigin = normalizeOrigin(origin);
+
+    if (!normalizedOrigin || allowedOrigins.has(normalizedOrigin) || isLocalDevOrigin(normalizedOrigin)) {
+        return true;
+    }
+
+    if (!shouldAllowVercelPreviewOrigin()) {
+        return false;
+    }
+
+    try {
+        const parsedOrigin = new URL(normalizedOrigin);
+        return parsedOrigin.protocol === "https:" && parsedOrigin.hostname.endsWith(".vercel.app");
+    } catch {
+        return false;
+    }
+};
+
 const corsOptions = {
     origin(origin, callback) {
-        if (!origin || allowedOrigins.has(origin) || isLocalDevOrigin(origin)) {
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
             return;
         }

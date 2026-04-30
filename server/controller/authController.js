@@ -866,6 +866,7 @@ export const sendLoginOtp = async (req, res) => {
             message: "Login OTP sent to your email",
         });
     } catch (error) {
+        console.error("Failed to send login OTP:", error?.message || error);
         return res.status(500).json({
             success: false,
             message: "Failed to send login OTP",

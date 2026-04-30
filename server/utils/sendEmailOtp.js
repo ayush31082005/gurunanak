@@ -3,20 +3,35 @@ import nodemailer from "nodemailer";
 const createTransporter = () => {
     const smtpUser = process.env.EMAIL_USER || process.env.EMAIL;
     const smtpPass = process.env.EMAIL_PASS;
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = Number(process.env.SMTP_PORT || 587);
+    const smtpSecure = String(process.env.SMTP_SECURE || "").toLowerCase() === "true";
 
     if (!smtpUser || !smtpPass) {
         throw new Error("Email credentials are missing in environment variables");
     }
 
+    const transportConfig = smtpHost
+        ? {
+              host: smtpHost,
+              port: smtpPort,
+              secure: smtpSecure,
+              auth: {
+                  user: smtpUser,
+                  pass: smtpPass,
+              },
+          }
+        : {
+              service: "gmail",
+              auth: {
+                  user: smtpUser,
+                  pass: smtpPass,
+              },
+          };
+
     return {
         smtpUser,
-        transporter: nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: smtpUser,
-                pass: smtpPass,
-            },
-        }),
+        transporter: nodemailer.createTransport(transportConfig),
     };
 };
 
@@ -125,9 +140,11 @@ const getNotificationTemplate = ({ purpose }) => {
 const sendEmailOtp = async (email, otp, purpose = "register") => {
     const { smtpUser, transporter } = createTransporter();
     const template = getEmailTemplate({ otp, purpose });
+    const senderName = process.env.EMAIL_FROM_NAME || "Gurunanak";
+    const senderAddress = process.env.EMAIL_FROM || smtpUser;
 
     const mailOptions = {
-        from: `"Gurunanak" <${smtpUser}>`,
+        from: `"${senderName}" <${senderAddress}>`,
         to: email,
         subject: template.subject,
         html: template.html,
@@ -139,9 +156,11 @@ const sendEmailOtp = async (email, otp, purpose = "register") => {
 export const sendAccountNotificationEmail = async (email, purpose = "register") => {
     const { smtpUser, transporter } = createTransporter();
     const template = getNotificationTemplate({ purpose });
+    const senderName = process.env.EMAIL_FROM_NAME || "Gurunanak";
+    const senderAddress = process.env.EMAIL_FROM || smtpUser;
 
     const mailOptions = {
-        from: `"Gurunanak" <${smtpUser}>`,
+        from: `"${senderName}" <${senderAddress}>`,
         to: email,
         subject: template.subject,
         html: template.html,
