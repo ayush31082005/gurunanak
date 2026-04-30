@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import mongoose from "mongoose";
 import Reminder from "../models/Reminder.js";
 import { sendReminderEmail, isReminderEmailConfigured } from "./reminderEmailService.js";
 
@@ -9,6 +10,7 @@ const REMINDER_TIMEZONE =
 
 let reminderCronJob = null;
 let missingEmailConfigLogged = false;
+let missingDbConnectionLogged = false;
 
 const formatDateParts = (date) => {
     const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -71,6 +73,16 @@ const processReminderSlot = async (reminder, dateKey, timeKey) => {
 };
 
 export const runReminderDispatch = async () => {
+    if (mongoose.connection.readyState !== 1) {
+        if (!missingDbConnectionLogged) {
+            console.warn("Reminder cron skipped because MongoDB is not connected.");
+            missingDbConnectionLogged = true;
+        }
+        return;
+    }
+
+    missingDbConnectionLogged = false;
+
     if (!isReminderEmailConfigured()) {
         if (!missingEmailConfigLogged) {
             console.warn(
@@ -113,7 +125,11 @@ export const startReminderCron = () => {
     reminderCronJob = cron.schedule(
         "* * * * *",
         async () => {
-            await runReminderDispatch();
+            try {
+                await runReminderDispatch();
+            } catch (error) {
+                console.error("Reminder cron run failed:", error?.message || error);
+            }
         },
         {
             timezone: REMINDER_TIMEZONE,

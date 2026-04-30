@@ -1,32 +1,13 @@
-// import mongoose from "mongoose";
-
-// const cleanupLegacyUserIndexes = async () => {
-//     const usersCollection = mongoose.connection.collection("users");
-//     const indexes = await usersCollection.indexes();
-//     const hasLegacyMobileIndex = indexes.some((index) => index.name === "mobile_1");
-
-//     if (hasLegacyMobileIndex) {
-//         await usersCollection.dropIndex("mobile_1");
-//         console.log("Dropped legacy users.mobile_1 index");
-//     }
-// };
-
-// const connectDB = async () => {
-//     try {
-//         const conn = await mongoose.connect(process.env.MONGO_URI);
-//         await cleanupLegacyUserIndexes();
-//         console.log(`MongoDB Connected: ${conn.connection.host}`);
-//     } catch (error) {
-//         console.error("MongoDB Error:", error.message);
-//         process.exit(1);
-//     }
-// };
-
-// export default connectDB;
-
-
 import mongoose from "mongoose";
 import dns from "node:dns";
+
+const RETRY_DELAY_MS = Number(process.env.MONGO_RETRY_DELAY_MS) || 15000;
+const SERVER_SELECTION_TIMEOUT_MS = Number(process.env.MONGO_SERVER_SELECTION_TIMEOUT_MS) || 10000;
+
+let reconnectTimer = null;
+let reconnectInFlight = false;
+let listenersAttached = false;
+let disconnectedNoticeShown = false;
 
 const getDbUris = () => {
     const primary = process.env.MONGO_URI || process.env.MONGODB_URI;
@@ -49,20 +30,39 @@ const shouldTryFallback = (err, uri) => {
         (msg.includes("querySrv") ||
             msg.includes("ENOTFOUND") ||
             msg.includes("EAI_AGAIN") ||
-            msg.includes("ECONNREFUSED"))
+            msg.includes("ECONNREFUSED") ||
+            msg.includes("ECONNRESET") ||
+            msg.includes("ETIMEDOUT"))
+    );
+};
+
+const isRetryableConnectionError = (err) => {
+    const msg = String(err?.message || "");
+    return (
+        msg.includes("ENOTFOUND") ||
+        msg.includes("EAI_AGAIN") ||
+        msg.includes("ECONNREFUSED") ||
+        msg.includes("ECONNRESET") ||
+        msg.includes("ETIMEDOUT") ||
+        msg.includes("Server selection timed out") ||
+        msg.includes("ReplicaSetNoPrimary")
     );
 };
 
 const applyDnsServersIfConfigured = () => {
     const raw = process.env.DNS_SERVERS;
-    if (!raw) return false;
+    if (!raw) {
+        return false;
+    }
 
     const servers = raw
         .split(",")
         .map((server) => server.trim())
         .filter(Boolean);
 
-    if (servers.length === 0) return false;
+    if (servers.length === 0) {
+        return false;
+    }
 
     dns.setServers(servers);
     return true;
@@ -75,10 +75,74 @@ const applyDefaultDnsServersForSrv = () => {
 const connectOnce = async (dbUri) =>
     mongoose.connect(dbUri, {
         family: 4,
-        serverSelectionTimeoutMS: 10000,
+        serverSelectionTimeoutMS: SERVER_SELECTION_TIMEOUT_MS,
     });
 
-const connectDB = async () => {
+const clearReconnectTimer = () => {
+    if (!reconnectTimer) {
+        return;
+    }
+
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+};
+
+const scheduleReconnect = (reason = "temporary network issue") => {
+    if (reconnectTimer || reconnectInFlight || mongoose.connection.readyState === 1) {
+        return;
+    }
+
+    console.warn(`MongoDB unavailable (${reason}). Retrying in ${Math.round(RETRY_DELAY_MS / 1000)}s.`);
+
+    reconnectTimer = setTimeout(async () => {
+        reconnectTimer = null;
+        await connectDB({ fromRetryTimer: true });
+    }, RETRY_DELAY_MS);
+
+    reconnectTimer.unref?.();
+};
+
+const attachConnectionListeners = () => {
+    if (listenersAttached) {
+        return;
+    }
+
+    listenersAttached = true;
+
+    mongoose.connection.on("connected", () => {
+        disconnectedNoticeShown = false;
+        clearReconnectTimer();
+    });
+
+    mongoose.connection.on("reconnected", () => {
+        disconnectedNoticeShown = false;
+        clearReconnectTimer();
+        console.log(`MongoDB reconnected: ${mongoose.connection.host}`);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+        if (!disconnectedNoticeShown) {
+            console.warn("MongoDB disconnected. The API will stay up and keep retrying in the background.");
+            disconnectedNoticeShown = true;
+        }
+
+        scheduleReconnect("connection lost");
+    });
+
+    mongoose.connection.on("error", (error) => {
+        const message = error?.message || String(error);
+
+        if (isRetryableConnectionError(error)) {
+            console.warn(`MongoDB transient error: ${message}`);
+            scheduleReconnect(message);
+            return;
+        }
+
+        console.error(`MongoDB error: ${message}`);
+    });
+};
+
+const tryConnectWithStrategies = async () => {
     const { primary, fallback } = getDbUris();
 
     applyDnsServersIfConfigured();
@@ -86,36 +150,79 @@ const connectDB = async () => {
     try {
         const conn = await connectOnce(primary);
         console.log(`MongoDB Connected: ${conn.connection.host}`);
-        return;
-    } catch (err) {
-        if (shouldTryFallback(err, primary) && !process.env.DNS_SERVERS) {
+        return conn;
+    } catch (primaryError) {
+        if (shouldTryFallback(primaryError, primary) && !process.env.DNS_SERVERS) {
             try {
                 applyDefaultDnsServersForSrv();
-                const conn = await connectOnce(primary);
-                console.log(`MongoDB Connected (dns retry): ${conn.connection.host}`);
-                return;
-            } catch {
-                // fall through to fallback / final error logging
+                const dnsRetryConn = await connectOnce(primary);
+                console.log(`MongoDB Connected (dns retry): ${dnsRetryConn.connection.host}`);
+                return dnsRetryConn;
+            } catch (dnsRetryError) {
+                if (fallback && shouldTryFallback(dnsRetryError, primary)) {
+                    try {
+                        const fallbackConn = await connectOnce(fallback);
+                        console.log(`MongoDB Connected (fallback): ${fallbackConn.connection.host}`);
+                        return fallbackConn;
+                    } catch (fallbackError) {
+                        console.error("MongoDB connection error (fallback):", fallbackError?.message || fallbackError);
+                        throw fallbackError;
+                    }
+                }
+
+                throw dnsRetryError;
             }
         }
 
-        const canFallback = Boolean(fallback) && shouldTryFallback(err, primary);
-
-        if (canFallback) {
+        if (fallback && shouldTryFallback(primaryError, primary)) {
             try {
-                const conn = await connectOnce(fallback);
-                console.log(`MongoDB Connected (fallback): ${conn.connection.host}`);
-                return;
-            } catch (fallbackErr) {
-                console.error("MongoDB connection error (fallback):", fallbackErr?.message || fallbackErr);
+                const fallbackConn = await connectOnce(fallback);
+                console.log(`MongoDB Connected (fallback): ${fallbackConn.connection.host}`);
+                return fallbackConn;
+            } catch (fallbackError) {
+                console.error("MongoDB connection error (fallback):", fallbackError?.message || fallbackError);
+                throw fallbackError;
             }
         }
 
-        console.error("MongoDB connection error:", err?.message || err);
+        throw primaryError;
+    }
+};
 
-        if (process.env.NODE_ENV === "production") {
-            process.exit(1);
+const connectDB = async ({ fromRetryTimer = false } = {}) => {
+    attachConnectionListeners();
+
+    if (mongoose.connection.readyState === 1) {
+        return true;
+    }
+
+    if (mongoose.connection.readyState === 2) {
+        return false;
+    }
+
+    reconnectInFlight = true;
+
+    try {
+        await tryConnectWithStrategies();
+        clearReconnectTimer();
+        return true;
+    } catch (error) {
+        const message = error?.message || String(error);
+
+        if (!fromRetryTimer) {
+            console.error(`MongoDB connection error: ${message}`);
+        } else {
+            console.warn(`MongoDB retry failed: ${message}`);
         }
+
+        if (isRetryableConnectionError(error)) {
+            scheduleReconnect(message);
+            return false;
+        }
+
+        throw error;
+    } finally {
+        reconnectInFlight = false;
     }
 };
 

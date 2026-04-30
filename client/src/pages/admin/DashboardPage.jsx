@@ -122,11 +122,14 @@ const DashboardTooltip = ({ active, payload, label }) => {
         <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600 shadow-xl">
             {label ? <p className="mb-2 font-semibold text-slate-900">{label}</p> : null}
             <div className="space-y-1.5">
-                {payload.map((entry) => {
+                {payload.map((entry, index) => {
                     const isSales = entry.dataKey === "sales";
 
                     return (
-                        <div key={`${entry.dataKey}-${entry.name}`} className="flex items-center justify-between gap-4">
+                        <div
+                            key={`${entry.dataKey || entry.name || "chart-entry"}-${index}`}
+                            className="flex items-center justify-between gap-4"
+                        >
                             <span className="flex items-center gap-2 text-slate-500">
                                 <span
                                     className="h-2.5 w-2.5 rounded-full"
