@@ -79,6 +79,8 @@ export const getMrOrders = async (req, res) => {
                 orderNumber: `#${String(order._id).slice(-8).toUpperCase()}`,
                 productId: item.productId || null,
                 productName: item.name,
+                unitPrice: Number(item.price) || 0,
+                lineTotal: (Number(item.price) || 0) * (Number(item.quantity) || 0),
                 quantity: item.quantity,
                 customerName:
                     order.user?.name ||
@@ -89,6 +91,7 @@ export const getMrOrders = async (req, res) => {
                 paymentStatus: buildPaymentStatus(order),
                 orderStatus: order.status,
                 orderDate: order.createdAt,
+                deliveredAt: order.deliveredAt || null,
                 paymentMethod: order.paymentMethod || "cod",
             }));
         });

@@ -16,7 +16,6 @@ import {
     YAxis,
 } from "recharts";
 import {
-    Bell,
     IndianRupee,
     Package,
     ShoppingCart,
@@ -27,7 +26,7 @@ import API from "../../api";
 const chartGrid = "rgba(148, 163, 184, 0.14)";
 
 const panelClassName =
-    "rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition duration-300 hover:border-sky-200 hover:shadow-[0_18px_40px_rgba(14,165,233,0.10)]";
+    "border border-slate-200 bg-white p-4 shadow-sm transition duration-300 hover:border-sky-200 hover:shadow-[0_12px_28px_rgba(14,165,233,0.08)]";
 
 const defaultStats = {
     totalSales: 0,
@@ -148,10 +147,10 @@ const DashboardTooltip = ({ active, payload, label }) => {
 
 const ChartCard = ({ title, subtitle, action, className = "", children }) => (
     <section className={`${panelClassName} ${className}`}>
-        <div className="mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
+        <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between">
             <div>
-                <h3 className="text-base font-semibold text-slate-900">{title}</h3>
-                {subtitle ? <p className="mt-1 text-sm text-slate-500">{subtitle}</p> : null}
+                <h3 className="text-[15px] font-semibold text-slate-900">{title}</h3>
+                {subtitle ? <p className="mt-0.5 text-xs sm:text-sm text-slate-500">{subtitle}</p> : null}
             </div>
             {action ? <div className="w-full sm:w-auto">{action}</div> : null}
         </div>
@@ -161,7 +160,7 @@ const ChartCard = ({ title, subtitle, action, className = "", children }) => (
 
 const StatCard = ({ title, value, subtitle, icon: Icon, gradient, glow, badge, badgeTone = "slate", footnote }) => (
     <article
-        className={`group relative overflow-hidden rounded-[22px] border border-slate-200 bg-gradient-to-br ${gradient} p-4 text-slate-900 shadow-sm transition duration-300 hover:-translate-y-1 sm:rounded-[24px] ${glow}`}
+        className={`group relative overflow-hidden border border-slate-200 bg-gradient-to-br ${gradient} p-3 text-slate-900 shadow-sm transition duration-300 hover:-translate-y-1 ${glow}`}
     >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.45),transparent_42%)]" />
         <div className="absolute -right-10 -top-10 h-24 w-24 rounded-full bg-white/50 blur-2xl" />
@@ -169,16 +168,16 @@ const StatCard = ({ title, value, subtitle, icon: Icon, gradient, glow, badge, b
         <div className="relative flex items-start justify-between gap-3">
             <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">{title}</p>
-                <h2 className="mt-3 text-[1.65rem] font-bold leading-none tracking-tight sm:text-[1.9rem]">{value}</h2>
-                <p className="mt-2 text-xs text-slate-600 sm:text-sm">{subtitle}</p>
+                <h2 className="mt-2 text-[1.45rem] font-bold leading-none tracking-tight sm:text-[1.7rem]">{value}</h2>
+                <p className="mt-1.5 text-xs text-slate-600 sm:text-sm">{subtitle}</p>
             </div>
-            <div className="rounded-2xl border border-sky-100 bg-white/80 p-2.5 text-sky-600 backdrop-blur">
-                <Icon size={20} />
+            <div className="border border-sky-100 bg-white/80 p-2 text-sky-600 backdrop-blur">
+                <Icon size={18} />
             </div>
         </div>
 
-        <div className="relative mt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-            <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${badgeToneClassNames[badgeTone]}`}>
+        <div className="relative mt-3 flex flex-col items-start gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+            <span className={`inline-flex px-2.5 py-1 text-[11px] font-semibold ${badgeToneClassNames[badgeTone]}`}>
                 {badge}
             </span>
             <span className="text-[11px] font-medium text-slate-500">{footnote}</span>
@@ -384,13 +383,10 @@ const AdminDashboard = () => {
     );
 
     return (
-        <div className="relative overflow-hidden rounded-[28px] border border-slate-200 bg-gradient-to-br from-white via-sky-50/70 to-slate-100 p-2 text-slate-900 shadow-sm sm:rounded-[36px] sm:p-5">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.10),transparent_24%)]" />
-            <div className="pointer-events-none absolute inset-0 opacity-40 [background-image:linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)] [background-size:72px_72px]" />
-
+        <div className="bg-white p-2 text-slate-900 sm:p-3">
             <div className="relative">
-                <main className="min-w-0 rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm sm:rounded-[30px] sm:p-6">
-                    <div className="flex flex-col gap-3 rounded-[20px] border border-slate-200 bg-gradient-to-r from-white via-sky-50/70 to-white px-3 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:rounded-[24px] sm:px-4 sm:py-4">
+                <main className="min-w-0 border border-slate-200 bg-white p-2 shadow-sm sm:p-3">
+                    <div className="flex flex-col gap-2 border border-slate-200 bg-white px-3 py-2.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-4 sm:py-3">
                         <div>
                             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-sky-600">
                                 Pharmacy Admin Analytics
@@ -400,59 +396,38 @@ const AdminDashboard = () => {
                             </h1>
                         </div>
 
-                        <div className="flex items-center justify-between gap-3 sm:justify-start">
-                            <div className="hidden rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 md:flex">
-                                Live database metrics
-                            </div>
-                            <button
-                                type="button"
-                                className="relative rounded-2xl border border-slate-200 bg-white p-3 text-slate-500 transition hover:border-sky-300 hover:text-sky-600"
-                            >
-                                <Bell size={18} />
-                                <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-sky-500 shadow-[0_0_16px_rgba(14,165,233,0.45)]" />
-                            </button>
+                        <div className="hidden border border-slate-200 bg-white px-4 py-2 text-sm text-slate-500 md:flex">
+                            Live database metrics
                         </div>
                     </div>
 
                     {loading ? (
-                        <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+                        <div className="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-4">
                             {Array.from({ length: 4 }).map((_, index) => (
                                 <div
                                     key={index}
-                                    className="h-[150px] animate-pulse rounded-[24px] border border-slate-200 bg-white"
+                                    className="h-[150px] animate-pulse border border-slate-200 bg-white"
                                 />
                             ))}
                         </div>
                     ) : errorMessage ? (
-                        <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-6 text-sm text-rose-600">
+                        <div className="mt-4 border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
                             {errorMessage}
                         </div>
                     ) : (
                         <>
-                            <div className="mt-6 grid gap-4 md:grid-cols-2 2xl:grid-cols-4">
+                            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                                 {topStats.map((item) => (
                                     <StatCard key={item.title} {...item} />
                                 ))}
                             </div>
 
-                            <div className="mt-6">
+                            <div className="mt-4">
                                 <ChartCard
                                     title="Total Sale"
                                     subtitle="Sales and order movement from your live pharmacy dashboard."
-                                    action={
-                                        <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500 sm:justify-end">
-                                            <span className="flex items-center gap-2">
-                                                <span className="h-2.5 w-2.5 rounded-full bg-sky-500" />
-                                                Total Sales
-                                            </span>
-                                            <span className="flex items-center gap-2">
-                                                <span className="h-2.5 w-2.5 rounded-full border border-blue-500" />
-                                                Order Count
-                                            </span>
-                                        </div>
-                                    }
                                 >
-                                    <div className="h-[240px] sm:h-[320px]">
+                                    <div className="h-[210px] sm:h-[280px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <LineChart data={salesVsOrdersData} margin={{ top: 20, right: 18, left: 0, bottom: 6 }}>
                                                 <defs>
@@ -523,51 +498,71 @@ const AdminDashboard = () => {
                                 </ChartCard>
                             </div>
 
-                            <div className="mt-6 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(320px,0.9fr)]">
+                            <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(280px,0.9fr)]">
                                 <ChartCard title="Total User" subtitle="Customer and MR account distribution.">
-                                    <div className="flex items-center justify-center">
-                                        <div className="relative h-[210px] w-full max-w-[260px] sm:h-[230px] sm:max-w-[280px]">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <PieChart>
-                                                    <Pie
-                                                        data={userMixData}
-                                                        dataKey="value"
-                                                        nameKey="name"
-                                                        innerRadius={54}
-                                                        outerRadius={82}
-                                                        paddingAngle={3}
-                                                        stroke="rgba(15,23,42,0.5)"
-                                                        strokeWidth={3}
-                                                    >
-                                                        {userMixData.map((entry) => (
-                                                            <Cell key={entry.name} fill={entry.color} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip content={<DashboardTooltip />} />
-                                                </PieChart>
-                                            </ResponsiveContainer>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-center">
+                                            <div className="relative h-[180px] w-full max-w-[220px] sm:h-[200px] sm:max-w-[240px]">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <PieChart>
+                                                        <Pie
+                                                            data={userMixData}
+                                                            dataKey="value"
+                                                            nameKey="name"
+                                                            innerRadius={48}
+                                                            outerRadius={72}
+                                                            paddingAngle={3}
+                                                            stroke="rgba(15,23,42,0.5)"
+                                                            strokeWidth={3}
+                                                        >
+                                                            {userMixData.map((entry) => (
+                                                                <Cell key={entry.name} fill={entry.color} />
+                                                            ))}
+                                                        </Pie>
+                                                        <Tooltip content={<DashboardTooltip />} />
+                                                    </PieChart>
+                                                </ResponsiveContainer>
 
-                                            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-                                                <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
-                                                    Total Users
-                                                </p>
-                                                <p className="mt-2 text-3xl font-bold text-slate-900">{formatCount(totalUserCount)}</p>
+                                                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+                                                    <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                                                        Total Users
+                                                    </p>
+                                                    <p className="mt-1.5 text-2xl font-bold text-slate-900">{formatCount(totalUserCount)}</p>
+                                                </div>
                                             </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            {userLegend.map((item) => (
+                                                <div
+                                                    key={item.name}
+                                                    className="border border-slate-200 bg-slate-50 px-3 py-2 sm:px-3.5 sm:py-2.5"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <span className="flex min-w-0 items-center gap-3 text-sm text-slate-700">
+                                                            <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                                                            {item.name}
+                                                        </span>
+                                                        <span className="text-sm font-semibold text-slate-900">{item.percent}%</span>
+                                                    </div>
+                                                    <p className="mt-1 text-xs text-slate-400">{formatCount(item.value)} users</p>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </ChartCard>
 
                                 <ChartCard title="Total Product" subtitle="Catalog health based on stock status.">
-                                    <div className="space-y-4">
-                                        <div className="relative h-[210px] sm:h-[230px]">
+                                    <div className="space-y-3">
+                                        <div className="relative h-[180px] sm:h-[200px]">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
                                                     <Pie
                                                         data={productMixData}
                                                         dataKey="value"
                                                         nameKey="name"
-                                                        innerRadius={62}
-                                                        outerRadius={88}
+                                                        innerRadius={54}
+                                                        outerRadius={76}
                                                         paddingAngle={2}
                                                         stroke="rgba(15,23,42,0.65)"
                                                         strokeWidth={4}
@@ -584,15 +579,15 @@ const AdminDashboard = () => {
                                                 <p className="text-xs font-medium uppercase tracking-[0.24em] text-slate-500">
                                                     Products
                                                 </p>
-                                                <p className="mt-2 text-3xl font-bold text-slate-900">{formatCount(totalProductCount)}</p>
+                                                <p className="mt-1.5 text-2xl font-bold text-slate-900">{formatCount(totalProductCount)}</p>
                                             </div>
                                         </div>
 
-                                        <div className="space-y-3">
+                                        <div className="space-y-2">
                                             {productLegend.map((item) => (
                                                 <div
                                                     key={item.name}
-                                                    className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5 sm:px-4 sm:py-3"
+                                                    className="border border-slate-200 bg-slate-50 px-3 py-2 sm:px-3.5 sm:py-2.5"
                                                 >
                                                     <div className="flex items-center justify-between gap-3">
                                                         <span className="flex min-w-0 items-center gap-3 text-sm text-slate-700">
@@ -609,7 +604,7 @@ const AdminDashboard = () => {
                                 </ChartCard>
 
                                 <ChartCard title="Total Order" subtitle="Order volume across the latest trend buckets.">
-                                    <div className="h-[240px] sm:h-[320px]">
+                                    <div className="h-[210px] sm:h-[280px]">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={trends.orders} margin={{ top: 16, right: 8, left: -18, bottom: 6 }}>
                                                 <defs>

@@ -1060,7 +1060,11 @@ const UserDashboard = () => {
                 </div>
             </div>
 
-            <PanelShell title="Recent Orders" subtitle="Your latest orders are shown here." shellClassName="rounded-none">
+        <PanelShell
+            title="Recent Orders"
+            subtitle="Your latest orders are shown here."
+            shellClassName="rounded-none border-0 bg-transparent p-0 shadow-none backdrop-blur-0"
+        >
                 {ordersLoading ? (
                     <div className="rounded-none bg-slate-50 p-6 text-center text-slate-500">
                         Loading orders...

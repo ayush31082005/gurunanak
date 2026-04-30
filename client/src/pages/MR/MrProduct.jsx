@@ -1,8 +1,17 @@
 ﻿import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+    Area,
+    CartesianGrid,
+    Line,
+    LineChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
+import {
     Bell,
-    CheckCircle2,
     Eye,
     IndianRupee,
     LayoutDashboard,
@@ -98,6 +107,106 @@ const formatCurrency = (value) =>
         maximumFractionDigits: 0,
     }).format(Number(value) || 0);
 
+const formatCompactCurrency = (value) => {
+    const amount = Number(value) || 0;
+
+    if (amount >= 100000) {
+        return `₹${(amount / 100000).toFixed(1)}L`;
+    }
+
+    if (amount >= 1000) {
+        return `₹${(amount / 1000).toFixed(1)}K`;
+    }
+
+    return `₹${amount}`;
+};
+
+const chartGrid = "rgba(148, 163, 184, 0.16)";
+
+const getOrderLineTotal = (order = {}) =>
+    Number(order?.lineTotal) ||
+    (Number(order?.unitPrice) || 0) * (Number(order?.quantity) || 0);
+
+const buildRecentDateBuckets = (days = 7) => {
+    const today = new Date();
+
+    return Array.from({ length: days }, (_, index) => {
+        const date = new Date(today);
+        date.setHours(0, 0, 0, 0);
+        date.setDate(today.getDate() - (days - index - 1));
+
+        return {
+            key: date.toISOString().slice(0, 10),
+            label: date.toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+            }),
+        };
+    });
+};
+
+const buildMrEarningsTrend = (orders = []) => {
+    const buckets = buildRecentDateBuckets();
+    const earningsMap = new Map();
+
+    orders.forEach((order) => {
+        const sourceDate = order?.deliveredAt || order?.orderDate;
+
+        if (!sourceDate) {
+            return;
+        }
+
+        const date = new Date(sourceDate);
+
+        if (Number.isNaN(date.getTime())) {
+            return;
+        }
+
+        const bucketKey = date.toISOString().slice(0, 10);
+        const earning = getOrderLineTotal(order);
+
+        earningsMap.set(bucketKey, (earningsMap.get(bucketKey) || 0) + earning);
+    });
+
+    return buckets.map((bucket) => ({
+        label: bucket.label,
+        earnings: earningsMap.get(bucket.key) || 0,
+    }));
+};
+
+const summarizeEarningsByProduct = (orders = []) => {
+    const earningsMap = new Map();
+
+    orders.forEach((order) => {
+        const productName = order?.productName || "Unnamed Product";
+        const productKey = String(order?.productId || productName);
+        const lineTotal = getOrderLineTotal(order);
+        const quantity = Number(order?.quantity) || 0;
+        const existingEntry = earningsMap.get(productKey);
+
+        if (existingEntry) {
+            existingEntry.amount += lineTotal;
+            existingEntry.quantity += quantity;
+            return;
+        }
+
+        earningsMap.set(productKey, {
+            id: productKey,
+            productName,
+            amount: lineTotal,
+            quantity,
+        });
+    });
+
+    return Array.from(earningsMap.values()).sort((firstProduct, secondProduct) => {
+        if (secondProduct.amount !== firstProduct.amount) {
+            return secondProduct.amount - firstProduct.amount;
+        }
+
+        return firstProduct.productName.localeCompare(secondProduct.productName);
+    });
+};
+
 const summarizeOrdersByProduct = (orders = []) => {
     const productSummaryMap = new Map();
 
@@ -128,11 +237,58 @@ const summarizeOrdersByProduct = (orders = []) => {
     });
 };
 
-const calculateProductsBalance = (products = []) =>
-    products.reduce(
-        (totalBalance, product) => totalBalance + (Number(product?.price) || 0),
-        0
-    );
+const getProductPriceValue = (product = {}) => Number(product?.price) || 0;
+
+const buildMrProductValueTrend = (products = []) => {
+    const buckets = buildRecentDateBuckets();
+    const latestBucketKey = buckets[buckets.length - 1]?.key;
+    const validBucketKeys = new Set(buckets.map((bucket) => bucket.key));
+    const valueMap = new Map();
+
+    products.forEach((product) => {
+        const sourceDate = product?.createdAt || product?.updatedAt;
+        let bucketKey = latestBucketKey;
+
+        if (sourceDate) {
+            const date = new Date(sourceDate);
+
+            if (!Number.isNaN(date.getTime())) {
+                bucketKey = date.toISOString().slice(0, 10);
+            }
+        }
+
+        if (!bucketKey) {
+            return;
+        }
+
+        if (!validBucketKeys.has(bucketKey)) {
+            bucketKey = latestBucketKey;
+        }
+
+        valueMap.set(bucketKey, (valueMap.get(bucketKey) || 0) + getProductPriceValue(product));
+    });
+
+    return buckets.map((bucket) => ({
+        label: bucket.label,
+        earnings: valueMap.get(bucket.key) || 0,
+    }));
+};
+
+const summarizeProductsByValue = (products = []) =>
+    [...products]
+        .map((product, index) => ({
+            id: String(product?.id || product?._id || `${product?.name || "product"}-${index}`),
+            productName: product?.name || "Unnamed Product",
+            amount: getProductPriceValue(product),
+            stock: Number(product?.stock) || 0,
+        }))
+        .sort((firstProduct, secondProduct) => {
+            if (secondProduct.amount !== firstProduct.amount) {
+                return secondProduct.amount - firstProduct.amount;
+            }
+
+            return firstProduct.productName.localeCompare(secondProduct.productName);
+        });
 
 const PaginationControls = ({
     currentPage,
@@ -201,29 +357,49 @@ const SectionHeading = ({ title, subtitle }) => {
     );
 };
 
+const EarningsTooltip = ({ active, payload, label }) => {
+    if (!active || !payload?.length) {
+        return null;
+    }
+
+    return (
+        <div className="border border-slate-200 bg-white px-4 py-3 text-xs text-slate-600 shadow-xl">
+            <p className="mb-2 font-semibold text-slate-900">{label}</p>
+            <div className="flex items-center justify-between gap-4">
+                <span className="flex items-center gap-2 text-slate-500">
+                    <span className="h-2.5 w-2.5 rounded-full bg-indigo-500" />
+                    Earnings
+                </span>
+                <span className="font-semibold text-slate-900">
+                    {formatCurrency(payload[0]?.value)}
+                </span>
+            </div>
+        </div>
+    );
+};
+
 const DashboardHome = ({
     totalProducts,
     totalOrders = 0,
-    deliveredOrders = 0,
     currentBalance = 0,
-    recentSales = [],
-    onViewOrders,
+    products = [],
+    orders = [],
+    onViewEarnings,
 }) => {
-    const averageProductValue = totalProducts > 0 ? currentBalance / totalProducts : 0;
-    const productSalesPerPage = 4;
-    const [salesPage, setSalesPage] = useState(1);
-    const totalSalesPages = Math.max(
-        1,
-        Math.ceil(recentSales.length / productSalesPerPage)
+    const earningsTrend = useMemo(
+        () => buildMrProductValueTrend(products),
+        [products]
     );
-    const paginatedSales = recentSales.slice(
-        (salesPage - 1) * productSalesPerPage,
-        salesPage * productSalesPerPage
+    const totalEarnings = useMemo(
+        () => products.reduce((sum, product) => sum + getProductPriceValue(product), 0),
+        [products]
     );
-
-    useEffect(() => {
-        setSalesPage((currentPage) => Math.min(currentPage, totalSalesPages));
-    }, [totalSalesPages]);
+    const averageEarning =
+        products.length > 0 ? totalEarnings / products.length : 0;
+    const topEarningProduct = useMemo(() => {
+        const rankedProducts = summarizeProductsByValue(products);
+        return rankedProducts[0] || null;
+    }, [products]);
 
     return (
         <div className="space-y-8">
@@ -232,7 +408,7 @@ const DashboardHome = ({
                 subtitle="Here is your business overview today."
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
                     title="Total Products"
                     value={totalProducts}
@@ -246,15 +422,9 @@ const DashboardHome = ({
                     icon={ShoppingBag}
                 />
                 <StatCard
-                    title="Delivered"
-                    value={deliveredOrders}
-                    subtitle="Successfully delivered orders"
-                    icon={CheckCircle2}
-                />
-                <StatCard
                     title="Current Balance"
                     value={formatCurrency(currentBalance)}
-                    subtitle="Total value of added products"
+                    subtitle="Total value of your listed products"
                     icon={Wallet}
                 />
             </div>
@@ -263,55 +433,61 @@ const DashboardHome = ({
                 <div className="border border-slate-200 bg-white p-4 shadow-sm sm:p-5 xl:col-span-2">
                     <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <h3 className="text-lg font-semibold text-slate-900">
-                            Product Sales
+                            Earnings Trend
                         </h3>
                         <button
                             type="button"
-                            onClick={onViewOrders}
+                            onClick={onViewEarnings}
                             className="bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
                         >
                             View All
                         </button>
                     </div>
 
-                    {recentSales.length > 0 ? (
-                        <div className="space-y-4">
-                            {paginatedSales.map((product) => (
-                                <div
-                                    key={product.id}
-                                    className="flex items-center justify-between border border-slate-200 p-4"
-                                >
-                                    <div>
-                                        <p className="font-semibold text-slate-900">
-                                            {product.productName}
-                                        </p>
-                                        <p className="text-sm text-slate-500">
-                                            Quantity sold
-                                        </p>
-                                    </div>
-
-                                    <span className="text-lg font-bold text-slate-900">
-                                        {product.quantity}
-                                    </span>
-                                </div>
-                            ))}
-
-                            <PaginationControls
-                                currentPage={salesPage}
-                                totalPages={totalSalesPages}
-                                onPrevious={() =>
-                                    setSalesPage((currentPage) => Math.max(currentPage - 1, 1))
-                                }
-                                onNext={() =>
-                                    setSalesPage((currentPage) =>
-                                        Math.min(currentPage + 1, totalSalesPages)
-                                    )
-                                }
-                            />
+                    {products.length > 0 ? (
+                        <div className="h-[240px] sm:h-[300px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={earningsTrend} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
+                                    <defs>
+                                        <linearGradient id="mrDashboardEarningsFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.28} />
+                                            <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid stroke={chartGrid} vertical={true} />
+                                    <XAxis
+                                        dataKey="label"
+                                        tick={{ fill: "#94a3b8", fontSize: 12 }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                    />
+                                    <YAxis
+                                        tick={{ fill: "#94a3b8", fontSize: 12 }}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tickFormatter={(value) => formatCompactCurrency(value)}
+                                    />
+                                    <Tooltip content={<EarningsTooltip />} />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="earnings"
+                                        stroke="none"
+                                        fill="url(#mrDashboardEarningsFill)"
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="earnings"
+                                        stroke="#4f46e5"
+                                        strokeWidth={3}
+                                        dot={false}
+                                        activeDot={{ r: 6, fill: "#4f46e5", stroke: "#c7d2fe", strokeWidth: 2 }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
                         </div>
                     ) : (
                         <div className="border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
-                            No product sales found yet.
+                            No product-value data found yet.
                         </div>
                     )}
                 </div>
@@ -323,24 +499,29 @@ const DashboardHome = ({
 
                     <div className="space-y-4">
                         <div className="bg-indigo-50 p-4">
-                            <p className="text-sm text-slate-600">Products Added</p>
+                            <p className="text-sm text-slate-600">Total Earnings</p>
                             <h4 className="mt-1 text-2xl font-bold text-indigo-700">
-                                {totalProducts}
+                                {formatCurrency(totalEarnings)}
                             </h4>
                         </div>
 
                         <div className="bg-emerald-50 p-4">
-                            <p className="text-sm text-slate-600">Average Product Value</p>
+                            <p className="text-sm text-slate-600">Average Earning</p>
                             <h4 className="mt-1 text-2xl font-bold text-emerald-700">
-                                {formatCurrency(averageProductValue)}
+                                {formatCurrency(averageEarning)}
                             </h4>
                         </div>
 
                         <div className="bg-slate-100 p-4">
-                            <p className="text-sm text-slate-600">Total Balance</p>
+                            <p className="text-sm text-slate-600">Top Earning Product</p>
                             <h4 className="mt-1 text-2xl font-bold text-slate-900">
-                                {formatCurrency(currentBalance)}
+                                {topEarningProduct?.productName || "N/A"}
                             </h4>
+                            {topEarningProduct ? (
+                                <p className="mt-1 text-sm text-slate-500">
+                                    {formatCurrency(topEarningProduct.amount)}
+                                </p>
+                            ) : null}
                         </div>
                     </div>
                 </div>
@@ -832,33 +1013,39 @@ const OrdersSection = ({ orders, loading, error }) => {
     );
 };
 
-const EarningsSection = ({ products }) => {
+const EarningsSection = ({ products, orders }) => {
     const totalProducts = products.length;
-    const earningsPerPage = 6;
+    const earningsPerPage = 5;
     const [earningsPage, setEarningsPage] = useState(1);
-    const totalBalance = useMemo(() => calculateProductsBalance(products), [products]);
-    const averageProductPrice = totalProducts > 0 ? totalBalance / totalProducts : 0;
+    const earningsTrend = useMemo(
+        () => buildMrProductValueTrend(products),
+        [products]
+    );
+    const topEarningProducts = useMemo(
+        () => summarizeProductsByValue(products),
+        [products]
+    );
+    const totalEarnings = useMemo(
+        () => products.reduce((sum, product) => sum + getProductPriceValue(product), 0),
+        [products]
+    );
+    const averageProductValue =
+        totalProducts > 0 ? totalEarnings / totalProducts : 0;
     const totalEarningsPages = Math.max(
         1,
-        Math.ceil(products.length / earningsPerPage)
+        Math.ceil(topEarningProducts.length / earningsPerPage)
     );
-    const paginatedProducts = products.slice(
+    const paginatedProducts = topEarningProducts.slice(
         (earningsPage - 1) * earningsPerPage,
         earningsPage * earningsPerPage
     );
     const highestValueProduct = useMemo(() => {
-        if (!products.length) {
+        if (!topEarningProducts.length) {
             return null;
         }
 
-        return products.reduce((highestProduct, product) => {
-            if ((Number(product?.price) || 0) > (Number(highestProduct?.price) || 0)) {
-                return product;
-            }
-
-            return highestProduct;
-        }, products[0]);
-    }, [products]);
+        return topEarningProducts[0];
+    }, [topEarningProducts]);
 
     useEffect(() => {
         setEarningsPage((currentPage) => Math.min(currentPage, totalEarningsPages));
@@ -868,60 +1055,111 @@ const EarningsSection = ({ products }) => {
         <div>
             <SectionHeading
                 title="Earnings"
-                subtitle="See the total balance of all products you have added."
+                subtitle="Track total earning value by adding all your product prices."
             />
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                 <StatCard
-                    title="Total Products"
-                    value={totalProducts}
-                    subtitle="Products added by you"
+                    title="Total Earnings"
+                    value={formatCurrency(totalEarnings)}
+                    subtitle="Combined value of all your product prices"
                     icon={IndianRupee}
                 />
                 <StatCard
-                    title="Average Price"
-                    value={formatCurrency(averageProductPrice)}
-                    subtitle="Average value per product"
+                    title="Total Products"
+                    value={totalProducts}
+                    subtitle="Products included in earning value"
                     icon={Wallet}
                 />
                 <StatCard
-                    title="Total Balance"
-                    value={formatCurrency(totalBalance)}
-                    subtitle="Sum of all added product prices"
+                    title="Average Earning"
+                    value={formatCurrency(averageProductValue)}
+                    subtitle="Average price per product"
                     icon={TrendingUp}
                 />
             </div>
 
-            <div className="mt-8 border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mt-6 border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-4">
+                    <h3 className="text-lg font-semibold text-slate-900">
+                        Earnings Trend
+                    </h3>
+                    <p className="mt-1 text-sm text-slate-500">
+                        Last 7 days product-price value movement.
+                    </p>
+                </div>
+
+                <div className="h-[220px] sm:h-[280px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={earningsTrend} margin={{ top: 12, right: 12, left: 0, bottom: 4 }}>
+                            <defs>
+                                <linearGradient id="mrEarningsFill" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="#6366f1" stopOpacity={0.28} />
+                                    <stop offset="100%" stopColor="#6366f1" stopOpacity={0.02} />
+                                </linearGradient>
+                            </defs>
+                            <CartesianGrid stroke={chartGrid} vertical={true} />
+                            <XAxis
+                                dataKey="label"
+                                tick={{ fill: "#94a3b8", fontSize: 12 }}
+                                axisLine={false}
+                                tickLine={false}
+                            />
+                            <YAxis
+                                tick={{ fill: "#94a3b8", fontSize: 12 }}
+                                axisLine={false}
+                                tickLine={false}
+                                tickFormatter={(value) => formatCompactCurrency(value)}
+                            />
+                            <Tooltip content={<EarningsTooltip />} />
+                            <Area
+                                type="monotone"
+                                dataKey="earnings"
+                                stroke="none"
+                                fill="url(#mrEarningsFill)"
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="earnings"
+                                stroke="#4f46e5"
+                                strokeWidth={3}
+                                dot={false}
+                                activeDot={{ r: 6, fill: "#4f46e5", stroke: "#c7d2fe", strokeWidth: 2 }}
+                            />
+                        </LineChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            <div className="mt-6 border border-slate-200 bg-white p-5 shadow-sm">
                 <h3 className="mb-5 text-lg font-semibold text-slate-900">
-                    Added Products Balance
+                    Top Product Earnings
                 </h3>
 
-                {products.length > 0 ? (
-                    <div className="space-y-4">
+                {topEarningProducts.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
                         {paginatedProducts.map((product) => (
                             <div
                                 key={product.id}
-                                className="flex flex-col gap-3 border border-slate-200 p-4 sm:flex-row sm:items-center sm:justify-between"
+                                className="w-fit min-w-[140px] border border-slate-200 bg-slate-50 p-2.5"
                             >
-                                <div>
-                                    <h4 className="font-semibold text-slate-900">
-                                        {product.name}
+                                <div className="space-y-1.5">
+                                    <h4 className="text-sm font-semibold text-slate-900">
+                                        {product.productName}
                                     </h4>
-                                    <p className="text-sm text-slate-500">
-                                        {product.categoryName || "Uncategorized"}
+                                    <p className="text-xs text-slate-500">
+                                        Stock: {product.stock}
                                     </p>
+                                    <span className="inline-flex bg-white px-2.5 py-1 text-xs font-bold text-slate-900">
+                                        {formatCurrency(product.amount)}
+                                    </span>
                                 </div>
-
-                                <span className="text-lg font-bold text-slate-900">
-                                    {formatCurrency(product.price)}
-                                </span>
                             </div>
                         ))}
                     </div>
                 ) : (
                     <div className="border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500">
-                        No products added yet, so balance is {formatCurrency(0)}.
+                        No products found yet.
                     </div>
                 )}
 
@@ -940,12 +1178,12 @@ const EarningsSection = ({ products }) => {
                 />
 
                 {highestValueProduct ? (
-                    <div className="mt-5 bg-slate-50 p-4 text-sm text-slate-700">
-                        Highest value product:{" "}
+                    <div className="mt-5 border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
+                        Highest earning product:{" "}
                         <span className="font-semibold text-slate-900">
-                            {highestValueProduct.name}
+                            {highestValueProduct.productName}
                         </span>{" "}
-                        ({formatCurrency(highestValueProduct.price)})
+                        ({formatCurrency(highestValueProduct.amount)})
                     </div>
                 ) : null}
             </div>
@@ -1014,14 +1252,12 @@ const MrDashboard = () => {
             ),
         [allowedMrCategoryNames, categories]
     );
-
-    const summarizedMrOrders = useMemo(
-        () => summarizeOrdersByProduct(mrOrders),
-        [mrOrders]
-    );
-
-    const totalBalance = useMemo(
-        () => calculateProductsBalance(normalizedProducts),
+    const currentBalance = useMemo(
+        () =>
+            normalizedProducts.reduce(
+                (sum, product) => sum + getProductPriceValue(product),
+                0
+            ),
         [normalizedProducts]
     );
 
@@ -1135,19 +1371,17 @@ const MrDashboard = () => {
                 );
 
             case "earnings":
-                return <EarningsSection products={normalizedProducts} />;
+                return <EarningsSection products={normalizedProducts} orders={mrOrders} />;
 
             default:
                 return (
                     <DashboardHome
                         totalProducts={normalizedProducts.length}
                         totalOrders={mrOrders.length}
-                        deliveredOrders={
-                            mrOrders.filter((order) => order.orderStatus === "delivered").length
-                        }
-                        currentBalance={totalBalance}
-                        recentSales={summarizedMrOrders}
-                        onViewOrders={() => setActiveTab("orders")}
+                        currentBalance={currentBalance}
+                        products={normalizedProducts}
+                        orders={mrOrders}
+                        onViewEarnings={() => setActiveTab("earnings")}
                     />
                 );
         }
@@ -1222,7 +1456,7 @@ const MrDashboard = () => {
                         <div className="mt-10 bg-gradient-to-br from-indigo-600 to-purple-600 p-5 text-white">
                             <p className="text-sm text-indigo-100">Current Balance</p>
                             <h3 className="mt-2 text-3xl font-bold">
-                                {formatCurrency(totalBalance)}
+                                {formatCurrency(currentBalance)}
                             </h3>
                             <p className="mt-2 text-sm text-indigo-100">
                                 Keep growing your orders and earnings.
